@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>我的专属课表</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+    <div class="header">{{ currentTab === 'schedule' ? '我的课表' : '工具与设置' }}</div>
+
+    <div class="content-area">
+        <div v-show="currentTab === 'schedule'" style="height: 100%;">
+
+            <div v-if="courseList.length > 0">
+
+                <div class="week-nav">
+                    <button class="icon-btn" @click="changeWeek(-1)">&#9664;</button>
+                    <div class="week-title" @click="showWeekSelector = true">
+                        第 {{ currentWeek }} 周
+                        <span class="week-tag" v-if="currentWeek === realWeek">本周</span>
+                    </div>
+                    <button class="icon-btn" @click="changeWeek(1)">&#9654;</button>
+                </div>
+
+                <div class="schedule-container">
+                    <div class="time-sidebar">
+                        <div class="time-slot" style="height: 48px;"></div>
+                        <div class="time-slot" v-for="i in 12" :key="i">{{ i }}</div>
+                    </div>
+                    <div class="grid-area">
+                        <div class="week-header">
+                            <div class="day-header" v-for="(day, index) in ['一', '二', '三', '四', '五', '六', '日']" :key="index">
+                                <div>周{{ day }}</div>
+                                <div class="date-text">{{ currentWeekDates[index] }}</div>
+                            </div>
+                        </div>
+                        <div class="course-grid">
+                            <div class="course-card"
+                                 v-for="(course, index) in regularCourses"
+                                 :key="index"
+                                 @click="openDetails(course)"
+                                 :style="getCardStyle(course, index)">
+                                <div class="course-name">{{ course.name }}</div>
+                                <div>@{{ course.room }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="otherCourses.length > 0" class="other-courses-section">
+                    <div class="other-courses-title">📦 本周待定或网络课程 ({{ otherCourses.length }})</div>
+                    <div class="other-course-card"
+                         v-for="(course, index) in otherCourses"
+                         :key="'other-'+index"
+                         @click="openDetails(course)"
+                         :style="{ borderLeft: '4px solid ' + colors[index % colors.length] }">
+                        <div class="other-course-name">{{ course.name }}</div>
+                        <div class="other-course-info">{{ course.teacher || '未知老师' }} | {{ course.room || '网课/无地点' }}</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="empty-state" v-else>
+                <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+                <p>本地还没有课表数据哦</p>
+                <p style="font-size: 12px; margin-top: 5px;">请前往「我的」页面进行同步</p>
+            </div>
+        </div>
+
+        <div v-show="currentTab === 'profile'" class="profile-container">
+            <div class="card">
+                <div class="card-title">🔄 同步教务处数据</div>
+                <div class="input-group">
+                    <input type="text" v-model="loginForm.username" placeholder="请输入学号">
+                </div>
+                <div class="input-group">
+                    <input type="password" v-model="loginForm.password" placeholder="请输入密码">
+                </div>
+                <div class="captcha-box">
+                    <input type="text" v-model="loginForm.captcha" placeholder="验证码">
+                    <img v-if="captchaImg" :src="captchaImg" @click="fetchCaptcha" alt="点击刷新">
+                    <span v-else style="line-height: 44px; color: #888;">正在获取验证码...</span>
+                </div>
+                <button class="btn" @click="doLogin" :disabled="loading">
+                    {{ loading ? '数据抓取中，请稍候...' : '立即同步课表' }}
+                </button>
+                <p style="color: red; font-size: 13px; margin-top: 10px; text-align: center;">{{ errorMsg }}</p>
+                <p style="color: green; font-size: 13px; margin-top: 10px; text-align: center;">{{ successMsg }}</p>
+            </div>
+
+            <div class="card" v-if="courseList.length > 0">
+                <div class="card-title">⚙️ 数据管理</div>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">当前本地已保存 <b>{{ courseList.length }}</b> 节课的数据。</p>
+                <button class="btn btn-danger" @click="clearLocalData">清空本地课表</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tabbar">
+        <div class="tab-item" :class="{ active: currentTab === 'schedule' }" @click="switchTab('schedule')">
+            <div class="tab-icon">📅</div>
+            <span>课表</span>
+        </div>
+        <div class="tab-item" :class="{ active: currentTab === 'profile' }" @click="switchTab('profile')">
+            <div class="tab-icon">⚙️</div>
+            <span>我的</span>
+        </div>
+    </div>
+
+    <div class="modal-overlay" v-if="showModal" @click.self="closeDetails">
+        <div class="modal-content" v-if="selectedCourse">
+            <div class="modal-title">{{ selectedCourse.name }}</div>
+            <div class="modal-detail-item">
+                <div class="modal-icon">👨‍🏫</div>
+                <div><strong>教师：</strong>{{ selectedCourse.teacher || '未知' }}</div>
+            </div>
+            <div class="modal-detail-item">
+                <div class="modal-icon">📍</div>
+                <div><strong>教室：</strong>{{ selectedCourse.room || '待定/网课' }}</div>
+            </div>
+            <div class="modal-detail-item">
+                <div class="modal-icon">📅</div>
+                <div><strong>周次：</strong>{{ selectedCourse.weeks }}</div>
+            </div>
+            <div class="modal-detail-item" v-if="selectedCourse.day && selectedCourse.start <= 12">
+                <div class="modal-icon">⏱️</div>
+                <div>
+                    <strong>节次：</strong>
+                    星期{{ getDayName(selectedCourse.day) }}
+                    (第 {{ selectedCourse.start }} - {{ selectedCourse.start + selectedCourse.duration - 1 }} 节)
+                </div>
+            </div>
+            <button class="modal-close-btn" @click="closeDetails">我知道了</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" v-if="showWeekSelector" @click.self="showWeekSelector = false">
+        <div class="modal-content">
+            <div class="modal-title">选择周次</div>
+            <div class="week-grid">
+                <button class="week-btn"
+                        v-for="w in 25" :key="w"
+                        :class="{ active: currentWeek === w, current: realWeek === w }"
+                        @click="selectWeek(w)">
+                    {{ w }}
+                </button>
+            </div>
+            <button class="modal-close-btn" style="margin-top: 20px;" @click="selectWeek(realWeek)">回到本周</button>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.staticfile.net/vue/3.3.4/vue.global.min.js"></script>
+<script src="app2.js"></script>
+
+</body>
+</html>
