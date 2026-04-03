@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup
 import base64
 import uuid
 import re
+import traceback
+
+DEBUG=False
 
 app = FastAPI(title="南理工课表 API")
 
@@ -22,6 +25,8 @@ LOGIN_URL = "http://202.119.81.113:8080/Logon.do?method=logon"
 CAPTCHA_URL = "http://202.119.81.113:8080/verifycode.servlet"
 SCHEDULE_URL = "http://202.119.81.112:9080/njlgdx/xskb/xskb_list.do?Ves632DSdyV=NEW_XSD_PYGL"
 GRADES_LIST_URL = "http://202.119.81.112:9080/njlgdx/kscj/cjcx_list"
+# 新增考试数据接口 (根据系统规律推测为 _list)
+EXAMS_LIST_URL = "http://202.119.81.112:9080/njlgdx/xsks/xsksap_list"
 # =========================================
 
 HEADERS = {
@@ -37,6 +42,23 @@ class LoginRequest(BaseModel):
     password: str
     captcha: str
 
+# 3. 【全新盲抓探针】：考试解析
+def parse_exams(html_content):
+    soup = BeautifulSoup(html_content, 'lxml')
+    # 尝试寻找常见的数据表格
+    table = soup.find('table', id='dataList')
+    if not table: table = soup.find('table', class_='Nsb_r_list')
+    if not table: return []
+
+    results = []
+    rows = table.find_all('tr')[1:] # 跳过表头
+    for row in rows:
+        tds = row.find_all('td')
+        if not tds: continue
+        # 泛型提取：把每一列的文本按顺序提出来，形成一个数组
+        row_data = [td.get_text(strip=True) for td in tds]
+        results.append(row_data)
+    return results
 
 @app.get("/api/captcha")
 def get_captcha():
@@ -202,7 +224,8 @@ def parse_grades(html_content):
         nature = tds[10].get_text(strip=True)
 
         # 【调试打印】请在控制台查看这里是否有输出！
-        print(f"抓取到课程: {name} | 属性: {attr} | 性质: {nature}")
+        if (DEBUG):
+            print(f"抓取到课程: {name} | 属性: {attr} | 性质: {nature}")
 
         is_selected = (attr == "必修")
 
@@ -229,29 +252,169 @@ def parse_grades(html_content):
         })
     return results
 
+#
+# @app.post("/api/get_grades")
+# def get_grades(req: LoginRequest):
+#     if req.session_id not in session_store:
+#         raise HTTPException(status_code=400, detail="会话过期")
+#
+#     s = session_store[req.session_id]
+#     login_data = {'USERNAME': req.username, 'PASSWORD': req.password, 'RANDOMCODE': req.captcha}
+#
+#     try:
+#         login_resp = s.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=5)
+#         if "退出" not in login_resp.text:
+#             raise HTTPException(status_code=401, detail="登录失败，请检查验证码")
+#
+#         # 核心修复：加入 pageSize 确保拉出所有学期
+#         grade_params = {
+#             'kksj': '', 'kcxz': '', 'kcmc': '', 'xsfs': 'max',
+#             'pageSize': '1000', 'pageNum': '1'
+#         }
+#         grade_resp = s.post(GRADES_LIST_URL, data=grade_params, headers=HEADERS)
+#         grade_resp.encoding = 'utf-8'
+#
+#         parsed_grades = parse_grades(grade_resp.text)
+#         return {"msg": "成功", "data": parsed_grades}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+#
+# @app.post("/api/sync_all")
+# def sync_all(req: LoginRequest):
+#     if req.session_id not in session_store:
+#         raise HTTPException(status_code=400, detail="会话已过期，请刷新网页重试")
+#
+#     user_session = session_store[req.session_id]
+#     login_data = {
+#         'USERNAME': req.username, 'PASSWORD': req.password,
+#         'useDogCode': '', 'RANDOMCODE': req.captcha
+#     }
+#
+#     try:
+#         # 1. 统一登录
+#         login_resp = user_session.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=5)
+#         login_resp.encoding = 'utf-8'
+#
+#         if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
+#             raise HTTPException(status_code=401, detail="登录失败：账号密码或验证码错误")
+#
+#         # 2. 抓取课表
+#         schedule_resp = user_session.get(SCHEDULE_URL, headers=HEADERS, timeout=5)
+#         schedule_resp.encoding = 'utf-8'
+#         courses = parse_schedule(schedule_resp.text)
+#
+#         # 3. 抓取成绩 (强制 1000 条全量抓取)
+#         grade_params = {'kksj': '', 'kcxz': '', 'kcmc': '', 'xsfs': 'max', 'pageSize': '1000', 'pageNum': '1'}
+#         grade_resp = user_session.post(GRADES_LIST_URL, data=grade_params, headers=HEADERS, timeout=5)
+#         grade_resp.encoding = 'utf-8'
+#         grades = parse_grades(grade_resp.text)
+#
+#         # 4. 考试 (盲查当前默认学期或全部)
+#         # 参数根据你发来的 html，应该是 xnxqid
+#         exam_params = {'xnxqid': ''}
+#         exam_resp = s.post(EXAMS_LIST_URL, data=exam_params, headers=HEADERS, timeout=5)
+#         exam_resp.encoding = 'utf-8'
+#         exams = parse_exams(exam_resp.text)
+#
+#         del session_store[req.session_id]
+#
+#         # 5. 功成身退，销毁凭证
+#         del session_store[req.session_id]
+#
+#         # 统一返回两大模块数据
+#         # return {"msg": "成功", "data": {"courses": courses, "grades": grades}}
+#         # 统一返回三个模块
+#         return {"msg": "成功", "data": {"courses": courses, "grades": grades, "exams": exams}}
+#
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"内部错误: {str(e)}")
 
-@app.post("/api/get_grades")
-def get_grades(req: LoginRequest):
+# ==================== 替换你的 parse_grades ====================
+def parse_grades(html_content):
+    soup = BeautifulSoup(html_content, 'lxml')
+    table = soup.find('table', id='dataList')
+    if not table: return []
+
+    results = []
+    rows = table.find_all('tr')[1:]
+    for row in rows:
+        try:
+            tds = row.find_all('td')
+            if len(tds) < 11: continue
+
+            semester = tds[1].get_text(strip=True)
+            name = tds[3].get_text(strip=True)
+            score_text = tds[4].get_text(strip=True)
+
+            # 【核心修复】安全提取学分，防止遇到“免修”或“-”报错
+            credit_text = tds[6].get_text(strip=True)
+            try:
+                credit = float(credit_text) if credit_text else 0.0
+            except ValueError:
+                credit = 0.0
+
+            attr = tds[9].get_text(strip=True)
+            nature = tds[10].get_text(strip=True)
+
+            print(f"抓取到课程: {name} | 属性: {attr} | 性质: {nature} | 学分: {credit}")
+
+            gpa, numeric_score = calculate_njust_4_0_gpa(score_text)
+
+            results.append({
+                "semester": semester,
+                "name": name,
+                "score": score_text,
+                "numericScore": numeric_score,
+                "credit": credit,
+                "nature": nature,
+                "attr": attr,
+                "gpa": gpa,
+                "selected": (attr == "必修")
+            })
+        except Exception as e:
+            # 如果某一行真的出错了，控制台会打印出具体原因，然后继续抓取下一行
+            print(f"⚠️ 警告：跳过一条异常成绩记录，错误原因: {e}")
+            continue
+
+    return results
+
+
+# ==================== 替换你的 sync_all ====================
+@app.post("/api/sync_all")
+def sync_all(req: LoginRequest):
     if req.session_id not in session_store:
-        raise HTTPException(status_code=400, detail="会话过期")
+        raise HTTPException(status_code=400, detail="会话已过期，请刷新网页重试")
 
-    s = session_store[req.session_id]
-    login_data = {'USERNAME': req.username, 'PASSWORD': req.password, 'RANDOMCODE': req.captcha}
+    user_session = session_store[req.session_id]
+    login_data = {
+        'USERNAME': req.username, 'PASSWORD': req.password,
+        'useDogCode': '', 'RANDOMCODE': req.captcha
+    }
 
     try:
-        login_resp = s.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=5)
-        if "退出" not in login_resp.text:
-            raise HTTPException(status_code=401, detail="登录失败，请检查验证码")
+        # 1. 登录
+        login_resp = user_session.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=5)
+        login_resp.encoding = 'utf-8'
 
-        # 核心修复：加入 pageSize 确保拉出所有学期
-        grade_params = {
-            'kksj': '', 'kcxz': '', 'kcmc': '', 'xsfs': 'max',
-            'pageSize': '1000', 'pageNum': '1'
-        }
-        grade_resp = s.post(GRADES_LIST_URL, data=grade_params, headers=HEADERS)
+        if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
+            raise HTTPException(status_code=401, detail="登录失败：账号密码或验证码错误")
+
+        # 2. 抓取课表
+        schedule_resp = user_session.get(SCHEDULE_URL, headers=HEADERS, timeout=5)
+        schedule_resp.encoding = 'utf-8'
+        courses = parse_schedule(schedule_resp.text)
+
+        # 3. 抓取成绩
+        grade_params = {'kksj': '', 'kcxz': '', 'kcmc': '', 'xsfs': 'max', 'pageSize': '1000', 'pageNum': '1'}
+        grade_resp = user_session.post(GRADES_LIST_URL, data=grade_params, headers=HEADERS, timeout=5)
         grade_resp.encoding = 'utf-8'
+        grades = parse_grades(grade_resp.text)
 
-        parsed_grades = parse_grades(grade_resp.text)
-        return {"msg": "成功", "data": parsed_grades}
+        del session_store[req.session_id]
+
+        return {"msg": "成功", "data": {"courses": courses, "grades": grades}}
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # 【核心修复】打印完整的红色错误堆栈，一眼看出哪里报错
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"内部错误: {str(e)}")

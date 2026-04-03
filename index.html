@@ -3,26 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>我的专属课表</title>
+    <title>我的教务中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="app">
-    <div class="header">{{ currentTab === 'schedule' ? '我的课表' : '工具与设置' }}</div>
+    <div class="header">
+        {{ currentTab === 'schedule' ? '我的课表' : (currentTab === 'grades' ? '成绩单' : (currentTab === 'exams' ? '考试安排' : '数据同步')) }}
+    </div>
 
     <div class="content-area">
         <div v-show="currentTab === 'schedule'" style="height: 100%;">
-
             <div v-if="courseList.length > 0">
 
-                <div class="week-nav">
+                <div style="display: flex; justify-content: center; background: #fff; padding-top: 12px;">
+                    <div class="switch-capsule">
+                        <div class="switch-item" :class="{active: viewMode === 'week'}" @click="viewMode = 'week'">单周模式</div>
+                        <div class="switch-item" :class="{active: viewMode === 'semester'}" @click="viewMode = 'semester'">全学期模式</div>
+                    </div>
+                </div>
+
+                <div class="week-nav" v-show="viewMode === 'week'">
                     <button class="icon-btn" @click="changeWeek(-1)">&#9664;</button>
                     <div class="week-title" @click="showWeekSelector = true">
-                        第 {{ currentWeek }} 周
-                        <span class="week-tag" v-if="currentWeek === realWeek">本周</span>
+                        第 {{ currentWeek }} 周 <span class="week-tag" v-if="currentWeek === realWeek">本周</span>
                     </div>
                     <button class="icon-btn" @click="changeWeek(1)">&#9654;</button>
+                </div>
+
+                <div class="week-nav" v-show="viewMode === 'semester'" style="justify-content: center;">
+                    <div style="font-size: 12px; color: #888;">💡 点击带 👀 的重叠卡片，可查看该时段所有课程</div>
                 </div>
 
                 <div class="schedule-container">
@@ -34,129 +45,140 @@
                         <div class="week-header">
                             <div class="day-header" v-for="(day, index) in ['一', '二', '三', '四', '五', '六', '日']" :key="index">
                                 <div>周{{ day }}</div>
-                                <div class="date-text">{{ currentWeekDates[index] }}</div>
+                                <div class="date-text" v-if="viewMode === 'week'">{{ currentWeekDates[index] }}</div>
+                                <div class="date-text" v-else>全学期</div>
                             </div>
                         </div>
                         <div class="course-grid">
                             <div class="course-card"
-                                 v-for="(course, index) in regularCourses"
-                                 :key="index"
-                                 @click="openDetails(course)"
-                                 :style="getCardStyle(course, index)">
-                                <div class="course-name">{{ course.name }}</div>
-                                <div>@{{ course.room }}</div>
+                                 v-for="(group, index) in gridCourseGroups" :key="index"
+                                 @click="openDetails(group)"
+                                 :style="getGroupCardStyle(group, index)"
+                                 :class="{'is-overlap': group.length > 1}">
+                                <div class="course-name">{{ group[0].name }}</div>
+                                <div v-if="group.length === 1">@{{ group[0].room }}</div>
+                                <div v-else class="overlap-badge">👀 {{ group.length }}门交替</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div v-if="otherCourses.length > 0" class="other-courses-section">
-                    <div class="other-courses-title">📦 本周待定或网络课程 ({{ otherCourses.length }})</div>
-                    <div class="other-course-card"
-                         v-for="(course, index) in otherCourses"
-                         :key="'other-'+index"
-                         @click="openDetails(course)"
-                         :style="{ borderLeft: '4px solid ' + colors[index % colors.length] }">
-                        <div class="other-course-name">{{ course.name }}</div>
-                        <div class="other-course-info">{{ course.teacher || '未知老师' }} | {{ course.room || '网课/无地点' }}</div>
+                    <div class="other-courses-title">📦 待定或网络课程 ({{ otherCourses.length }})</div>
+                    <div class="other-course-card" v-for="(course, index) in otherCourses" :key="'other-'+index" @click="openDetails([course])">
+                        <div style="font-weight: bold; font-size: 14px;">{{ course.name }}</div>
+                        <div style="font-size: 12px; color: #888; margin-top: 4px;">{{ course.teacher || '未知' }} | {{ course.room || '网课/无地点' }}</div>
                     </div>
                 </div>
-
             </div>
 
             <div class="empty-state" v-else>
                 <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
-                <p>本地还没有课表数据哦</p>
-                <p style="font-size: 12px; margin-top: 5px;">请前往「我的」页面进行同步</p>
+                <p>课表空空如也，请前往同步</p>
             </div>
+        </div>
+
+        <div v-show="currentTab === 'grades'" class="grades-container">
+            <div v-if="gradeList.length > 0">
+                <div class="summary-card">
+                    <div class="summary-title">📈 实时绩点统计 (MAX: 4.0)</div>
+                    <table class="g-table">
+                        <thead><tr><th>范围</th><th>总学分</th><th>加权均分</th><th>GPA</th></tr></thead>
+                        <tbody>
+                            <tr><td>全部</td><td>{{ overallStats.all.credit }}</td><td>{{ overallStats.all.avg }}</td><td>{{ overallStats.all.gpa }}</td></tr>
+                            <tr class="text-red"><td>已选</td><td>{{ overallStats.selected.credit }}</td><td>{{ overallStats.selected.avg }}</td><td>{{ overallStats.selected.gpa }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="semester-block" v-for="semester in semesters" :key="semester.name">
+                    <div class="semester-header">🗓️ {{ semester.name }}</div>
+                    <table class="g-table">
+                        <thead><tr><th style="width:30px;">选</th><th style="text-align:left; padding-left:10px;">详情</th><th style="width:40px">成绩</th><th style="width:35px">学分</th><th style="width:35px">绩点</th></tr></thead>
+                        <tbody>
+                            <tr v-for="course in semester.courses">
+                                <td @click="toggleCourseSelection(course)"><div class="custom-checkbox" :class="{ checked: course.selected }"></div></td>
+                                <td class="course-name-td">
+                                    <div class="course-info-row">
+                                        <div><div class="course-name-main">{{ course.name }}</div><div class="course-nature-sub">{{ course.nature }}</div></div>
+                                        <div :class="['attr-tag', course.attr === '必修' ? 'tag-must' : 'tag-other']">{{ course.attr }}</div>
+                                    </div>
+                                </td>
+                                <td :class="{'text-red': course.numericScore < 60}">{{ course.score }}</td>
+                                <td>{{ course.credit }}</td>
+                                <td>{{ course.gpa }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="empty-state" v-else>
+                <div style="font-size: 40px; margin-bottom: 10px;">📊</div><p>暂无成绩数据，请前往同步</p>
+            </div>
+        </div>
+
+        <div v-show="currentTab === 'exams'" style="height: 100%;">
+            <div class="empty-state"><div style="font-size: 45px; margin-bottom: 15px;">🚧</div><p style="font-weight: bold; color: #333; font-size: 16px;">考试查询功能开发中</p></div>
         </div>
 
         <div v-show="currentTab === 'profile'" class="profile-container">
             <div class="card">
-                <div class="card-title">🔄 同步教务处数据</div>
-                <div class="input-group">
-                    <input type="text" v-model="loginForm.username" placeholder="请输入学号">
-                </div>
-                <div class="input-group">
-                    <input type="password" v-model="loginForm.password" placeholder="请输入密码">
-                </div>
-                <div class="captcha-box">
-                    <input type="text" v-model="loginForm.captcha" placeholder="验证码">
-                    <img v-if="captchaImg" :src="captchaImg" @click="fetchCaptcha" alt="点击刷新">
-                    <span v-else style="line-height: 44px; color: #888;">正在获取验证码...</span>
-                </div>
-                <button class="btn" @click="doLogin" :disabled="loading">
-                    {{ loading ? '数据抓取中，请稍候...' : '立即同步课表' }}
-                </button>
+                <div class="card-title">🔄 一键同步教务处</div>
+                <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
+                <div class="input-group"><input type="password" v-model="loginForm.password" placeholder="请输入密码"></div>
+                <div class="captcha-box"><input type="text" v-model="loginForm.captcha" placeholder="验证码"><img v-if="captchaImg" :src="captchaImg" @click="fetchCaptcha"></div>
+                <button class="btn" @click="syncAllData" :disabled="loading">{{ loading ? '数据抓取中，请稍候...' : '同步课表与成绩' }}</button>
                 <p style="color: red; font-size: 13px; margin-top: 10px; text-align: center;">{{ errorMsg }}</p>
                 <p style="color: green; font-size: 13px; margin-top: 10px; text-align: center;">{{ successMsg }}</p>
             </div>
 
-            <div class="card" v-if="courseList.length > 0">
+            <div class="card" v-if="courseList.length > 0 || gradeList.length > 0">
                 <div class="card-title">⚙️ 数据管理</div>
-                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">当前本地已保存 <b>{{ courseList.length }}</b> 节课的数据。</p>
-                <button class="btn btn-danger" @click="clearLocalData">清空本地课表</button>
+                <p style="font-size: 12px; color: #666; margin-bottom: 15px;">本地已缓存 <b>{{ courseList.length }}</b> 门课表和 <b>{{ gradeList.length }}</b> 条成绩。</p>
+                <button class="btn btn-danger" @click="clearLocalData">清空本地所有缓存</button>
             </div>
         </div>
     </div>
 
     <div class="tabbar">
-        <div class="tab-item" :class="{ active: currentTab === 'schedule' }" @click="switchTab('schedule')">
-            <div class="tab-icon">📅</div>
-            <span>课表</span>
-        </div>
-        <div class="tab-item" :class="{ active: currentTab === 'profile' }" @click="switchTab('profile')">
-            <div class="tab-icon">⚙️</div>
-            <span>我的</span>
-        </div>
+        <div class="tab-item" :class="{ active: currentTab === 'schedule' }" @click="switchTab('schedule')"><div class="tab-icon">📅</div><span>课表</span></div>
+        <div class="tab-item" :class="{ active: currentTab === 'grades' }" @click="switchTab('grades')"><div class="tab-icon">🏆</div><span>成绩</span></div>
+        <div class="tab-item" :class="{ active: currentTab === 'exams' }" @click="switchTab('exams')"><div class="tab-icon">📝</div><span>考试</span></div>
+        <div class="tab-item" :class="{ active: currentTab === 'profile' }" @click="switchTab('profile')"><div class="tab-icon">⚙️</div><span>我的</span></div>
     </div>
 
     <div class="modal-overlay" v-if="showModal" @click.self="closeDetails">
-        <div class="modal-content" v-if="selectedCourse">
-            <div class="modal-title">{{ selectedCourse.name }}</div>
-            <div class="modal-detail-item">
-                <div class="modal-icon">👨‍🏫</div>
-                <div><strong>教师：</strong>{{ selectedCourse.teacher || '未知' }}</div>
-            </div>
-            <div class="modal-detail-item">
-                <div class="modal-icon">📍</div>
-                <div><strong>教室：</strong>{{ selectedCourse.room || '待定/网课' }}</div>
-            </div>
-            <div class="modal-detail-item">
-                <div class="modal-icon">📅</div>
-                <div><strong>周次：</strong>{{ selectedCourse.weeks }}</div>
-            </div>
-            <div class="modal-detail-item" v-if="selectedCourse.day && selectedCourse.start <= 12">
-                <div class="modal-icon">⏱️</div>
-                <div>
-                    <strong>节次：</strong>
-                    星期{{ getDayName(selectedCourse.day) }}
-                    (第 {{ selectedCourse.start }} - {{ selectedCourse.start + selectedCourse.duration - 1 }} 节)
+        <div class="modal-content">
+            <div class="modal-title">{{ selectedCourseGroup.length > 1 ? '时段重叠课程 (' + selectedCourseGroup.length + '门)' : '课程详情' }}</div>
+            <div v-for="(course, idx) in selectedCourseGroup" :key="idx">
+                <div v-if="selectedCourseGroup.length > 1" style="font-weight: bold; font-size: 14px; color: #007aff; margin-bottom: 8px;">📚 {{ course.name }}</div>
+                <div v-else style="font-weight: bold; font-size: 15px; color: #333; margin-bottom: 12px; text-align: center;">{{ course.name }}</div>
+
+                <div class="modal-detail-item"><div class="modal-icon">👨‍🏫</div><div><strong>教师：</strong>{{ course.teacher || '未知' }}</div></div>
+                <div class="modal-detail-item"><div class="modal-icon">📍</div><div><strong>教室：</strong>{{ course.room || '待定' }}</div></div>
+                <div class="modal-detail-item"><div class="modal-icon">📅</div><div><strong>周次：</strong>{{ course.weeks }}</div></div>
+
+                <div class="modal-detail-item" v-if="course.day && course.start <= 12">
+                    <div class="modal-icon">⏱️</div>
+                    <div><strong>节次：</strong>星期{{ getDayName(course.day) }} (第 {{ course.start }} - {{ course.start + course.duration - 1 }} 节)</div>
                 </div>
+                <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed #ddd; margin: 15px 0;">
             </div>
             <button class="modal-close-btn" @click="closeDetails">我知道了</button>
         </div>
     </div>
 
     <div class="modal-overlay" v-if="showWeekSelector" @click.self="showWeekSelector = false">
-        <div class="modal-content">
+        <div class="modal-content" style="max-height: initial;">
             <div class="modal-title">选择周次</div>
             <div class="week-grid">
-                <button class="week-btn"
-                        v-for="w in 25" :key="w"
-                        :class="{ active: currentWeek === w, current: realWeek === w }"
-                        @click="selectWeek(w)">
-                    {{ w }}
-                </button>
+                <button class="week-btn" v-for="w in 25" :key="w" :class="{ active: currentWeek === w, current: realWeek === w }" @click="selectWeek(w)">{{ w }}</button>
             </div>
-            <button class="modal-close-btn" style="margin-top: 20px;" @click="selectWeek(realWeek)">回到本周</button>
         </div>
     </div>
-
 </div>
 
 <script src="https://cdn.staticfile.net/vue/3.3.4/vue.global.min.js"></script>
-<script src="app2.js"></script>
-
+<script src="app.js"></script>
 </body>
 </html>
