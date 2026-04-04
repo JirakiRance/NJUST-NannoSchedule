@@ -551,7 +551,7 @@ body {
     border-radius: 6px;
     cursor: pointer;
     border: 1px solid #ddd;
-    max-width: 40%;
+    max-width: 20%;
     /* 建议加上这一行：防止 Flex 布局为了挤空间把图片宽度缩成 0 */
     flex-shrink: 0;
     object-fit: contain;
