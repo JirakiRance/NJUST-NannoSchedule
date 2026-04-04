@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>NannoSchedule</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 
@@ -204,5 +204,19 @@
 
 <script src="./vue.global.min.js"></script>
 <script src="app.js"></script>
+<script>
+      // 注册 Service Worker 来触发 PWA 安装
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW 注册成功:', registration);
+            })
+            .catch(error => {
+              console.log('SW 注册失败:', error);
+            });
+        });
+      }
+    </script>
 </body>
 </html>
