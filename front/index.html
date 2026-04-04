@@ -17,7 +17,7 @@
     </div>
 
     <div class="content-area">
-        <div v-show="currentTab === 'schedule'" style="height: 100%;">
+        <div v-show="currentTab === 'schedule'" style="height: 100%;" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
             <div v-if="courseList.length > 0">
                 <div style="display: flex; justify-content: center; background: #fff; padding-top: 12px;">
                     <div class="switch-capsule">

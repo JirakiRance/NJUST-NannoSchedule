@@ -39,6 +39,10 @@ createApp({
             errorMsg: "",
             successMsg: "",
 
+            // 记录触摸起点
+            touchStartX: 0,
+            touchStartY: 0,
+
             // 登录与表单
             captchaImg: "",
             loginForm: { username: "", password: "", captcha: "", session_id: "" },
@@ -328,6 +332,39 @@ createApp({
                 height: `${maxDuration * 60 - 4}px`,
                 backgroundColor: this.colors[colorIndex]
             };
+        },
+
+        /* ================= 滑动手势处理 ================= */
+        handleTouchStart(e) {
+            // 记录手指刚接触屏幕时的坐标
+            this.touchStartX = e.changedTouches[0].clientX;
+            this.touchStartY = e.changedTouches[0].clientY;
+        },
+
+        handleTouchEnd(e) {
+            // 如果弹窗开着，或者不是单周模式，就不处理滑动切周
+            if (this.showModal || this.viewMode !== 'week') return;
+
+            // 记录手指离开屏幕时的坐标
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+
+            // 计算水平和垂直滑动的距离
+            const deltaX = touchEndX - this.touchStartX;
+            const deltaY = touchEndY - this.touchStartY;
+
+            // 【防误触判定】
+            // 1. 只有水平滑动距离大于垂直滑动距离，才算左右滑（防止用户上下划屏幕看课表时误触发）
+            // 2. 滑动距离必须大于 50 像素，才算有效操作
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+                if (deltaX > 0) {
+                    // 向右滑动（手指向右边甩）：查看上一周
+                    this.changeWeek(-1);
+                } else {
+                    // 向左滑动（手指向左边甩）：查看下一周
+                    this.changeWeek(1);
+                }
+            }
         },
 
         /* ================= 绩点计算 ================= */
