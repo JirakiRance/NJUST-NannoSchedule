@@ -628,3 +628,44 @@ body {
 .tab-icon {
     font-size: 22px;
 }
+
+/* ================= 消息提示 Toast ================= */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    width: 90%;
+    max-width: 350px;
+    align-items: center;
+}
+
+.toast {
+    background: #ff3b30;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-align: center;
+    word-break: break-all;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.success {
+    background: #34c759;
+    box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+}

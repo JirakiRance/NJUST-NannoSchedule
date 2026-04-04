@@ -3,6 +3,30 @@
 //服务器
 const API_BASE = "https://njust-nannoschedule.onrender.com/api"
 
+
+
+
+// ====== 全局消息提示函数 ======
+function showToast(message, type = 'error') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerText = message;
+    container.appendChild(toast);
+
+    setTimeout(() => { toast.classList.add('show'); }, 10);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => { toast.remove(); }, 300);
+    }, 3000);
+}
+// ===================================
+
+
+
 const { createApp } = Vue;
 
 createApp({
@@ -160,32 +184,61 @@ createApp({
             }
         },
 
+//        async syncAllData() {
+//            if(!this.loginForm.username || !this.loginForm.captcha) {
+//                this.errorMsg = "请填写完整信息";
+//                return;
+//            }
+//            this.loading = true;
+//            this.errorMsg = "";
+//            this.successMsg = "";
+//            try {
+//                const res = await fetch(`${API_BASE}/sync_all`, {
+//                    method: "POST", headers: { "Content-Type": "application/json" },
+//                    body: JSON.stringify(this.loginForm)
+//                });
+//                const result = await res.json();
+//                if (res.ok) {
+//                    this.courseList = result.data.courses;
+//                    this.gradeList = result.data.grades;
+//                    localStorage.setItem("my_njust_data", JSON.stringify(result.data));
+//                    this.successMsg = "同步成功！";
+//                    setTimeout(() => { this.switchTab("schedule"); }, 1000);
+//                } else {
+//                    this.errorMsg = result.detail || "验证失败";
+//                    this.fetchCaptcha();
+//                }
+//            } catch (e) {
+//                this.errorMsg = "网络连接异常";
+//            } finally {
+//                this.loading = false;
+//            }
+//        },
         async syncAllData() {
             if(!this.loginForm.username || !this.loginForm.captcha) {
-                this.errorMsg = "请填写完整信息";
+                showToast("请填写完整账号和验证码", "error"); // 换成弹窗
                 return;
             }
             this.loading = true;
-            this.errorMsg = "";
-            this.successMsg = "";
             try {
                 const res = await fetch(`${API_BASE}/sync_all`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(this.loginForm)
                 });
                 const result = await res.json();
+
                 if (res.ok) {
                     this.courseList = result.data.courses;
                     this.gradeList = result.data.grades;
                     localStorage.setItem("my_njust_data", JSON.stringify(result.data));
-                    this.successMsg = "同步成功！";
+                    showToast("同步成功！", "success"); // 成功也换成绿色弹窗
                     setTimeout(() => { this.switchTab("schedule"); }, 1000);
                 } else {
-                    this.errorMsg = result.detail || "验证失败";
-                    this.fetchCaptcha();
+                    showToast(result.detail || "验证失败，请检查账号密码或验证码", "error"); // 后端报错弹窗
+                    this.fetchCaptcha(); // 自动刷新验证码
                 }
             } catch (e) {
-                this.errorMsg = "网络连接异常";
+                showToast("网络连接异常，请稍后再试", "error"); // 网络报错弹窗
             } finally {
                 this.loading = false;
             }
