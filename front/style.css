@@ -509,37 +509,11 @@ body {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
-}
-
-.captcha-box input {
-    flex-grow: 1;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 15px;
-}
-
-.captcha-box img {
-    height: 44px;
-    border-radius: 6px;
-    cursor: pointer;
-    border: 1px solid #ddd;
-    max-width: 40%;
-    object-fit: contain;
-    background-color: #eee;
-}
-*/
-.captcha-box {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    /* 建议加上这一行：让输入框和图片在垂直方向上居中对齐，更好看 */
     align-items: center;
 }
 
 .captcha-box input {
     flex-grow: 1;
-    /* 建议加上这一行：给输入框一个最小尊严，防止它被挤成一个点 */
     min-width: 0;
     padding: 12px;
     border: 1px solid #ddd;
@@ -553,11 +527,46 @@ body {
     cursor: pointer;
     border: 1px solid #ddd;
     max-width: 20%;
-    /* 建议加上这一行：防止 Flex 布局为了挤空间把图片宽度缩成 0 */
     flex-shrink: 0;
     object-fit: contain;
     background-color: #eee;
 }
+*/
+.captcha-box {
+    display: flex;
+    gap: 12px; /* 间距稍微拉开一点点，视觉更透气 */
+    margin-bottom: 20px;
+    align-items: center; /* 确保垂直居中对齐 */
+}
+
+.captcha-box input {
+    flex: 1; /* 核心：占据除了验证码之外的所有空间 */
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    height: 46px; /* 显式指定高度 */
+    box-sizing: border-box;
+    outline: none; /* 点下去的时候不要有丑陋的黑框 */
+}
+
+.captcha-box input:focus {
+    border-color: var(--primary-color); /* 聚焦时边框变蓝，细节拉满 */
+}
+
+.captcha-box img {
+    width: 110px; /* 黄金宽度，足够看清字母，又不会撑爆屏幕 */
+    height: 46px; /* 核心：高度跟输入框一模一样！ */
+    flex-shrink: 0; /* 核心：告诉浏览器，就算屏幕再小，也不许挤压验证码的宽度 */
+    border-radius: 8px; /* 圆角跟输入框统一 */
+    cursor: pointer;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+    object-fit: cover; /* 核心：让图片完美铺满这个 110x46 的框，绝对不留灰边 */
+}
+
+
 .btn {
     background: var(--primary-color);
     color: white;
