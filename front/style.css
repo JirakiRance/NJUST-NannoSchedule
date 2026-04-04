@@ -523,6 +523,9 @@ body {
     border-radius: 6px;
     cursor: pointer;
     border: 1px solid #ddd;
+    max-width: 40%;
+    object-fit: contain;
+    background-color: #eee;
 }
 
 .btn {
