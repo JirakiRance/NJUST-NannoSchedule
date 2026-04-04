@@ -1,6 +1,6 @@
 // 【部署必改】：当你将后端部署到云端后，请把 127.0.0.1 替换为你的云端 API 地址
 // const API_BASE = "http://127.0.0.1:8000/api";
-const API_BASE = "https://njust-nannoschedule.onrender.com"
+const API_BASE = "https://njust-nannoschedule.onrender.com/api"
 // 例如: const API_BASE = "https://your-njust-api.onrender.com/api";
 
 const { createApp } = Vue;
