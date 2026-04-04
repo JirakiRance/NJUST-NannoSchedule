@@ -503,7 +503,7 @@ body {
     box-sizing: border-box;
     background: #f9f9f9;
 }
-
+/*
 .captcha-box {
     display: flex;
     gap: 10px;
@@ -527,7 +527,36 @@ body {
     object-fit: contain;
     background-color: #eee;
 }
+*/
+.captcha-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    /* 建议加上这一行：让输入框和图片在垂直方向上居中对齐，更好看 */
+    align-items: center;
+}
 
+.captcha-box input {
+    flex-grow: 1;
+    /* 建议加上这一行：给输入框一个最小尊严，防止它被挤成一个点 */
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.captcha-box img {
+    height: 44px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    max-width: 40%;
+    /* 建议加上这一行：防止 Flex 布局为了挤空间把图片宽度缩成 0 */
+    flex-shrink: 0;
+    object-fit: contain;
+    background-color: #eee;
+}
 .btn {
     background: var(--primary-color);
     color: white;
