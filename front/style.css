@@ -12,7 +12,7 @@ body {
     padding: 0;
     background-color: var(--bg-color);
     font-family: -apple-system, sans-serif;
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden; /* 锁死外部，仅允许内容区滚动 */
 }
 
