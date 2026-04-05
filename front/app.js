@@ -187,7 +187,7 @@ createApp({
                 this.pixelsPerSlot = 60;
             } else {
                 // 竖屏时计算压缩高度
-                const availableHeight = screenHeight - 160; // 这里的 160 你可以根据实际情况微调
+                const availableHeight = screenHeight - 260; // 这里的 160 你可以根据实际情况微调
 
                 this.pixelsPerSlot = Math.max(availableHeight / this.totalSlots, 20);
             }
@@ -268,7 +268,7 @@ createApp({
 
             const startHour = 8;
             const startMinute = 0;
-            const minsPerSlot = 55; // 填入南理工一节课+课间的平均分钟数
+            const minsPerSlot = 55; // 一节课+课间的平均分钟数
             //const pixelsPerSlot = 60; //
 
             // 计算从早八到现在，一共过去了多少分钟
