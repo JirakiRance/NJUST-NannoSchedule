@@ -178,7 +178,6 @@ createApp({
     methods: {
 
         /* ================= 屏幕高度自适应引擎 ================= */
-        /* ================= 屏幕高度自适应引擎 ================= */
         calculateSlotHeight() {
             const screenHeight = window.innerHeight;
             const screenWidth = window.innerWidth;
@@ -190,7 +189,7 @@ createApp({
                 // 竖屏时计算压缩高度
                 const availableHeight = screenHeight - 160; // 这里的 160 你可以根据实际情况微调
 
-                this.pixelsPerSlot = Math.max(availableHeight / this.totalSlots, 42);
+                this.pixelsPerSlot = Math.max(availableHeight / this.totalSlots, 20);
             }
             document.documentElement.style.setProperty('--slot-height', this.pixelsPerSlot + 'px');
         },
