@@ -723,3 +723,9 @@ body {
     display: inline-block;
     letter-spacing: 0.5px;
 }
+
+/* ================= 终极防溢出锁 ================= */
+.content-area.lock-scroll {
+    overflow-y: hidden !important; /* 强制禁止上下滑动 */
+    overscroll-behavior-y: none;   /* 彻底干掉 iOS/Android 原生的橡皮筋回弹效果 */
+}

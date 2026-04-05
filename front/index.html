@@ -16,7 +16,7 @@
         {{ currentTab === 'schedule' ? '我的课表' : (currentTab === 'grades' ? '成绩单' : (currentTab === 'exams' ? '考试安排' : '数据同步')) }}
     </div>
 
-    <div class="content-area">
+    <div class="content-area" :class="{ 'lock-scroll': currentTab === 'schedule' && scheduleViewType === 'fixed' }">
         <div v-show="currentTab === 'schedule'" style="height: 100%;" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
             <div v-if="courseList.length > 0">
                 <div style="display: flex; justify-content: center; background: #fff; padding-top: 6px;">
