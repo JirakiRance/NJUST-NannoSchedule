@@ -68,7 +68,11 @@ createApp({
             currentTimeY: 0,
             currentDayOfWeek: 1,
             showTimeLine: false,
-            timeTrackerInterval: null
+            timeTrackerInterval: null,
+
+            // UI 状态
+            pixelsPerSlot: 60, // 动态格子高度，默认给个60
+            totalSlots: 15,
         };
     },
     computed: {
@@ -172,6 +176,24 @@ createApp({
         }
     },
     methods: {
+
+        /* ================= 屏幕高度自适应引擎 ================= */
+        /* ================= 屏幕高度自适应引擎 ================= */
+        calculateSlotHeight() {
+            const screenHeight = window.innerHeight;
+            const screenWidth = window.innerWidth;
+
+            // 核心判定：如果是横屏，直接恢复成 60px（允许上下滑动排版）
+            if (screenWidth > screenHeight) {
+                this.pixelsPerSlot = 60;
+            } else {
+                // 竖屏时计算压缩高度
+                const availableHeight = screenHeight - 160; // 这里的 160 你可以根据实际情况微调
+
+                this.pixelsPerSlot = Math.max(availableHeight / this.totalSlots, 42);
+            }
+            document.documentElement.style.setProperty('--slot-height', this.pixelsPerSlot + 'px');
+        },
         /* ================= 数据同步接口 ================= */
 
         switchTab(tab) {
@@ -193,36 +215,6 @@ createApp({
             }
         },
 
-//        async syncAllData() {
-//            if(!this.loginForm.username || !this.loginForm.captcha) {
-//                this.errorMsg = "请填写完整信息";
-//                return;
-//            }
-//            this.loading = true;
-//            this.errorMsg = "";
-//            this.successMsg = "";
-//            try {
-//                const res = await fetch(`${API_BASE}/sync_all`, {
-//                    method: "POST", headers: { "Content-Type": "application/json" },
-//                    body: JSON.stringify(this.loginForm)
-//                });
-//                const result = await res.json();
-//                if (res.ok) {
-//                    this.courseList = result.data.courses;
-//                    this.gradeList = result.data.grades;
-//                    localStorage.setItem("my_njust_data", JSON.stringify(result.data));
-//                    this.successMsg = "同步成功！";
-//                    setTimeout(() => { this.switchTab("schedule"); }, 1000);
-//                } else {
-//                    this.errorMsg = result.detail || "验证失败";
-//                    this.fetchCaptcha();
-//                }
-//            } catch (e) {
-//                this.errorMsg = "网络连接异常";
-//            } finally {
-//                this.loading = false;
-//            }
-//        },
         async syncAllData() {
             if(!this.loginForm.username || !this.loginForm.captcha) {
                 showToast("请填写完整账号和验证码", "error"); // 换成弹窗
@@ -278,7 +270,7 @@ createApp({
             const startHour = 8;
             const startMinute = 0;
             const minsPerSlot = 55; // 填入南理工一节课+课间的平均分钟数
-            const pixelsPerSlot = 60; // 你的 UI 设定每个格子 60px
+            //const pixelsPerSlot = 60; //
 
             // 计算从早八到现在，一共过去了多少分钟
             const passedMinutes = (hour - startHour) * 60 + (minute - startMinute);
@@ -289,7 +281,8 @@ createApp({
             } else {
                 this.showTimeLine = true;
                 // 把过去的分钟数映射成屏幕像素高度
-                this.currentTimeY = (passedMinutes / minsPerSlot) * pixelsPerSlot;
+                //this.currentTimeY = (passedMinutes / minsPerSlot) * pixelsPerSlot;
+                this.currentTimeY = (passedMinutes / minsPerSlot) * this.pixelsPerSlot;
             }
         },
 
@@ -363,8 +356,8 @@ createApp({
 
             return {
                 left: `calc(${(100 / 7) * (firstCourse.day - 1)}% + 2px)`,
-                top: `${(minStart - 1) * 60 + 2}px`,
-                height: `${maxDuration * 60 - 4}px`,
+                top: `${(minStart - 1) * this.pixelsPerSlot + 2}px`,
+                height: `${maxDuration * this.pixelsPerSlot - 4}px`,
                 backgroundColor: this.colors[colorIndex]
             };
         },

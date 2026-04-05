@@ -5,6 +5,7 @@
     --text-sub: #888;
     --primary-color: #5b9bd5;
     --must-color: #007aff;
+    --slot-height: 60px;
 }
 
 body {
@@ -93,7 +94,7 @@ body {
 }
 
 .time-slot {
-    height: 60px;
+    height: var(--slot-height);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -140,8 +141,8 @@ body {
     background-image:
         linear-gradient(var(--grid-border) 1px, transparent 1px),
         linear-gradient(90deg, var(--grid-border) 1px, transparent 1px);
-    background-size: calc(100% / 7) 60px;
-    height: 900px; /* 支持 15 节的高度展示 */
+    background-size: calc(100% / 7) var(--slot-height);
+    height: calc(15 * var(--slot-height));
 }
 
 /* 正常卡片 */
