@@ -35,7 +35,7 @@
                 </div>
 
                 <div class="week-nav" v-show="viewMode === 'semester'" style="justify-content: center;">
-                    <div style="font-size: 12px; color: #888;">💡 点击重叠卡片，可查看该时段所有课程</div>
+                    <div style="font-size: 12px; color: #888;">点击重叠卡片，可查看该时段所有课程</div>
                 </div>
 
                 <div class="schedule-container">
@@ -73,7 +73,7 @@
                                  :class="{'is-overlap': group.length > 1}">
                                 <div class="course-name">{{ group[0].name }}</div>
                                 <div v-if="group.length === 1">@{{ group[0].room }}</div>
-                                <div v-else class="overlap-badge">👀 {{ group.length }}门交替</div>
+                                <div v-else class="overlap-badge">{{ group.length }}门交替</div>
                             </div>
                         </div>
                     </div>
@@ -160,7 +160,7 @@
                     <input type="text" v-model="loginForm.captcha" placeholder="验证码">
                     <img v-if="captchaImg" :src="captchaImg" @click="fetchCaptcha">
                 </div>
-                <button class="btn" @click="syncAllData" :disabled="loading">{{ loading ? '数据抓取中，请稍候...' : '同步课表与成绩' }}</button>
+                <button class="btn" @click="syncAllData" :disabled="loading">{{ loading ? '数据抓取中，请稍候...' : '同步数据' }}</button>
                 <p style="color: red; font-size: 13px; margin-top: 10px; text-align: center;">{{ errorMsg }}</p>
                 <p style="color: green; font-size: 13px; margin-top: 10px; text-align: center;">{{ successMsg }}</p>
             </div>
