@@ -63,7 +63,12 @@ createApp({
             currentWeek: 1,
             realWeek: 1,
             settingWeek: 1,
-            calibratedMsg: ""
+            calibratedMsg: "",
+
+            currentTimeY: 0,
+            currentDayOfWeek: 1,
+            showTimeLine: false,
+            timeTrackerInterval: null
         };
     },
     computed: {
@@ -258,6 +263,36 @@ createApp({
             }
         },
 
+        /* ================= 光追时间线系统 ================= */
+        updateTimeLine() {
+            const now = new Date();
+            let day = now.getDay();
+            this.currentDayOfWeek = day === 0 ? 7 : day; // 把周日的 0 转换成 7
+
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+
+            // 为了让线走得准，我们定义：8:00 时高度是 0px (第一节课顶部)
+            // 每一个格子 60px 代表一节课 (包含课间，大约 55 分钟)
+
+            const startHour = 8;
+            const startMinute = 0;
+            const minsPerSlot = 55; // 填入南理工一节课+课间的平均分钟数
+            const pixelsPerSlot = 60; // 你的 UI 设定每个格子 60px
+
+            // 计算从早八到现在，一共过去了多少分钟
+            const passedMinutes = (hour - startHour) * 60 + (minute - startMinute);
+
+            // 如果还没到早八，或者已经是晚上 10 点以后，隐藏时间线
+            if (passedMinutes < 0 || passedMinutes > 14 * 60) {
+                this.showTimeLine = false;
+            } else {
+                this.showTimeLine = true;
+                // 把过去的分钟数映射成屏幕像素高度
+                this.currentTimeY = (passedMinutes / minsPerSlot) * pixelsPerSlot;
+            }
+        },
+
         /* ================= 课表交互控制 ================= */
 
         calculateRealWeek() {
@@ -392,6 +427,13 @@ createApp({
     },
     mounted() {
         this.calculateRealWeek();
+
+        // 启动光追系统
+        this.updateTimeLine();
+        this.timeTrackerInterval = setInterval(() => {
+            this.updateTimeLine();
+        }, 60000); // 每 60 秒刷新一次时间线位置
+
         try {
             const saved = localStorage.getItem("my_njust_data");
             if (saved) {

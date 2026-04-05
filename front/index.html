@@ -35,7 +35,7 @@
                 </div>
 
                 <div class="week-nav" v-show="viewMode === 'semester'" style="justify-content: center;">
-                    <div style="font-size: 12px; color: #888;">💡 点击带 👀 的重叠卡片，可查看该时段所有课程</div>
+                    <div style="font-size: 12px; color: #888;">💡 点击重叠卡片，可查看该时段所有课程</div>
                 </div>
 
                 <div class="schedule-container">
@@ -48,13 +48,24 @@
                     </div>
                     <div class="grid-area">
                         <div class="week-header">
-                            <div class="day-header" v-for="(day, index) in ['一', '二', '三', '四', '五', '六', '日']" :key="index">
+                            <div class="day-header" v-for="(day, index) in ['一', '二', '三', '四', '五', '六', '日']" :key="index"
+                                 :class="{'is-today': currentDayOfWeek === index + 1 && currentWeek === realWeek}">
                                 <div>周{{ day }}</div>
                                 <div class="date-text" v-if="viewMode === 'week'">{{ currentWeekDates[index] }}</div>
                                 <div class="date-text" v-else>全学期</div>
                             </div>
                         </div>
                         <div class="course-grid">
+
+                            <div class="time-line"
+                                 v-if="viewMode === 'week' && currentWeek === realWeek && showTimeLine"
+                                 :style="{
+                                     top: currentTimeY + 'px',
+                                     left: `calc(${(100 / 7) * (currentDayOfWeek - 1)}%)`,
+                                     width: `calc(100% / 7)`
+                                 }">
+                                 <div class="time-dot"></div>
+                            </div>
                             <div class="course-card"
                                  v-for="(group, index) in gridCourseGroups" :key="index"
                                  @click="openDetails(group)"
