@@ -185,8 +185,7 @@ createApp({
             if (screenWidth > screenHeight) {
                 this.pixelsPerSlot = 60; // 横屏依然保持原样，允许滑动
             } else {
-                // 直接减去 280 像素的非课表区域（如果还滑就改成 300！）
-                const availableHeight = screenHeight - 280;
+                const availableHeight = screenHeight - 220;
 
                 // 去掉底线保护，屏幕有多高，就硬生生压缩到多高
                 this.pixelsPerSlot = availableHeight / this.totalSlots;

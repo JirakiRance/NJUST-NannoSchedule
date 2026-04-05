@@ -26,8 +26,8 @@ body {
 
 .header {
     text-align: center;
-    padding: 15px 0;
-    font-size: 18px;
+    padding: 8px 0;
+    font-size: 16px;
     font-weight: bold;
     color: #fff;
     background: var(--primary-color);
@@ -47,16 +47,16 @@ body {
 .switch-capsule {
     display: flex;
     background: #f0f0f5;
-    border-radius: 8px;
-    padding: 4px;
+    border-radius: 6px;
+    padding: 2px;
 }
 
 .switch-item {
-    padding: 6px 20px;
-    font-size: 13px;
+    padding: 4px 15px;
+    font-size: 12px;
     color: #666;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 4px;
     font-weight: bold;
     transition: all 0.2s;
     display: flex;
@@ -122,8 +122,8 @@ body {
 
 .day-header {
     text-align: center;
-    padding: 8px 0;
-    font-size: 12px;
+    padding: 4px 0;
+    font-size: 11px;
     color: var(--text-main);
     display: flex;
     flex-direction: column;
@@ -206,7 +206,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px;
+    padding: 5px 10px;
     background: #fff;
     border-bottom: 1px solid var(--grid-border);
     position: sticky;
@@ -224,7 +224,7 @@ body {
 }
 
 .week-nav .week-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     min-width: 100px;

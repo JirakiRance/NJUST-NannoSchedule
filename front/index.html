@@ -19,7 +19,7 @@
     <div class="content-area">
         <div v-show="currentTab === 'schedule'" style="height: 100%;" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
             <div v-if="courseList.length > 0">
-                <div style="display: flex; justify-content: center; background: #fff; padding-top: 12px;">
+                <div style="display: flex; justify-content: center; background: #fff; padding-top: 6px;">
                     <div class="switch-capsule">
                         <div class="switch-item" :class="{active: viewMode === 'week'}" @click="viewMode = 'week'">单周模式</div>
                         <div class="switch-item" :class="{active: viewMode === 'semester'}" @click="viewMode = 'semester'">全学期模式</div>
@@ -40,7 +40,7 @@
 
                 <div class="schedule-container">
                    <div class="time-sidebar">
-                        <div class="time-slot" style="height: 48px;"></div>
+                        <div class="time-slot" style="height: 38px;"></div>
                         <div class="time-slot" v-for="i in 15" :key="i">
                             <span v-if="i <= 13">{{ i }}</span>
                             <span v-else style="font-size: 11px; color: #888;">网课</span>
