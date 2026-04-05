@@ -73,6 +73,9 @@ createApp({
             // UI 状态
             pixelsPerSlot: 60, // 动态格子高度，默认给个60
             totalSlots: 15,
+
+            // UI 状态
+            scheduleViewType: localStorage.getItem("my_njust_view_type") || "fixed",
         };
     },
     computed: {
@@ -173,21 +176,26 @@ createApp({
         termStartDate(newVal) {
             localStorage.setItem("my_njust_start_date", newVal);
             this.calculateRealWeek();
+        },
+        scheduleViewType(newVal) {
+            localStorage.setItem("my_njust_view_type", newVal);
+            this.calculateSlotHeight();
         }
     },
     methods: {
 
         /* ================= 屏幕高度自适应引擎 ================= */
+        /* ================= 屏幕高度自适应引擎 ================= */
         calculateSlotHeight() {
             const screenHeight = window.innerHeight;
             const screenWidth = window.innerWidth;
 
-            if (screenWidth > screenHeight) {
-                this.pixelsPerSlot = 60; // 横屏依然保持原样，允许滑动
+            // 👇 核心修改：如果是横屏，或者用户手动选择了 'scroll' (滑动) 模式，就用 60px！
+            if (screenWidth > screenHeight || this.scheduleViewType === 'scroll') {
+                this.pixelsPerSlot = 60;
             } else {
-                const availableHeight = screenHeight - 220;
-
-                // 去掉底线保护，屏幕有多高，就硬生生压缩到多高
+                // fixed 模式：自动压缩
+                const availableHeight = screenHeight - 200;
                 this.pixelsPerSlot = availableHeight / this.totalSlots;
             }
 

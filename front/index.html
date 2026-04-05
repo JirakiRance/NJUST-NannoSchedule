@@ -134,6 +134,7 @@
         </div>
 
         <div v-show="currentTab === 'profile'" class="profile-container">
+
             <div class="card">
                 <div class="card-title">📅 课表时间校准</div>
                 <p style="font-size: 13px; color: #666; margin-bottom: 12px;">在这里输入当前是第几周自动校准</p>
@@ -164,6 +165,19 @@
                 <button class="btn" @click="syncAllData" :disabled="loading">{{ loading ? '数据抓取中，请稍候...' : '同步数据' }}</button>
                 <p style="color: red; font-size: 13px; margin-top: 10px; text-align: center;">{{ errorMsg }}</p>
                 <p style="color: green; font-size: 13px; margin-top: 10px; text-align: center;">{{ successMsg }}</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🎨 界面设置</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 14px; color: #333; font-weight: bold;">课表显示模式</span>
+
+                    <div class="switch-capsule" style="margin: 0;">
+                        <div class="switch-item" :class="{active: scheduleViewType === 'fixed'}" @click="scheduleViewType = 'fixed'">一屏固定</div>
+                        <div class="switch-item" :class="{active: scheduleViewType === 'scroll'}" @click="scheduleViewType = 'scroll'">自由滑动</div>
+                    </div>
+                </div>
+                <p style="font-size: 12px; color: #888; margin: 0;">一屏固定适合快速扫视，自由滑动字号更宽松。</p>
             </div>
 
             <div class="card" v-if="courseList.length > 0 || gradeList.length > 0">
