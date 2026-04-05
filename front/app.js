@@ -440,6 +440,10 @@ createApp({
     mounted() {
         this.calculateRealWeek();
 
+        // 启动高度自适应
+        this.calculateSlotHeight();
+        // 监听屏幕旋转，随时重新计算
+        window.addEventListener('resize', this.calculateSlotHeight);
         // 启动光追系统
         this.updateTimeLine();
         this.timeTrackerInterval = setInterval(() => {
