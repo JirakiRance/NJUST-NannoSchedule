@@ -182,16 +182,36 @@ createApp({
             const screenHeight = window.innerHeight;
             const screenWidth = window.innerWidth;
 
-            // 核心判定：如果是横屏，直接恢复成 60px（允许上下滑动排版）
             if (screenWidth > screenHeight) {
-                this.pixelsPerSlot = 60;
+                this.pixelsPerSlot = 60; // 横屏依然保持原样，允许滑动
             } else {
-                // 竖屏时计算压缩高度
-                const availableHeight = screenHeight - 260; // 这里的 160 你可以根据实际情况微调
+                // 直接减去 280 像素的非课表区域（如果还滑就改成 300！）
+                const availableHeight = screenHeight - 280;
 
-                this.pixelsPerSlot = Math.max(availableHeight / this.totalSlots, 20);
+                // 去掉底线保护，屏幕有多高，就硬生生压缩到多高
+                this.pixelsPerSlot = availableHeight / this.totalSlots;
             }
+
             document.documentElement.style.setProperty('--slot-height', this.pixelsPerSlot + 'px');
+        },
+
+        /* ================= 课程时间转换 ================= */
+        getStartTime(course) {
+            // 网课或待定课程直接返回空
+            if (course.isPending) return "";
+
+            // 根据规则硬编码写死
+            const timeMap = {
+                1: "8:00",
+                2: "8:50",
+                4: "10:40",
+                6: "14:00",
+                8: "15:50",
+                11: "19:00"
+            };
+
+            // 返回对应的时间，如果没匹配上（比如第3节）就不显示
+            return timeMap[course.start] || "";
         },
         /* ================= 数据同步接口 ================= */
 

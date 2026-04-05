@@ -71,6 +71,7 @@
                                  @click="openDetails(group)"
                                  :style="getGroupCardStyle(group, index)"
                                  :class="{'is-overlap': group.length > 1}">
+                                <div class="course-time" v-if="getStartTime(group[0])">{{ getStartTime(group[0]) }}</div>
                                 <div class="course-name">{{ group[0].name }}</div>
                                 <div v-if="group.length === 1">@{{ group[0].room }}</div>
                                 <div v-else class="overlap-badge">{{ group.length }}门交替</div>
