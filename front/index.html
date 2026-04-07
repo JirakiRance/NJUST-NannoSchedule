@@ -20,10 +20,10 @@
         {{
             currentTab === 'schedule' ? '我的课表' :
             (currentTab === 'other' ?
-                                    (currentSubPage === 'grades' ? '成绩单' :
-                                    (currentSubPage === 'exams' ? '考试安排' :
-                                    (currentSubPage === 'level_exams' ? '等级考试' :
-                                    '应用中心')) : '我的设置')
+                (currentSubPage === 'grades' ? '成绩单' :
+                (currentSubPage === 'exams' ? '考试安排' :
+                (currentSubPage === 'level_exams' ? '等级考试' : '应用中心')))
+            : '我的设置')
         }}
     </div>
 
