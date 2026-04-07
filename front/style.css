@@ -158,7 +158,7 @@ body {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -167,13 +167,30 @@ body {
     border: 1px solid rgba(255,255,255,0.2);
 }
 
+
+.course-info-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 3px; /* 和下方的课程名稍微隔开 */
+    flex-shrink: 0; /* 防止被挤压变形 */
+}
+.course-room {
+    font-size: 9px;
+    font-weight: bold;
+    line-height: 1.1;
+}
+
 .course-name {
     font-weight: bold;
     margin-bottom: 4px;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 /* 发生冲突重叠时的特殊卡片 */
@@ -199,6 +216,8 @@ body {
     margin-top: 4px;
     font-weight: bold;
     box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    flex-shrink: 0; /* 防止被挤压 */
+    margin-bottom: 2px;
 }
 
 /* ================= 课表导航条 ================= */
