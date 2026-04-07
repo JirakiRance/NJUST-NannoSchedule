@@ -748,3 +748,63 @@ body {
     overflow-y: hidden !important; /* 强制禁止上下滑动 */
     overscroll-behavior-y: none;   /* 彻底干掉 iOS/Android 原生的橡皮筋回弹效果 */
 }
+
+/* ================= 应用中心与子页面样式 ================= */
+/* 顶部返回按钮 */
+.header .back-btn {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+/* 应用宫格容器 */
+.other-container {
+    padding: 20px;
+}
+
+.feature-group-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.feature-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.feature-card:active {
+    transform: scale(0.95);
+    background-color: #f9f9f9;
+}
+
+.feature-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.feature-name {
+    font-size: 13px;
+    color: #333;
+    font-weight: bold;
+}

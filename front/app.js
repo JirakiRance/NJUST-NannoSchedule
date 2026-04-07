@@ -34,6 +34,7 @@ createApp({
         return {
             // UI 状态
             currentTab: "schedule",
+            currentSubPage: "",
             viewMode: "week",
             loading: false,
             errorMsg: "",
@@ -235,6 +236,7 @@ createApp({
 
         switchTab(tab) {
             this.currentTab = tab;
+            this.currentSubPage = "";
             this.errorMsg = "";
             this.successMsg = "";
             if (tab === "profile" && !this.captchaImg) this.fetchCaptcha();

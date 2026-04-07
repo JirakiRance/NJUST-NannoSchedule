@@ -12,8 +12,15 @@
 <div id="toast-container"></div>
 
 <div id="app">
-    <div class="header">
-        {{ currentTab === 'schedule' ? '我的课表' : (currentTab === 'grades' ? '成绩单' : (currentTab === 'exams' ? '考试安排' : '数据同步')) }}
+    <div class="header" style="position: relative;">
+        <div v-if="currentTab === 'other' && currentSubPage" class="back-btn" @click="currentSubPage = ''">
+            ◀ 返回
+        </div>
+
+        {{
+            currentTab === 'schedule' ? '我的课表' :
+            (currentTab === 'other' ? (currentSubPage === 'grades' ? '成绩单' : (currentSubPage === 'exams' ? '考试安排' : '应用中心')) : '我的设置')
+        }}
     </div>
 
     <div class="content-area" :class="{ 'lock-scroll': currentTab === 'schedule' && scheduleViewType === 'fixed' }">
@@ -105,50 +112,72 @@
             </div>
         </div>
 
-        <div v-show="currentTab === 'grades'" class="grades-container">
-            <div v-if="gradeList.length > 0">
-                <div class="summary-card">
-                    <div class="summary-title">实时成绩统计</div>
-                    <table class="g-table">
-                        <thead><tr><th>范围</th><th>总学分</th><th>加权均分</th><th>GPA</th></tr></thead>
-                        <tbody>
-                            <tr><td>全部</td><td>{{ overallStats.all.credit }}</td><td>{{ overallStats.all.avg }}</td><td>{{ overallStats.all.gpa }}</td></tr>
-                            <tr class="text-red"><td>已选</td><td>{{ overallStats.selected.credit }}</td><td>{{ overallStats.selected.avg }}</td><td>{{ overallStats.selected.gpa }}</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div v-show="currentTab === 'other'" style="height: 100%; overflow-y: auto;">
 
-                <div class="semester-block" v-for="semester in semesters" :key="semester.name">
-                    <div class="semester-header">🗓️ {{ semester.name }}</div>
-                    <table class="g-table">
-                        <thead><tr><th style="width:30px;">选</th><th style="text-align:left; padding-left:10px;">详情</th><th style="width:40px">成绩</th><th style="width:35px">学分</th><th style="width:35px">绩点</th></tr></thead>
-                        <tbody>
-                            <tr v-for="course in semester.courses">
-                                <td @click="toggleCourseSelection(course)"><div class="custom-checkbox" :class="{ checked: course.selected }"></div></td>
-                                <td class="course-name-td">
-                                    <div class="course-info-row">
-                                        <div><div class="course-name-main">{{ course.name }}</div><div class="course-nature-sub">{{ course.nature }}</div></div>
-                                        <div :class="['attr-tag', course.attr === '必修' ? 'tag-must' : 'tag-other']">{{ course.attr }}</div>
-                                    </div>
-                                </td>
-                                <td :class="{'text-red': course.numericScore < 60}">{{ course.score }}</td>
-                                <td>{{ course.credit }}</td>
-                                <td>{{ course.gpa }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div v-if="!currentSubPage" class="other-container">
+                <div class="feature-group-title">常用查询</div>
+                <div class="feature-grid">
+                    <div class="feature-card" @click="currentSubPage = 'grades'">
+                        <div class="feature-icon">🏆</div>
+                        <div class="feature-name">成绩查询</div>
+                    </div>
+                    <div class="feature-card" @click="currentSubPage = 'exams'">
+                        <div class="feature-icon">📝</div>
+                        <div class="feature-name">考试安排</div>
+                    </div>
+                    <div class="feature-card" style="opacity: 0.5;">
+                        <div class="feature-icon">🚌</div>
+                        <div class="feature-name">敬请期待</div>
+                    </div>
                 </div>
             </div>
-            <div class="empty-state" v-else>
-                <div style="font-size: 40px; margin-bottom: 10px;">📊</div><p>暂无成绩数据，请前往同步</p>
-            </div>
-        </div>
 
-        <div v-show="currentTab === 'exams'" style="height: 100%;">
-            <div class="empty-state">
-                <div style="font-size: 45px; margin-bottom: 15px;">🚧</div>
-                <p style="font-weight: bold; color: #333; font-size: 16px;">考试查询功能开发中</p>
+            <div v-show="currentSubPage === 'grades'" class="grades-container">
+                <div v-if="gradeList.length > 0">
+                    <div class="summary-card">
+                        <div class="summary-title">实时成绩统计</div>
+                        <table class="g-table">
+                            <thead><tr><th>范围</th><th>总学分</th><th>加权均分</th><th>GPA</th></tr></thead>
+                            <tbody>
+                                <tr><td>全部</td><td>{{ overallStats.all.credit }}</td><td>{{ overallStats.all.avg }}</td><td>{{ overallStats.all.gpa }}</td></tr>
+                                <tr class="text-red"><td>已选</td><td>{{ overallStats.selected.credit }}</td><td>{{ overallStats.selected.avg }}</td><td>{{ overallStats.selected.gpa }}</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="semester-block" v-for="semester in semesters" :key="semester.name">
+                        <div class="semester-header">🗓️ {{ semester.name }}</div>
+                        <table class="g-table">
+                            <thead><tr><th style="width:30px;">选</th><th style="text-align:left; padding-left:10px;">详情</th><th style="width:40px">成绩</th><th style="width:35px">学分</th><th style="width:35px">绩点</th></tr></thead>
+                            <tbody>
+                                <tr v-for="course in semester.courses">
+                                    <td @click="toggleCourseSelection(course)"><div class="custom-checkbox" :class="{ checked: course.selected }"></div></td>
+                                    <td class="course-name-td">
+                                        <div class="course-info-row">
+                                            <div><div class="course-name-main">{{ course.name }}</div><div class="course-nature-sub">{{ course.nature }}</div></div>
+                                            <div :class="['attr-tag', course.attr === '必修' ? 'tag-must' : 'tag-other']">{{ course.attr }}</div>
+                                        </div>
+                                    </td>
+                                    <td :class="{'text-red': course.numericScore < 60}">{{ course.score }}</td>
+                                    <td>{{ course.credit }}</td>
+                                    <td>{{ course.gpa }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="empty-state" v-else>
+                    <div style="font-size: 40px; margin-bottom: 10px;">📊</div><p>暂无成绩数据，请前往同步</p>
+                </div>
             </div>
+
+            <div v-show="currentSubPage === 'exams'" style="height: 100%;">
+                <div class="empty-state">
+                    <div style="font-size: 45px; margin-bottom: 15px;">🚧</div>
+                    <p style="font-weight: bold; color: #333; font-size: 16px;">考试查询功能开发中</p>
+                </div>
+            </div>
+
         </div>
 
         <div v-show="currentTab === 'profile'" class="profile-container">
@@ -207,10 +236,15 @@
     </div>
 
     <div class="tabbar">
-        <div class="tab-item" :class="{ active: currentTab === 'schedule' }" @click="switchTab('schedule')"><div class="tab-icon">📅</div><span>课表</span></div>
-        <div class="tab-item" :class="{ active: currentTab === 'grades' }" @click="switchTab('grades')"><div class="tab-icon">🏆</div><span>成绩</span></div>
-        <div class="tab-item" :class="{ active: currentTab === 'exams' }" @click="switchTab('exams')"><div class="tab-icon">📝</div><span>考试</span></div>
-        <div class="tab-item" :class="{ active: currentTab === 'profile' }" @click="switchTab('profile')"><div class="tab-icon">⚙️</div><span>我的</span></div>
+        <div class="tab-item" :class="{ active: currentTab === 'schedule' }" @click="switchTab('schedule')">
+            <div class="tab-icon">📅</div><span>课表</span>
+        </div>
+        <div class="tab-item" :class="{ active: currentTab === 'other' }" @click="switchTab('other')">
+            <div class="tab-icon">✨</div><span>其他</span>
+        </div>
+        <div class="tab-item" :class="{ active: currentTab === 'profile' }" @click="switchTab('profile')">
+            <div class="tab-icon">⚙️</div><span>我的</span>
+        </div>
     </div>
 
     <div class="modal-overlay" v-if="showModal" @click.self="closeDetails">
