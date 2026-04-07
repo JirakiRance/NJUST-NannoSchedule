@@ -43,7 +43,8 @@
                         <div class="time-slot" style="height: 38px;"></div>
                         <div class="time-slot" v-for="i in 15" :key="i">
                             <span v-if="i <= 13">{{ i }}</span>
-                            <span v-else style="font-size: 11px; color: #888;">网课</span>
+                            <span v-else-if="i === 14" style="font-size: 11px; color: #888;">网</span>
+                            <span v-else-if="i === 15" style="font-size: 11px; color: #888;">课</span>
                         </div>
                     </div>
                     <div class="grid-area">
