@@ -1,7 +1,7 @@
 //本地测试
-//const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = "http://127.0.0.1:8000/api";
 //服务器
-const API_BASE = "https://njust-nannoschedule.onrender.com/api"
+//const API_BASE = "https://njust-nannoschedule.onrender.com/api"
 
 
 

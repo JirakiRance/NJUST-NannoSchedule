@@ -43,6 +43,13 @@ class LoginRequest(BaseModel):
     captcha: str
 
 
+class BookSearchRequest(BaseModel):
+    keyword: str
+
+class BookDetailRequest(BaseModel):
+    id: str
+
+
 # ================= 核心解析逻辑 =================
 
 def calculate_njust_4_0_gpa(score_text):
@@ -86,6 +93,58 @@ def calculate_njust_4_0_gpa(score_text):
         }
         clean_score = score_text.strip().upper()
         return score_map.get(clean_score, (0.0, 0))
+
+
+def parse_books(html_content):
+    """
+    解析图书馆 OPAC 搜索结果
+    """
+    soup = BeautifulSoup(html_content, 'lxml')
+    books = []
+
+    # OPAC系统返回的是包含很多 <li> 的列表
+    for li in soup.find_all('li', class_='ng-isolate-scope'):
+        try:
+            # 1. 解析书名 (把外面的 1. 2. 标号去掉)
+            title_a = li.find('div', class_='resultList-title').find('a')
+            title = title_a.get_text(strip=True) if title_a else "未知书名"
+
+            # 2. 解析封面
+            img = li.find('img')
+            cover = img.get('src') if img else ""
+            if cover and cover.startswith('../'):  # 处理没有封面时的默认占位图
+                cover = "http://202.119.83.14:8080/uopac" + cover[2:]
+
+            # 3. 解析作者和出版社
+            dds = li.find_all('dd')
+            author = dds[0].get_text(strip=True) if len(dds) > 0 else "未知作者"
+            publisher = dds[1].get_text(strip=True) if len(dds) > 1 else "未知出版社"
+            # 清理里面可能存在的 \xa0 空格字符
+            publisher = publisher.replace('\xa0', ' ')
+
+            # 4. 解析馆藏数量
+            avail_span = li.find(lambda tag: tag.name == 'span' and '馆藏复本' in tag.text)
+            total = "0"
+            available = "0"
+            if avail_span:
+                match_total = re.search(r'馆藏复本：\s*(\d+)', avail_span.text)
+                match_avl = re.search(r'可借复本：\s*(\d+)', avail_span.text)
+                if match_total: total = match_total.group(1)
+                if match_avl: available = match_avl.group(1)
+
+            books.append({
+                "id": item.get('marcRecNo', ''),
+                "title": title,
+                "cover": cover,
+                "author": author,
+                "publisher": publisher,
+                "total": total,
+                "available": available
+            })
+        except Exception as e:
+            continue  # 如果某本书格式解析失败，跳过它，防止整个接口崩溃
+
+    return books
 
 
 def parse_level_exams(html_content):
@@ -423,3 +482,130 @@ def sync_all(req: LoginRequest):
         if DEBUG:
             traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"内部错误: {str(e)}")
+
+
+@app.post("/api/search_books")
+def search_books(req: BookSearchRequest):
+    """
+    实时搜索图书馆书籍 (JSON直解 + 深度正则挖矿版)
+    """
+    search_url = "http://202.119.83.14:8080/uopac/opac/ajax_search_adv.php"
+
+    payload = {
+        "searchWords": [{"fieldList": [{"fieldCode": "", "fieldValue": req.keyword}]}],
+        "filters": [],
+        "limiter": [],
+        "first": True,
+        "locale": "zh_CN",
+        "pageCount": 1,
+        "pageSize": 20,
+        "sortField": "relevance",
+        "sortType": "desc"
+    }
+
+    try:
+        resp = requests.post(search_url, json=payload, headers=HEADERS, timeout=10)
+        resp.encoding = 'utf-8'
+        data = resp.json()
+
+        items = []
+        if isinstance(data, list):
+            items = data
+        elif isinstance(data, dict):
+            items = data.get('content') or data.get('resultsList') or data.get('searchResult') or []
+
+        books = []
+        for item in items:
+            # 1. 提取原生带有 HTML 的标题
+            title_raw = item.get('title', '')
+            # 纯净版书名
+            title = re.sub(r'<[^>]+>', '', title_raw)
+
+            # ✨ 核心修复 1：如果在最外层找不到 ID，直接从 title_raw 的超链接里把 marc_no 挖出来！
+            book_id = item.get('marcRecNo', '')
+            if not book_id:
+                m_id = re.search(r'marc_no=([^"&]+)', title_raw)
+                if m_id:
+                    book_id = m_id.group(1)
+
+            # 2. 提取作者
+            author = item.get('author', '未知作者')
+            author = re.sub(r'<[^>]+>', '', author)
+
+            # 3. 提取出版社和年份
+            publisher = item.get('publisher', '')
+            pubYear = item.get('pubYear', '')
+            pub_str = f"{publisher} {pubYear}".strip()
+            pub_str = re.sub(r'<[^>]+>', '', pub_str)
+
+            # ✨ 核心修复 2：剥离 <b> 标签后再提取馆藏数字
+            lend_avl_html = item.get('lendAvl', '')
+            clean_lend = re.sub(r'<[^>]+>', '', lend_avl_html)  # 把 <b>馆藏复本：</b>7 变成纯文本 "馆藏复本：7"
+
+            total = "0"
+            available = "0"
+            if clean_lend:
+                m_total = re.search(r'馆藏复本：\s*(\d+)', clean_lend)
+                m_avl = re.search(r'可借复本：\s*(\d+)', clean_lend)
+                if m_total: total = m_total.group(1)
+                if m_avl: available = m_avl.group(1)
+
+            books.append({
+                "id": book_id,
+                "title": title,
+                "author": author,
+                "publisher": pub_str,
+                "total": total,
+                "available": available
+            })
+
+        return {"msg": "成功", "data": books}
+
+    except Exception as e:
+        print("【后端报错】搜书失败:", e)
+        raise HTTPException(status_code=500, detail=f"搜索失败: {str(e)}")
+
+
+@app.post("/api/book_detail")
+def book_detail(req: BookDetailRequest):
+    """
+    爬取书籍详细信息与馆藏状态
+    """
+    detail_url = f"http://202.119.83.14:8080/uopac/opac/item.php?marc_no={req.id}"
+    try:
+        resp = requests.get(detail_url, headers=HEADERS, timeout=10)
+        resp.encoding = 'utf-8'
+        soup = BeautifulSoup(resp.text, 'lxml')
+
+        # 1. 解析基础信息 (出版社、ISBN等)
+        info = {}
+        for dl in soup.find_all('dl', class_='booklist'):
+            dt = dl.find('dt')
+            dd = dl.find('dd')
+            if dt and dd:
+                key = dt.get_text(strip=True).replace(':', '').replace('：', '')
+                val = dd.get_text(strip=True)
+                info[key] = val
+
+        # 2. 解析馆藏表格 (楼层、借阅状态)
+        holdings = []
+        tab_item = soup.find('div', id='tab_item')
+        if tab_item:
+            table = tab_item.find('table', id='item')
+            if table:
+                rows = table.find_all('tr')[1:] # 跳过表头
+                for row in rows:
+                    tds = row.find_all('td')
+                    if len(tds) >= 5:
+                        holdings.append({
+                            "call_no": tds[0].get_text(strip=True), # 索书号
+                            "barcode": tds[1].get_text(strip=True), # 条码号
+                            "location": tds[3].get_text(strip=True).replace('南京校区—', ''), # 精简馆藏地文字
+                            "status": tds[4].get_text(strip=True) # 状态(可借/阅览/已借出)
+                        })
+
+        return {"msg": "成功", "data": {"info": info, "holdings": holdings}}
+
+    except Exception as e:
+        print("【后端报错】获取书籍详情失败:", e)
+        raise HTTPException(status_code=500, detail=f"获取详情失败: {str(e)}")

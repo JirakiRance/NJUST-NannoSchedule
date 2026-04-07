@@ -22,8 +22,9 @@
             (currentTab === 'other' ?
                 (currentSubPage === 'grades' ? '成绩单' :
                 (currentSubPage === 'exams' ? '考试安排' :
-                (currentSubPage === 'level_exams' ? '等级考试' : '应用中心')))
-            : '我的设置')
+                (currentSubPage === 'level_exams' ? '等级考试' :
+                (currentSubPage === 'books' ? '图书查询' :
+                '应用中心')))) : '我的设置')
         }}
     </div>
 
@@ -133,6 +134,10 @@
                         <div class="feature-icon">🏅</div>
                         <div class="feature-name">等级考试</div>
                     </div>
+                    <div class="feature-card" @click="currentSubPage = 'books'">
+                        <div class="feature-icon">📚</div>
+                        <div class="feature-name">图书查询</div>
+                    </div>
                     <div class="feature-card" style="opacity: 0.5;">
                         <div class="feature-icon">🚌</div>
                         <div class="feature-name">敬请期待</div>
@@ -207,6 +212,40 @@
                 </div>
                 <div class="empty-state" v-else>
                     <div style="font-size: 40px; margin-bottom: 10px;">🏅</div><p>暂无等级考试数据，请前往同步</p>
+                </div>
+            </div>
+
+
+            <div v-show="currentSubPage === 'books'" class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
+
+                <div class="search-bar-wrapper">
+                    <input type="text" v-model="bookKeyword" placeholder="输入书名、作者或关键词..." @keyup.enter="searchLibrary">
+                    <button class="search-btn" @click="searchLibrary" :disabled="isSearchingBooks">
+                        {{ isSearchingBooks ? '...' : '搜索' }}
+                    </button>
+                </div>
+
+                <div class="search-results-area" style="flex: 1; overflow-y: auto; padding-top: 15px;">
+                    <div v-if="bookList.length > 0">
+                        <div class="book-card" v-for="(book, index) in bookList" :key="index" @click="fetchBookDetail(book)">
+                            <div class="book-info">
+                                <div class="book-title">{{ book.title }}</div>
+                                <div class="book-author">{{ book.author }} | {{ book.publisher }}</div>
+                                <div class="book-stock">
+                                    <span class="stock-badge" style="background: #e1f0ff; color: #007aff; font-weight: normal;">
+                                        📍 点击查看馆藏楼层与可借状态
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; color: #ccc; font-weight: bold; font-size: 16px;">
+                                〉
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empty-state" v-else-if="!isSearchingBooks">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🔍</div><p>输入关键词，寻找图书馆的宝藏</p>
+                    </div>
                 </div>
             </div>
 
@@ -301,6 +340,55 @@
                 <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed #ddd; margin: 15px 0;">
             </div>
             <button class="modal-close-btn" @click="closeDetails">我知道了</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" v-if="showBookModal" @click.self="showBookModal = false">
+        <div class="modal-content" style="width: 90%; max-width: 400px;">
+            <div v-if="loadingBook" style="text-align: center; padding: 40px 0;">
+                <div style="font-size: 30px; margin-bottom: 15px; animation: breathing 1.5s infinite;">📖</div>
+                <div style="color: #888; font-size: 14px;">正在努力穿梭图书馆书架...</div>
+            </div>
+
+            <div v-else-if="currentBookDetail">
+                <div class="modal-title" style="margin-bottom: 5px;">{{ currentBookDetail.title }}</div>
+                <div style="text-align: center; color: #666; font-size: 12px; margin-bottom: 15px;">{{ currentBookDetail.author }}</div>
+
+                <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                    <div class="modal-detail-item" v-if="currentBookDetail.info['ISBN及定价']">
+                        <div><strong>ISBN：</strong>{{ currentBookDetail.info['ISBN及定价'] }}</div>
+                    </div>
+                    <div class="modal-detail-item" v-if="currentBookDetail.info['出版发行项']">
+                        <div><strong>出版：</strong>{{ currentBookDetail.info['出版发行项'] }}</div>
+                    </div>
+                    <div class="modal-detail-item" v-if="currentBookDetail.info['中图法分类号']">
+                        <div><strong>分类号：</strong>{{ currentBookDetail.info['中图法分类号'] }}</div>
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">📍 馆藏位置</div>
+                <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                    <table class="g-table" style="margin: 0; width: 100%;">
+                        <thead style="position: sticky; top: 0; z-index: 1;">
+                            <tr><th style="text-align:left; padding-left:8px;">馆藏地</th><th>索书号</th><th>状态</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(h, idx) in currentBookDetail.holdings" :key="idx">
+                                <td style="text-align:left; padding-left:8px; font-size: 11px; line-height: 1.3;">{{ h.location }}</td>
+                                <td style="font-size: 11px;">{{ h.call_no }}</td>
+                                <td :style="{ color: h.status.includes('可借') ? '#34c759' : (h.status.includes('阅览') ? '#ff9500' : '#ff3b30'), fontWeight: 'bold', fontSize: '11px' }">
+                                    {{ h.status }}
+                                </td>
+                            </tr>
+                            <tr v-if="currentBookDetail.holdings.length === 0">
+                                <td colspan="3" style="color:#999; padding:15px;">暂无实体馆藏数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <button class="modal-close-btn" @click="showBookModal = false">关闭</button>
+            </div>
         </div>
     </div>
 
