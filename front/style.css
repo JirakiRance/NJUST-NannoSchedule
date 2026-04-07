@@ -177,7 +177,7 @@ body {
     flex-shrink: 0; /* 防止被挤压变形 */
 }
 .course-room {
-    font-size: 9px;
+    font-size: 7px;
     font-weight: bold;
     line-height: 1.1;
 }
