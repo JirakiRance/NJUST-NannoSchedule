@@ -88,7 +88,9 @@
                                     <div class="course-room" v-if="group.length === 1 && group[0].room">{{ group[0].room }}</div>
                                 </div>
 
-                                <div class="course-name">{{ group[0].name }}</div>
+                                <div class="course-name" :style="{ '--max-lines': group[0].duration <= 2 ? 2 : 4 }">
+                                    {{ group[0].name }}
+                                </div>
 
                                 <div v-if="group.length > 1" class="overlap-badge">{{ group.length }}门交替</div>
                             </div>
