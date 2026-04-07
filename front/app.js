@@ -296,31 +296,64 @@ createApp({
         updateTimeLine() {
             const now = new Date();
             let day = now.getDay();
-            this.currentDayOfWeek = day === 0 ? 7 : day; // 把周日的 0 转换成 7
+            this.currentDayOfWeek = day === 0 ? 7 : day; // 周日转换
 
             const hour = now.getHours();
             const minute = now.getMinutes();
+            const currentMins = hour * 60 + minute;
 
-            // 为了让线走得准，我们定义：8:00 时高度是 0px (第一节课顶部)
-            // 每一个格子 60px 代表一节课 (包含课间，大约 55 分钟)
+            // 精确作息时间表（换算成距离 00:00 的分钟数）
+            const schedule = [
+                { s: 8*60+0,  e: 8*60+45 },   // 第 1 节: 08:00 - 08:45
+                { s: 8*60+50, e: 9*60+35 },   // 第 2 节: 08:50 - 09:35
+                { s: 9*60+40, e: 10*60+25 },  // 第 3 节: 09:40 - 10:25
+                { s: 10*60+40, e: 11*60+25 }, // 第 4 节: 10:40 - 11:25
+                { s: 11*60+30, e: 12*60+15 }, // 第 5 节: 11:30 - 12:15
+                { s: 14*60+0,  e: 14*60+45 }, // 第 6 节: 14:00 - 14:45 (下午开始)
+                { s: 14*60+50, e: 15*60+35 }, // 第 7 节: 14:50 - 15:35
+                { s: 15*60+50, e: 16*60+35 }, // 第 8 节: 15:50 - 16:35
+                { s: 16*60+40, e: 17*60+25 }, // 第 9 节: 16:40 - 17:25
+                { s: 17*60+30, e: 18*60+15 }, // 第 10节: 17:30 - 18:15
+                { s: 19*60+0,  e: 19*60+45 }, // 第 11节: 19:00 - 19:45 (晚上开始)
+                { s: 19*60+50, e: 20*60+35 }, // 第 12节: 19:50 - 20:35
+                { s: 20*60+40, e: 21*60+25 }  // 第 13节: 20:40 - 21:25
+            ];
 
-            const startHour = 8;
-            const startMinute = 0;
-            const minsPerSlot = 55; // 一节课+课间的平均分钟数
-            //const pixelsPerSlot = 60; //
-
-            // 计算从早八到现在，一共过去了多少分钟
-            const passedMinutes = (hour - startHour) * 60 + (minute - startMinute);
-
-            // 如果还没到早八，或者已经是晚上 10 点以后，隐藏时间线
-            if (passedMinutes < 0 || passedMinutes > 14 * 60) {
+            // 如果还没到早八点前半小时，或者已经下晚课半小时后，直接隐藏光追线
+            if (currentMins < schedule[0].s - 30 || currentMins > schedule[12].e + 30) {
                 this.showTimeLine = false;
-            } else {
-                this.showTimeLine = true;
-                // 把过去的分钟数映射成屏幕像素高度
-                //this.currentTimeY = (passedMinutes / minsPerSlot) * pixelsPerSlot;
-                this.currentTimeY = (passedMinutes / minsPerSlot) * this.pixelsPerSlot;
+                return;
             }
+
+            this.showTimeLine = true;
+            let logicalSlot = -1; // 用来记录当前线应该处在“第几个格子”的位置
+
+            // 遍历寻找当前时间在哪个区间
+            for (let i = 0; i < schedule.length; i++) {
+                if (currentMins < schedule[i].s) {
+                    // 【情况A：在课间休息、中午休息、傍晚休息】
+                    // 此时时间还没到第 i+1 节课的开始。
+                    // 线条会精准停靠在上一节课的底边（也就是下一节课的顶边）原地待命！
+                    // 例如：12:15 - 14:00 期间，logicalSlot = 5，线会死死贴在第5格的底线。
+                    logicalSlot = i;
+                    break;
+                } else if (currentMins <= schedule[i].e) {
+                    // 【情况B：正在上课】
+                    // 计算在这 45 分钟内的进度比例 (0.0 ~ 1.0)
+                    const progress = (currentMins - schedule[i].s) / (schedule[i].e - schedule[i].s);
+                    // 实际位置 = 当前第几格 + 这节课上了百分之几
+                    logicalSlot = i + progress;
+                    break;
+                }
+            }
+
+            // 如果超过了最后一节课，就让它停在课表的最底部
+            if (logicalSlot === -1 && currentMins > schedule[schedule.length-1].e) {
+                logicalSlot = 13;
+            }
+
+            // 最终把“逻辑格子数”乘以“物理像素高度”，输出完美的光追坐标！
+            this.currentTimeY = logicalSlot * this.pixelsPerSlot;
         },
 
         /* ================= 课表交互控制 ================= */
