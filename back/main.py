@@ -117,21 +117,26 @@ def parse_schedule(html_content):
     exact_times = {}
     day_map = {'一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 7}
 
-    # 1. 解析底部详细列表提取精准时间
+    # ================= 核心修复 1：无死角提取精准时间 =================
     data_list_table = soup.find('table', id='dataList')
     if data_list_table:
         for row in data_list_table.find_all('tr')[1:]:
             tds = row.find_all('td')
-            if len(tds) >= 8:
-                c_name = tds[3].get_text(strip=True)
-                for t_str in tds[5].stripped_strings:
-                    m = re.search(r'星期([一二三四五六日])\((\d+)-(\d+)小节\)', t_str)
-                    if m:
-                        d_str, s_str, e_str = m.groups()
-                        exact_day = day_map.get(d_str)
-                        exact_start = int(s_str)
-                        exact_duration = int(e_str) - exact_start + 1
-                        exact_times[(c_name, exact_day)] = (exact_start, exact_duration)
+            if len(tds) >= 6:
+                # 彻底去除课名中的所有空格、换行、零宽字符，作为最纯净的 Key
+                raw_name = tds[3].get_text()
+                c_name_clean = re.sub(r'\s+', '', raw_name)
+
+                # 直接把时间列转成纯文本，用超级宽容的正则去抓取所有时间段
+                time_text = tds[5].get_text()
+                # 兼容 '星期五(02-03小节)' 或 '星期五( 2 - 3 节 )' 等各种奇葩格式
+                for m in re.finditer(r'星期([一二三四五六日])\D*(\d+)\D*-\D*(\d+)\D*节', time_text):
+                    d_str, s_str, e_str = m.groups()
+                    exact_day = day_map.get(d_str)
+                    exact_start = int(s_str)
+                    exact_duration = int(e_str) - exact_start + 1
+                    # 存入精准字典
+                    exact_times[(c_name_clean, exact_day)] = (exact_start, exact_duration)
 
     # 2. 解析网格结构
     table = soup.find('table', id='kbtable')
@@ -165,7 +170,6 @@ def parse_schedule(html_content):
 
             day = c - day_offset
 
-            # 根据南理工网格行数分配默认基准节次
             if r == 1:
                 default_start, default_duration = 1, 3
             elif r == 2:
@@ -240,18 +244,15 @@ def parse_schedule(html_content):
                     start = default_start
                     duration = default_duration
 
-                    # 正则修正
-                    match = re.search(r'(\d+)-(\d+)[节小]', weeks)
-                    if match:
-                        start = int(match.group(1))
-                        duration = int(match.group(2)) - start + 1
+                    # 必须把总览表里的名字也同样去除所有空格，确保 Key 绝对匹配！
+                    clean_course_name = re.sub(r'\s+', '', course_name)
 
-                    # 精准数据覆盖
-                    if (course_name, day) in exact_times:
-                        start, duration = exact_times[(course_name, day)]
+                    # 如果在字典里查到了这门课在今天的精准时间，就无情地覆盖掉默认的大节时间！
+                    if (clean_course_name, day) in exact_times:
+                        start, duration = exact_times[(clean_course_name, day)]
 
                     all_courses.append({
-                        "name": course_name,
+                        "name": course_name,  # 给前端的名字还是保留原样
                         "teacher": block.get('teacher', ''),
                         "weeks": weeks,
                         "room": block.get('room', ''),
