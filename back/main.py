@@ -26,6 +26,7 @@ CAPTCHA_URL = "http://202.119.81.113:8080/verifycode.servlet"
 SCHEDULE_URL = "http://202.119.81.112:9080/njlgdx/xskb/xskb_list.do?Ves632DSdyV=NEW_XSD_PYGL"
 GRADES_LIST_URL = "http://202.119.81.112:9080/njlgdx/kscj/cjcx_list"
 EXAMS_LIST_URL = "http://202.119.81.112:9080/njlgdx/xsks/xsksap_list"
+LEVEL_EXAMS_URL = "http://202.119.81.112:9080/njlgdx/kscj/djkscj_list"
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
@@ -86,6 +87,33 @@ def calculate_njust_4_0_gpa(score_text):
         clean_score = score_text.strip().upper()
         return score_map.get(clean_score, (0.0, 0))
 
+
+def parse_level_exams(html_content):
+    """
+    解析等级考试成绩
+    """
+    soup = BeautifulSoup(html_content, 'lxml')
+    table = soup.find('table', id='dataList')
+    if not table:
+        return []
+
+    results = []
+    # 表头占了 2 行，所以从下标 2 开始
+    rows = table.find_all('tr')[2:]
+    for row in rows:
+        tds = row.find_all('td')
+        if len(tds) >= 9:
+            results.append({
+                "name": tds[1].get_text(strip=True),
+                "score_written": tds[2].get_text(strip=True),
+                "score_machine": tds[3].get_text(strip=True),
+                "score_total": tds[4].get_text(strip=True), # 分数类总分
+                "grade_written": tds[5].get_text(strip=True),
+                "grade_machine": tds[6].get_text(strip=True),
+                "grade_total": tds[7].get_text(strip=True), # 等级类总分
+                "date": tds[8].get_text(strip=True),
+            })
+    return results
 
 def parse_exams(html_content):
     """
@@ -373,6 +401,11 @@ def sync_all(req: LoginRequest):
         exam_resp.encoding = 'utf-8'
         exams = parse_exams(exam_resp.text)
 
+        # 5. 抓取等级考试
+        level_exam_resp = user_session.get(LEVEL_EXAMS_URL, headers=HEADERS, timeout=5)
+        level_exam_resp.encoding = 'utf-8'
+        level_exams = parse_level_exams(level_exam_resp.text)
+
         # 销毁凭证，释放内存
         del session_store[req.session_id]
 
@@ -381,7 +414,8 @@ def sync_all(req: LoginRequest):
             "data": {
                 "courses": courses,
                 "grades": grades,
-                "exams": exams
+                "exams": exams,
+                "level_exams": level_exams
             }
         }
 

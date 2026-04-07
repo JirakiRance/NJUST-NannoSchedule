@@ -52,6 +52,7 @@ createApp({
             // 数据缓存
             courseList: [],
             gradeList: [],
+            levelExamsList: [],
 
             // 组件参数
             colors: ["#FFA07A", "#87CEFA", "#98FB98", "#DDA0DD", "#F08080", "#6495ED", "#FFB6C1", "#20B2AA"],
@@ -270,6 +271,7 @@ createApp({
                 if (res.ok) {
                     this.courseList = result.data.courses;
                     this.gradeList = result.data.grades;
+                    this.levelExamsList = result.data.level_exams || [];
                     localStorage.setItem("my_njust_data", JSON.stringify(result.data));
                     showToast("同步成功！", "success"); // 成功也换成绿色弹窗
                     setTimeout(() => { this.switchTab("schedule"); }, 1000);
@@ -289,6 +291,7 @@ createApp({
                 localStorage.removeItem("my_njust_data");
                 this.courseList = [];
                 this.gradeList = [];
+                this.levelExamsList = [];
                 this.loginForm.password = "";
                 this.loginForm.captcha = "";
             }
@@ -509,6 +512,7 @@ createApp({
                 const parsed = JSON.parse(saved);
                 this.courseList = parsed.courses || [];
                 this.gradeList = parsed.grades || [];
+                this.levelExamsList = parsed.level_exams || [];
             } else {
                 this.switchTab("profile");
             }

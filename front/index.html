@@ -19,7 +19,11 @@
 
         {{
             currentTab === 'schedule' ? '我的课表' :
-            (currentTab === 'other' ? (currentSubPage === 'grades' ? '成绩单' : (currentSubPage === 'exams' ? '考试安排' : '应用中心')) : '我的设置')
+            (currentTab === 'other' ?
+                                    (currentSubPage === 'grades' ? '成绩单' :
+                                    (currentSubPage === 'exams' ? '考试安排' :
+                                    (currentSubPage === 'level_exams' ? '等级考试' :
+                                    '应用中心')) : '我的设置')
         }}
     </div>
 
@@ -125,6 +129,10 @@
                         <div class="feature-icon">📝</div>
                         <div class="feature-name">考试安排</div>
                     </div>
+                    <div class="feature-card" @click="currentSubPage = 'level_exams'">
+                        <div class="feature-icon">🏅</div>
+                        <div class="feature-name">等级考试</div>
+                    </div>
                     <div class="feature-card" style="opacity: 0.5;">
                         <div class="feature-icon">🚌</div>
                         <div class="feature-name">敬请期待</div>
@@ -175,6 +183,30 @@
                 <div class="empty-state">
                     <div style="font-size: 45px; margin-bottom: 15px;">🚧</div>
                     <p style="font-weight: bold; color: #333; font-size: 16px;">考试查询功能开发中</p>
+                </div>
+            </div>
+
+            <div v-show="currentSubPage === 'level_exams'" class="subpage-container">
+                <div v-if="levelExamsList.length > 0">
+                    <div class="list-card" v-for="(exam, index) in levelExamsList" :key="index">
+                        <div class="list-card-header">
+                            <span class="list-card-title">📝 {{ exam.name }}</span>
+                            <span class="list-card-date">{{ exam.date }}</span>
+                        </div>
+                        <div class="list-card-body">
+                            <div class="score-item" v-if="exam.score_total && exam.score_total !== '0'">
+                                <span class="score-label">总成绩</span>
+                                <span class="score-value highlight">{{ exam.score_total }}</span>
+                            </div>
+                            <div class="score-item" v-else-if="exam.grade_total">
+                                <span class="score-label">考试等级</span>
+                                <span class="score-value highlight">{{ exam.grade_total }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="empty-state" v-else>
+                    <div style="font-size: 40px; margin-bottom: 10px;">🏅</div><p>暂无等级考试数据，请前往同步</p>
                 </div>
             </div>
 
