@@ -684,13 +684,13 @@ body {
 /* 停留在当前那天的红点 */
 .time-dot {
     position: absolute;
-    top: -6px;
+    top: -4px;
     left: 30%;
-    width: 14px;
-    height: 14px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background-color: #ff9500;
-    box-shadow: 0 0 8px rgba(255, 149, 0, 0.8);
+    box-shadow: 0 0 8px rgba(255, 149, 0, 0.4);
     animation: breathing 2s infinite ease-in-out; /* 2秒闪烁一次，无限循环 */
 }
 
