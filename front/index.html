@@ -203,16 +203,16 @@
                 <div v-if="selectedCourseGroup.length > 1" style="font-weight: bold; font-size: 14px; color: #007aff; margin-bottom: 8px;">📚 {{ course.name }}</div>
                 <div v-else style="font-weight: bold; font-size: 15px; color: #333; margin-bottom: 12px; text-align: center;">{{ course.name }}</div>
 
-                <div class="modal-detail-item"><div class="modal-icon">👨‍🏫</div><div><strong>教师：</strong>{{ course.teacher || '未知' }}</div></div>
-                <div class="modal-detail-item"><div class="modal-icon">📍</div><div><strong>教室：</strong>{{ course.room || '待定' }}</div></div>
-                <div class="modal-detail-item"><div class="modal-icon">📅</div><div><strong>周次：</strong>{{ course.weeks }}</div></div>
+                <div class="modal-detail-item"><div><strong>教师：</strong>{{ course.teacher || '未知' }}</div></div>
+                <div class="modal-detail-item"><div><strong>教室：</strong>{{ course.room || '待定' }}</div></div>
+                <div class="modal-detail-item"><div><strong>周次：</strong>{{ course.weeks }}</div></div>
 
                 <div class="modal-detail-item" v-if="course.isPending">
-                    <div class="modal-icon">🌐</div>
+<!--                    <div class="modal-icon">🌐</div>-->
                     <div><strong>类型：</strong>网络课程 / 时间待定</div>
                 </div>
                 <div class="modal-detail-item" v-else-if="course.day && course.start <= 12">
-                    <div class="modal-icon">⏱️</div>
+<!--                    <div class="modal-icon">⏱️</div>-->
                     <div><strong>节次：</strong>星期{{ getDayName(course.day) }} (第 {{ course.start }} - {{ course.start + course.duration - 1 }} 节)</div>
                 </div>
                 <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed #ddd; margin: 15px 0;">

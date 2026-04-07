@@ -98,14 +98,25 @@ createApp({
         filteredCourseList() {
             if (!this.courseList || this.courseList.length === 0) return [];
             return this.courseList.filter(c => {
+                // 如果没有周次信息，默认显示
                 if (!c.weeks) return true;
-                const ranges = c.weeks.match(/(\d+)-(\d+)/g);
-                if (ranges) {
-                    return ranges.some(r => {
-                        let [start, end] = r.split("-").map(Number);
-                        return this.currentWeek >= start && this.currentWeek <= end;
+
+                const parts = c.weeks.match(/(\d+-\d+|\d+)/g);
+
+                if (parts) {
+                    return parts.some(part => {
+                        // 如果包含短横线，说明是区间 (比如 "9-12")
+                        if (part.includes("-")) {
+                            let [start, end] = part.split("-").map(Number);
+                            return this.currentWeek >= start && this.currentWeek <= end;
+                        } else {
+                            // 如果没有短横线，说明是单周 (比如 "6" 或 "16")
+                            return this.currentWeek === Number(part);
+                        }
                     });
                 }
+
+                // 如果实在解析不出任何数字，为了防丢，兜底显示
                 return true;
             });
         },
