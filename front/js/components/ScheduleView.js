@@ -108,7 +108,22 @@ export default {
             store,
             viewMode: "week",
             touchStartX: 0, touchStartY: 0,
-            colors: ["#FFA07A", "#87CEFA", "#98FB98", "#DDA0DD", "#F08080", "#6495ED", "#FFB6C1", "#20B2AA"],
+            colors: [
+                "#FFA07A", // 浅鲑鱼红
+                "#87CEFA", // 天蓝色
+                "#98FB98", // 苍绿色
+                "#DDA0DD", // 梅红色
+                "#F08080", // 浅珊瑚色
+                "#6495ED", // 矢车菊蓝
+                "#FFB6C1", // 浅粉色
+                "#20B2AA", // 浅海洋绿
+                "#F4A460", // 沙褐色
+                "#B0C4DE", // 亮钢兰色
+                "#FFE4B5", // 鹿皮色/浅黄
+                "#48D1CC", // 中绿宝石
+                "#D8BFD8", // 蓟色/浅紫
+                "#FFDAB9"  // 桃色
+            ],
             showModal: false, showWeekSelector: false, selectedCourseGroup: [],
             currentTimeY: 0, currentDayOfWeek: 1, showTimeLine: false, timeTrackerInterval: null,
             pixelsPerSlot: 60, totalSlots: 15
