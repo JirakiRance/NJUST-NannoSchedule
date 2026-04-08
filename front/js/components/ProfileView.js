@@ -162,7 +162,7 @@ export default {
             const CURRENT_VERSION = "1.0";
 
 
-            const CHECK_URL = "https://JirakiRance.github.io/NJUST-NannoSchedule/update/version.json";
+            const CHECK_URL = "https://JirakiRance.github.io/NannoSchedule-Release/version.json";
 
             try {
                 const response = await fetch(`${CHECK_URL}?t=${new Date().getTime()}`);
