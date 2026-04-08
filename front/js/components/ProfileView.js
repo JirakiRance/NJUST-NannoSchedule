@@ -6,11 +6,11 @@ export default {
         <div class="profile-container">
             <div class="card">
                 <div class="card-title">📅 课表时间校准</div>
-                <p style="font-size: 13px; color: #666; margin-bottom: 12px;">在这里输入当前是第几周自动校准</p>
+                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">在这里输入当前是第几周自动校准</p>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <span style="font-size: 14px;">今天是：第</span>
+                    <span style="font-size: 12px;">今天是第:</span>
                     <input type="number" v-model.number="settingWeek" min="1" max="25" style="width: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; text-align: center;">
-                    <span style="font-size: 14px;">周</span>
+                    <span style="font-size: 12px;">周</span>
                     <button class="btn" style="padding: 8px 15px; width: auto;" @click="calibrateWeek">一键校准</button>
                 </div>
             </div>
