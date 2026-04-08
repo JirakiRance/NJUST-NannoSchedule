@@ -232,10 +232,10 @@
 
 .time-dot {
     position: absolute;
-    top: -4px;
+    top: -3px;
     left: 30%;
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background-color: #ffffff;
     border: 2px solid #ff3b30;
