@@ -145,5 +145,9 @@ export default {
             showToast("校准成功", "success"); window.location.reload();
         }
     },
-    mounted() { if(store.currentTab === 'profile') this.fetchCaptcha(); }
+    mounted() {
+        if(store.currentTab === 'profile')
+            this.fetchCaptcha();
+        this.settingWeek = this.store.realWeek;
+    }
 }

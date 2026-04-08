@@ -50,10 +50,7 @@ createApp({
         }
     },
     mounted() {
-        // 全局计算一下当前的周次
-        let start = new Date(store.termStartDate); start.setHours(0, 0, 0, 0);
-        let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
-        store.realWeek = store.currentWeek = Math.max(1, Math.min(weekCount, 25));
+
 
         // 读取本地缓存
         try {
