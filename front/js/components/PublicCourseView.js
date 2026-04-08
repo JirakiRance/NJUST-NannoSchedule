@@ -14,11 +14,20 @@ export default {
 
                 <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
                 <div class="input-group"><input type="password" v-model="loginForm.password" placeholder="请输入密码"></div>
-                <div class="captcha-box">
+
+                <div class="captcha-box" style="margin-bottom: 8px;">
                     <input type="text" v-model="loginForm.captcha" placeholder="验证码" @keyup.enter="roomLogin">
-                    <img v-if="captchaImg" :src="captchaImg" @click="fetchCaptcha">
+                    <img v-if="captchaImg && !isFetchingCaptcha" :src="captchaImg" @click="fetchCaptcha">
+                    <div v-else class="captcha-placeholder" @click="fetchCaptcha">
+                        <span v-if="isFetchingCaptcha" style="animation: breathing 1.5s infinite;">加载中...</span>
+                        <span v-else>点击获取</span>
+                    </div>
                 </div>
-                <button class="btn" @click="roomLogin" :disabled="isRoomLoggingIn">
+                <div style="font-size: 11px; color: #ff9500; margin-bottom: 15px; text-align: right;">
+                    * 教务处响应较慢，验证码可能需等待 5-10 秒
+                </div>
+
+                <button class="btn" @click="roomLogin" :disabled="isRoomLoggingIn || isFetchingCaptcha">
                     {{ isRoomLoggingIn ? '正在建立加密通道...' : '连接并查询' }}
                 </button>
             </div>
@@ -60,18 +69,21 @@ export default {
     `,
     data() {
         return {
-            store, roomSessionValid: false, isRoomLoggingIn: false,
+            store, roomSessionValid: false, isRoomLoggingIn: false, isFetchingCaptcha: false,
             captchaImg: "", loginForm: { username: "", password: "", captcha: "", session_id: "" },
             searchKeyword: "", isSearching: false, courseList: []
         }
     },
     methods: {
         async fetchCaptcha() {
+            if (this.isFetchingCaptcha) return;
+            this.isFetchingCaptcha = true;
+            this.captchaImg = "";
             try {
                 const res = await fetch(`${API_BASE}/captcha`);
                 const data = await res.json();
                 this.captchaImg = data.captcha_image; this.loginForm.session_id = data.session_id;
-            } catch (e) { showToast("无法获取验证码"); }
+            } catch (e) { showToast("无法获取验证码"); } finally { this.isFetchingCaptcha = false; }
         },
         async roomLogin() {
             if(!this.loginForm.username || !this.loginForm.password || !this.loginForm.captcha) return showToast("请填写完整");
@@ -81,27 +93,19 @@ export default {
                 const result = await res.json();
                 if (res.ok) {
                     this.roomSessionValid = true; showToast("连接教务处成功", "success");
-                } else {
-                    showToast(result.detail || "验证失败", "error"); this.fetchCaptcha();
-                }
+                } else { showToast(result.detail || "验证失败", "error"); this.fetchCaptcha(); }
             } catch (e) { showToast("网络异常"); } finally { this.isRoomLoggingIn = false; }
         },
         async searchCourses() {
             if (!this.searchKeyword.trim()) return showToast("请输入课程名称");
             this.isSearching = true; this.courseList = [];
             try {
-                const res = await fetch(`${API_BASE}/search_public_courses`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ session_id: this.loginForm.session_id, keyword: this.searchKeyword })
-                });
+                const res = await fetch(`${API_BASE}/search_public_courses`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: this.loginForm.session_id, keyword: this.searchKeyword }) });
                 const result = await res.json();
                 if (res.ok) {
-                    this.courseList = result.data;
-                    if (this.courseList.length === 0) showToast("未找到相关课程");
+                    this.courseList = result.data; if (this.courseList.length === 0) showToast("未找到相关课程");
                 } else {
-                    if (res.status === 400 || res.status === 401) {
-                        this.roomSessionValid = false; this.fetchCaptcha(); showToast("连接已断开，请重新验证", "error");
-                    } else showToast(result.detail || "查询失败");
+                    if (res.status === 400 || res.status === 401) { this.roomSessionValid = false; this.fetchCaptcha(); showToast("连接断开，请重新验证", "error"); } else showToast(result.detail || "查询失败");
                 }
             } catch (e) { showToast("网络异常"); } finally { this.isSearching = false; }
         }
