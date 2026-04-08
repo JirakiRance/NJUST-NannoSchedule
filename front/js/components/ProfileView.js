@@ -110,7 +110,7 @@ export default {
         },
         // ✨ 核心机制：强制清除浏览器 SW 缓存并刷新
         async forceUpdateApp() {
-            if(!confirm("这将会清除网页底层缓存并从服务器下载最新代码。是否继续？")) return;
+            if(!confirm("这将会清除网页底层缓存并从服务器下载最新代码，不会清除本地数据。是否继续？")) return;
 
             try {
                 // 1. 注销 Service Worker
