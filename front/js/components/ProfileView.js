@@ -6,12 +6,12 @@ export default {
         <div class="profile-container">
             <div class="card">
                 <div class="card-title">📅 课表时间校准</div>
-                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">在这里输入当前是第几周自动校准</p>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <span style="font-size: 12px;">今天是第:</span>
-                    <input type="number" v-model.number="settingWeek" min="1" max="25" style="width: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; text-align: center;">
-                    <span style="font-size: 12px;">周</span>
-                    <button class="btn" style="padding: 8px 15px; width: auto;" @click="calibrateWeek">一键校准</button>
+                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">如果发现当前周次不对，请在此手动修正：</p>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span style="font-size: 14px; white-space: nowrap;">当前为第</span>
+                    <input type="number" v-model.number="settingWeek" min="1" max="25" style="width: 55px; padding: 8px 4px; border: 1px solid #ddd; border-radius: 6px; text-align: center;">
+                    <span style="font-size: 14px; white-space: nowrap;">周</span>
+                    <div style="flex: 1;"></div> <button class="btn" style="padding: 8px 15px; width: auto; white-space: nowrap; flex-shrink: 0; margin: 0;" @click="calibrateWeek">一键校准</button>
                 </div>
             </div>
 
@@ -50,7 +50,12 @@ export default {
             </div>
 
             <div class="card">
-                <button class="btn btn-danger" @click="clearLocalData">清空本地缓存</button>
+                <div class="card-title">🛠️ 系统维护</div>
+                <p style="font-size: 12px; color: #888; margin-bottom: 15px;">如果遇到页面白屏、功能异常，或想获取最新版本代码，请点击拉取更新。</p>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">🚀 强制拉取最新版本</button>
+                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">🗑️ 清空本地教务缓存</button>
+                </div>
             </div>
         </div>
     `,
@@ -61,7 +66,6 @@ export default {
             settingWeek: store.realWeek
         };
     },
-    // ✨ 增加监听器：当你点击切换时，自动保存到浏览器的 localStorage
     watch: {
         'store.scheduleViewType'(newVal) {
             localStorage.setItem("my_njust_view_type", newVal);
@@ -99,8 +103,38 @@ export default {
             } catch (e) { showToast("网络异常"); } finally { this.loading = false; }
         },
         clearLocalData() {
-            if(confirm("确定清空吗？")) {
+            if(confirm("确定要清空课表和成绩缓存吗？（需重新登录获取）")) {
                 localStorage.removeItem("my_njust_data"); store.courseList = []; store.gradeList = []; store.levelExamsList = [];
+                showToast("教务缓存已清空", "success");
+            }
+        },
+        // ✨ 核心机制：强制清除浏览器 SW 缓存并刷新
+        async forceUpdateApp() {
+            if(!confirm("这将会清除网页底层缓存并从服务器下载最新代码。是否继续？")) return;
+
+            try {
+                // 1. 注销 Service Worker
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+
+                // 2. 清空 Cache Storage (存放 js/css/html 的地方)
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                }
+
+                showToast("缓存已清除，正在重新加载...", "success");
+
+                // 3. 延迟 1 秒后强制刷新，跳过浏览器本地缓存读取最新文件
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 1000);
+            } catch (e) {
+                showToast("更新指令执行失败，请手动清理浏览器缓存", "error");
             }
         },
         calibrateWeek() {
