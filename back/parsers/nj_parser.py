@@ -159,3 +159,81 @@ def parse_level_exams(html_content):
                 "grade_total": tds[7].get_text(strip=True), "date": tds[8].get_text(strip=True),
             })
     return results
+
+
+
+def parse_public_courses(html_content):
+    soup = BeautifulSoup(html_content, 'lxml')
+    table = soup.find('table', id='kbtable')
+    if not table: return []
+
+    results = []
+    # 跳过前面2行表头
+    rows = table.find_all('tr')[2:]
+
+    slot_names = ["1-3节", "4-5节", "6-7节", "8-10节", "11-13节", "14节"]
+    day_names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+
+    for row in rows:
+        tds = row.find_all('td')
+        if len(tds) < 43: continue
+
+        course_name = tds[0].get_text(strip=True)
+
+        # 遍历 42 个时间格子 (7天 * 6大节)
+        for i in range(42):
+            cell = tds[i + 1]
+            divs = cell.find_all('div', class_='kbcontent1')
+            for div in divs:
+                # 用换行符切开 9241062301 \n 俞研(1-5周) \n Ⅳ-A410
+                lines = div.get_text(separator='\n', strip=True).split('\n')
+                if len(lines) >= 2:
+                    class_id = lines[0]
+                    teacher = lines[1]
+                    weeks = lines[2] if len(lines) > 2 else ""
+                    room = lines[3] if len(lines) > 3 else ""
+
+                    day = i // 6
+                    slot = i % 6
+
+                    results.append({
+                        "course_name": course_name,
+                        "class_id": class_id,
+                        "teacher": teacher,
+                        "weeks": weeks,
+                        "room": room,
+                        "day_str": day_names[day],
+                        "slot_str": slot_names[slot]
+                    })
+    return results
+
+
+def parse_empty_rooms_matrix(html_content):
+    """
+    解析教室课表矩阵
+    返回格式: { "I-301": [True, True, False, True, True, True, True] } # True表示没课
+    """
+    soup = BeautifulSoup(html_content, 'lxml')
+    table = soup.find('table', id='kbtable')
+    if not table: return {}
+
+    room_matrix = {}
+    rows = table.find_all('tr')[2:]  # 跳过前两行表头
+
+    for row in rows:
+        tds = row.find_all('td')
+        if len(tds) < 8: continue
+
+        room_name = tds[0].get_text(strip=True)
+        days_free = []
+
+        # 遍历周一到周日的7个格子
+        for i in range(1, 8):
+            cell = tds[i]
+            # 如果格子里找不到 kbcontent1 的 div，说明这节没课
+            has_class = cell.find('div', class_='kbcontent1') is not None
+            days_free.append(not has_class)
+
+        room_matrix[room_name] = days_free
+
+    return room_matrix

@@ -294,3 +294,22 @@ body {
     color: #333;
     font-weight: bold;
 }
+
+.period-checkbox {
+    background: #f0f0f0;
+    color: #666;
+    text-align: center;
+    padding: 8px 2px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.period-checkbox.active {
+    background: #e1f0ff;
+    color: var(--primary-color);
+    border-color: #b3d7ff;
+    font-weight: bold;
+}

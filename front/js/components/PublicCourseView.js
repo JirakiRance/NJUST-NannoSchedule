@@ -1,0 +1,110 @@
+import { store } from '../store.js';
+import { API_BASE, showToast } from '../utils.js';
+
+export default {
+    template: `
+        <div class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
+
+            <div v-if="!roomSessionValid" class="card" style="margin-top: 15px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 45px; margin-bottom: 10px;">🎓</div>
+                    <div style="font-size: 16px; font-weight: bold; color: #333;">全校课程雷达</div>
+                    <div style="font-size: 12px; color: #888; margin-top: 5px;">查询蹭课需要保持教务处连接</div>
+                </div>
+
+                <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
+                <div class="input-group"><input type="password" v-model="loginForm.password" placeholder="请输入密码"></div>
+                <div class="captcha-box">
+                    <input type="text" v-model="loginForm.captcha" placeholder="验证码" @keyup.enter="roomLogin">
+                    <img v-if="captchaImg" :src="captchaImg" @click="fetchCaptcha">
+                </div>
+                <button class="btn" @click="roomLogin" :disabled="isRoomLoggingIn">
+                    {{ isRoomLoggingIn ? '正在建立加密通道...' : '连接并查询' }}
+                </button>
+            </div>
+
+            <div v-else style="display: flex; flex-direction: column; height: 100%;">
+                <div class="search-bar-wrapper">
+                    <input type="text" v-model="searchKeyword" placeholder="输入课程名(如: 数据结构)" @keyup.enter="searchCourses">
+                    <button class="search-btn" @click="searchCourses" :disabled="isSearching">
+                        {{ isSearching ? '...' : '雷达扫描' }}
+                    </button>
+                </div>
+
+                <div class="search-results-area" style="flex: 1; overflow-y: auto; padding-top: 15px;">
+                    <div v-if="courseList.length > 0">
+                        <div style="font-size: 12px; color: #888; margin-bottom: 10px;">发现 {{ courseList.length }} 个可以旁听的教学班</div>
+
+                        <div class="list-card" v-for="(c, idx) in courseList" :key="idx">
+                            <div class="list-card-header" style="margin-bottom: 8px; padding-bottom: 8px;">
+                                <span class="list-card-title">📚 {{ c.course_name }}</span>
+                                <span class="list-card-date" style="color: var(--primary-color); background: #e1f0ff; font-weight:bold;">
+                                    {{ c.day_str }} | {{ c.slot_str }}
+                                </span>
+                            </div>
+                            <div style="font-size: 13px; color: #555; line-height: 1.6;">
+                                <div><strong>👨‍🏫 教师：</strong>{{ c.teacher }}</div>
+                                <div><strong>📍 教室：</strong>{{ c.room || '待定' }}</div>
+                                <div><strong>📅 周次：</strong>{{ c.weeks }}</div>
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">班级代码: {{ c.class_id }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="empty-state" v-else-if="!isSearching">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🎒</div><p>输入课程名，发掘感兴趣的旁听课</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
+    data() {
+        return {
+            store, roomSessionValid: false, isRoomLoggingIn: false,
+            captchaImg: "", loginForm: { username: "", password: "", captcha: "", session_id: "" },
+            searchKeyword: "", isSearching: false, courseList: []
+        }
+    },
+    methods: {
+        async fetchCaptcha() {
+            try {
+                const res = await fetch(`${API_BASE}/captcha`);
+                const data = await res.json();
+                this.captchaImg = data.captcha_image; this.loginForm.session_id = data.session_id;
+            } catch (e) { showToast("无法获取验证码"); }
+        },
+        async roomLogin() {
+            if(!this.loginForm.username || !this.loginForm.password || !this.loginForm.captcha) return showToast("请填写完整");
+            this.isRoomLoggingIn = true;
+            try {
+                const res = await fetch(`${API_BASE}/pure_login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(this.loginForm) });
+                const result = await res.json();
+                if (res.ok) {
+                    this.roomSessionValid = true; showToast("连接教务处成功", "success");
+                } else {
+                    showToast(result.detail || "验证失败", "error"); this.fetchCaptcha();
+                }
+            } catch (e) { showToast("网络异常"); } finally { this.isRoomLoggingIn = false; }
+        },
+        async searchCourses() {
+            if (!this.searchKeyword.trim()) return showToast("请输入课程名称");
+            this.isSearching = true; this.courseList = [];
+            try {
+                const res = await fetch(`${API_BASE}/search_public_courses`, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: this.loginForm.session_id, keyword: this.searchKeyword })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    this.courseList = result.data;
+                    if (this.courseList.length === 0) showToast("未找到相关课程");
+                } else {
+                    if (res.status === 400 || res.status === 401) {
+                        this.roomSessionValid = false; this.fetchCaptcha(); showToast("连接已断开，请重新验证", "error");
+                    } else showToast(result.detail || "查询失败");
+                }
+            } catch (e) { showToast("网络异常"); } finally { this.isSearching = false; }
+        }
+    },
+    mounted() { this.fetchCaptcha(); }
+}

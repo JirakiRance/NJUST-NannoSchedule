@@ -54,3 +54,19 @@ def sync_all(req: LoginRequest):
     except Exception as e:
         if DEBUG: traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"内部错误: {str(e)}")
+
+
+@router.post("/pure_login")
+def pure_login(req: LoginRequest):
+    if req.session_id not in session_store: raise HTTPException(status_code=400, detail="会话失效")
+    user_session = session_store[req.session_id]
+    login_data = {'USERNAME': req.username, 'PASSWORD': req.password, 'useDogCode': '', 'RANDOMCODE': req.captcha}
+    try:
+        # 加了防代理机制
+        login_resp = user_session.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=10, proxies={"http": None, "https": None})
+        login_resp.encoding = 'utf-8'
+        if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
+            raise HTTPException(status_code=401, detail="账号、密码或验证码错误")
+        return {"msg": "登录成功"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"内部错误: {str(e)}")

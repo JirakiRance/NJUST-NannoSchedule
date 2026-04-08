@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import user_api, library_api
+from api import user_api, library_api, public_course_api ,empty_rooms_api
 
 app = FastAPI(title="南理工教务 API")
 
@@ -15,3 +15,5 @@ app.add_middleware(
 # 注册所有路由模块
 app.include_router(user_api.router, prefix="/api", tags=["用户同步"])
 app.include_router(library_api.router, prefix="/api", tags=["图书馆"])
+app.include_router(public_course_api.router, prefix="/api", tags=["蹭课查询"])
+app.include_router(empty_rooms_api.router, prefix="/api", tags=["空闲教室"])
