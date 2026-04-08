@@ -2,6 +2,8 @@
 //export const API_BASE = "http://127.0.0.1:8000/api";
 //服务器
 export const API_BASE = "https://njust-nannoschedule.onrender.com/api";
+//打包版本
+//export const API_BASE = "/api";
 
 export function showToast(message, type = 'error') {
     const container = document.getElementById('toast-container');

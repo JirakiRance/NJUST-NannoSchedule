@@ -56,10 +56,17 @@ export default {
 
             <div class="card">
                 <div class="card-title">🛠️ 系统维护</div>
-                <p style="font-size: 12px; color: #888; margin-bottom: 15px;">如果遇到页面白屏、功能异常，或想获取最新版本代码，请点击拉取更新。</p>
+                <p style="font-size: 12px; color: #888; margin-bottom: 15px;">网页异常可尝试拉取或清缓存；如需安装全新功能请检查 App 更新。</p>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">强制拉取最新版本</button>
-                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">清空本地教务缓存</button>
+                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">
+                        拉取网页最新版本
+                    </button>
+                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">
+                        清空本地教务缓存
+                    </button>
+                    <button class="btn" style="background-color: #007aff; margin: 0; font-weight: bold;" @click="checkApkUpdate">
+                        检查软件最新版本
+                    </button>
                 </div>
             </div>
         </div>
@@ -148,6 +155,36 @@ export default {
             let yyyy = monday.getFullYear(); let mm = String(monday.getMonth() + 1).padStart(2, '0'); let dd = String(monday.getDate()).padStart(2, '0');
             store.termStartDate = `${yyyy}-${mm}-${dd}`; localStorage.setItem("my_njust_start_date", store.termStartDate);
             showToast("校准成功", "success"); window.location.reload();
+        },
+        // 检查 APK 外链更新
+        async checkApkUpdate() {
+            // 当前 APK 的内置版本号，发新包前记得修改这里
+            const CURRENT_VERSION = "1.0";
+
+
+            const CHECK_URL = "https://JirakiRance.github.io/NJUST-NannoSchedule/update/version.json";
+
+            try {
+                const response = await fetch(`${CHECK_URL}?t=${new Date().getTime()}`);
+                if (!response.ok) {
+                    throw new Error("无法连接更新服务器");
+                }
+
+                const data = await response.json();
+
+                if (data.version !== CURRENT_VERSION) {
+                    const msg = `🎉 发现新版本：v${data.version}\n\n更新日志：\n${data.update_log}\n\n是否前往下载最新版 APK？`;
+                    if (confirm(msg)) {
+                        // 跳转到你部署的网盘/下载页
+                        window.location.href = data.download_url;
+                    }
+                } else {
+                    alert(`您当前使用的已经是最新版本 v${CURRENT_VERSION} 啦！`);
+                }
+            } catch (error) {
+                console.error("检查更新失败:", error);
+                alert("检查更新失败，请稍后再试或检查网络状态。");
+            }
         }
     },
     mounted() {
