@@ -5,418 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>NannoSchedule</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
-
 <div id="toast-container"></div>
 
 <div id="app">
     <div class="header" style="position: relative;">
-        <div v-if="currentTab === 'other' && currentSubPage" class="back-btn" @click="currentSubPage = ''">
-            ◀ 返回
-        </div>
-
-        {{
-            currentTab === 'schedule' ? '我的课表' :
-            (currentTab === 'other' ?
-                (currentSubPage === 'grades' ? '成绩单' :
-                (currentSubPage === 'exams' ? '考试安排' :
-                (currentSubPage === 'level_exams' ? '等级考试' :
-                (currentSubPage === 'books' ? '图书查询' :
-                '应用中心')))) : '我的设置')
-        }}
+        <div v-if="store.currentTab === 'other' && store.currentSubPage" class="back-btn" @click="store.currentSubPage = ''">◀ 返回</div>
+        {{ pageTitle }}
     </div>
 
-    <div class="content-area" :class="{ 'lock-scroll': currentTab === 'schedule' && scheduleViewType === 'fixed' }">
-        <div v-show="currentTab === 'schedule'" style="height: 100%;" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
-            <div v-if="courseList.length > 0">
-                <div style="display: flex; justify-content: center; background: #fff; padding-top: 6px;">
-                    <div class="switch-capsule">
-                        <div class="switch-item" :class="{active: viewMode === 'week'}" @click="viewMode = 'week'">单周模式</div>
-                        <div class="switch-item" :class="{active: viewMode === 'semester'}" @click="viewMode = 'semester'">全学期模式</div>
-                    </div>
-                </div>
+    <div class="content-area" :class="{ 'lock-scroll': store.currentTab === 'schedule' && store.scheduleViewType === 'fixed' }">
 
-                <div class="week-nav" v-show="viewMode === 'week'">
-                    <button class="icon-btn" @click="changeWeek(-1)">&#9664;</button>
-                    <div class="week-title" @click="showWeekSelector = true">
-                        第 {{ currentWeek }} 周 <span class="week-tag" v-if="currentWeek === realWeek">本周</span>
-                    </div>
-                    <button class="icon-btn" @click="changeWeek(1)">&#9654;</button>
-                </div>
+        <schedule-view v-if="store.currentTab === 'schedule'"></schedule-view>
 
-                <div class="week-nav" v-show="viewMode === 'semester'" style="justify-content: center;">
-                    <div style="font-size: 12px; color: #888;">点击重叠卡片，可查看该时段所有课程</div>
-                </div>
-
-                <div class="schedule-container">
-                   <div class="time-sidebar">
-                        <div class="time-slot" style="height: 38px;"></div>
-                        <div class="time-slot" v-for="i in 15" :key="i">
-                            <span v-if="i <= 13">{{ i }}</span>
-                            <span v-else-if="i === 14" style="font-size: 11px; color: #888;">网</span>
-                            <span v-else-if="i === 15" style="font-size: 11px; color: #888;">课</span>
-                        </div>
-                    </div>
-                    <div class="grid-area">
-                        <div class="week-header">
-                            <div class="day-header" v-for="(day, index) in ['一', '二', '三', '四', '五', '六', '日']" :key="index"
-                                 :class="{'is-today': currentDayOfWeek === index + 1 && currentWeek === realWeek}">
-                                <div>周{{ day }}</div>
-                                <div class="date-text" v-if="viewMode === 'week'">{{ currentWeekDates[index] }}</div>
-                                <div class="date-text" v-else>全学期</div>
-                            </div>
-                        </div>
-                        <div class="course-grid">
-
-                            <div class="time-line"
-                                 v-if="viewMode === 'week' && currentWeek === realWeek && showTimeLine"
-                                 :style="{
-                                     top: currentTimeY + 'px',
-                                     left: `calc(${(100 / 7) * (currentDayOfWeek - 1)}%)`,
-                                     width: `calc(100% / 7)`
-                                 }">
-                                 <div class="time-dot"></div>
-                            </div>
-<!--                            <div class="course-card"-->
-<!--                                 v-for="(group, index) in gridCourseGroups" :key="index"-->
-<!--                                 @click="openDetails(group)"-->
-<!--                                 :style="getGroupCardStyle(group, index)"-->
-<!--                                 :class="{'is-overlap': group.length > 1}">-->
-<!--                                <div class="course-time" v-if="getStartTime(group[0])">{{ getStartTime(group[0]) }}</div>-->
-<!--                                <div class="course-name">{{ group[0].name }}</div>-->
-<!--                                <div v-if="group.length === 1">{{ group[0].room }}</div>-->
-<!--                                <div v-else class="overlap-badge">{{ group.length }}门交替</div>-->
-<!--                            </div>-->
-                            <div class="course-card"
-                                 v-for="(group, index) in gridCourseGroups" :key="index"
-                                 @click="openDetails(group)"
-                                 :style="getGroupCardStyle(group, index)"
-                                 :class="{'is-overlap': group.length > 1}">
-
-                                <div class="course-info-top">
-                                    <div class="course-time" v-if="getStartTime(group[0])">{{ getStartTime(group[0]) }}</div>
-                                    <div class="course-room" v-if="group.length === 1 && group[0].room">{{ group[0].room }}</div>
-                                </div>
-
-                                <div class="course-name" :style="{ '--max-lines': group[0].duration <= 2 ? 2 : 4 }">
-                                    {{ group[0].name }}
-                                </div>
-
-                                <div v-if="group.length > 1" class="overlap-badge">{{ group.length }}门交替</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="empty-state" v-else>
-                <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
-                <p>课表空空如也，请前往同步</p>
-            </div>
-        </div>
-
-        <div v-show="currentTab === 'other'" style="height: 100%; overflow-y: auto;">
-
-            <div v-if="!currentSubPage" class="other-container">
+        <div v-show="store.currentTab === 'other'" style="height: 100%; overflow-y: auto;">
+            <div v-show="!store.currentSubPage" class="other-container">
                 <div class="feature-group-title">常用查询</div>
                 <div class="feature-grid">
-                    <div class="feature-card" @click="currentSubPage = 'grades'">
-                        <div class="feature-icon">🏆</div>
-                        <div class="feature-name">成绩查询</div>
-                    </div>
-                    <div class="feature-card" @click="currentSubPage = 'exams'">
-                        <div class="feature-icon">📝</div>
-                        <div class="feature-name">考试安排</div>
-                    </div>
-                    <div class="feature-card" @click="currentSubPage = 'level_exams'">
-                        <div class="feature-icon">🏅</div>
-                        <div class="feature-name">等级考试</div>
-                    </div>
-                    <div class="feature-card" @click="currentSubPage = 'books'">
-                        <div class="feature-icon">📚</div>
-                        <div class="feature-name">图书查询</div>
-                    </div>
-                    <div class="feature-card" style="opacity: 0.5;">
-                        <div class="feature-icon">🚌</div>
-                        <div class="feature-name">敬请期待</div>
-                    </div>
+                    <div class="feature-card" @click="store.currentSubPage = 'exams'"><div class="feature-icon">📝</div><div class="feature-name">考试安排</div></div>
+                    <div class="feature-card" @click="store.currentSubPage = 'grades'"><div class="feature-icon">🏆</div><div class="feature-name">成绩查询</div></div>
+                    <div class="feature-card" @click="store.currentSubPage = 'level_exams'"><div class="feature-icon">🏅</div><div class="feature-name">等级考试</div></div>
+                    <div class="feature-card" @click="store.currentSubPage = 'books'"><div class="feature-icon">📚</div><div class="feature-name">图书查询</div></div>
+                    <div class="feature-card" style="opacity: 0.5;"><div class="feature-icon">🚪</div><div class="feature-name">敬请期待</div></div>
                 </div>
             </div>
 
-            <div v-show="currentSubPage === 'grades'" class="grades-container">
-                <div v-if="gradeList.length > 0">
-                    <div class="summary-card">
-                        <div class="summary-title">实时成绩统计</div>
-                        <table class="g-table">
-                            <thead><tr><th>范围</th><th>总学分</th><th>加权均分</th><th>GPA</th></tr></thead>
-                            <tbody>
-                                <tr><td>全部</td><td>{{ overallStats.all.credit }}</td><td>{{ overallStats.all.avg }}</td><td>{{ overallStats.all.gpa }}</td></tr>
-                                <tr class="text-red"><td>已选</td><td>{{ overallStats.selected.credit }}</td><td>{{ overallStats.selected.avg }}</td><td>{{ overallStats.selected.gpa }}</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="semester-block" v-for="semester in semesters" :key="semester.name">
-                        <div class="semester-header">🗓️ {{ semester.name }}</div>
-                        <table class="g-table">
-                            <thead><tr><th style="width:30px;">选</th><th style="text-align:left; padding-left:10px;">详情</th><th style="width:40px">成绩</th><th style="width:35px">学分</th><th style="width:35px">绩点</th></tr></thead>
-                            <tbody>
-                                <tr v-for="course in semester.courses">
-                                    <td @click="toggleCourseSelection(course)"><div class="custom-checkbox" :class="{ checked: course.selected }"></div></td>
-                                    <td class="course-name-td">
-                                        <div class="course-info-row">
-                                            <div><div class="course-name-main">{{ course.name }}</div><div class="course-nature-sub">{{ course.nature }}</div></div>
-                                            <div :class="['attr-tag', course.attr === '必修' ? 'tag-must' : 'tag-other']">{{ course.attr }}</div>
-                                        </div>
-                                    </td>
-                                    <td :class="{'text-red': course.numericScore < 60}">{{ course.score }}</td>
-                                    <td>{{ course.credit }}</td>
-                                    <td>{{ course.gpa }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="empty-state" v-else>
-                    <div style="font-size: 40px; margin-bottom: 10px;">📊</div><p>暂无成绩数据，请前往同步</p>
-                </div>
-            </div>
-
-            <div v-show="currentSubPage === 'exams'" style="height: 100%;">
-                <div class="empty-state">
-                    <div style="font-size: 45px; margin-bottom: 15px;">🚧</div>
-                    <p style="font-weight: bold; color: #333; font-size: 16px;">考试查询功能开发中</p>
-                </div>
-            </div>
-
-            <div v-show="currentSubPage === 'level_exams'" class="subpage-container">
-                <div v-if="levelExamsList.length > 0">
-                    <div class="list-card" v-for="(exam, index) in levelExamsList" :key="index">
-                        <div class="list-card-header">
-                            <span class="list-card-title">📝 {{ exam.name }}</span>
-                            <span class="list-card-date">{{ exam.date }}</span>
-                        </div>
-                        <div class="list-card-body">
-                            <div class="score-item" v-if="exam.score_total && exam.score_total !== '0'">
-                                <span class="score-label">总成绩</span>
-                                <span class="score-value highlight">{{ exam.score_total }}</span>
-                            </div>
-                            <div class="score-item" v-else-if="exam.grade_total">
-                                <span class="score-label">考试等级</span>
-                                <span class="score-value highlight">{{ exam.grade_total }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="empty-state" v-else>
-                    <div style="font-size: 40px; margin-bottom: 10px;">🏅</div><p>暂无等级考试数据，请前往同步</p>
-                </div>
-            </div>
-
-
-            <div v-show="currentSubPage === 'books'" class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
-
-                <div class="search-bar-wrapper">
-                    <input type="text" v-model="bookKeyword" placeholder="输入书名、作者或关键词..." @keyup.enter="searchLibrary">
-                    <button class="search-btn" @click="searchLibrary" :disabled="isSearchingBooks">
-                        {{ isSearchingBooks ? '...' : '搜索' }}
-                    </button>
-                </div>
-
-                <div class="search-results-area" style="flex: 1; overflow-y: auto; padding-top: 15px;">
-                    <div v-if="bookList.length > 0">
-                        <div class="book-card" v-for="(book, index) in bookList" :key="index" @click="fetchBookDetail(book)">
-                            <div class="book-info">
-                                <div class="book-title">{{ book.title }}</div>
-                                <div class="book-author">{{ book.author }} | {{ book.publisher }}</div>
-                                <div class="book-stock">
-                                    <span class="stock-badge" style="background: #e1f0ff; color: #007aff; font-weight: normal;">
-                                        📍 点击查看馆藏楼层与可借状态
-                                    </span>
-                                </div>
-                            </div>
-                            <div style="display: flex; align-items: center; color: #ccc; font-weight: bold; font-size: 16px;">
-                                〉
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="empty-state" v-else-if="!isSearchingBooks">
-                        <div style="font-size: 40px; margin-bottom: 10px;">🔍</div><p>输入关键词，寻找图书馆的宝藏</p>
-                    </div>
-                </div>
-            </div>
-
+            <grades-view v-if="store.currentSubPage === 'grades'"></grades-view>
+            <exams-view v-if="store.currentSubPage === 'exams'"></exams-view>
+            <level-exams-view v-if="store.currentSubPage === 'level_exams'"></level-exams-view>
+            <library-view v-if="store.currentSubPage === 'books'"></library-view>
         </div>
 
-        <div v-show="currentTab === 'profile'" class="profile-container">
+        <profile-view v-show="store.currentTab === 'profile'"></profile-view>
 
-            <div class="card">
-                <div class="card-title">📅 课表时间校准</div>
-                <p style="font-size: 13px; color: #666; margin-bottom: 12px;">在这里输入当前是第几周自动校准</p>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <span style="font-size: 14px;">今天是：第</span>
-                    <input type="number" v-model.number="settingWeek" min="1" max="25" style="width: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; text-align: center; background: #f9f9f9;">
-                    <span style="font-size: 14px;">周</span>
-                    <button class="btn" style="padding: 8px 15px; font-size: 14px; width: auto;" @click="calibrateWeek">一键校准</button>
-                </div>
-                <p style="color: green; font-size: 12px; margin-top: 10px;" v-if="calibratedMsg">{{ calibratedMsg }}</p>
-            </div>
-
-            <div class="card">
-                <div class="card-title">🔄 教务处数据同步</div>
-                <div class="input-group">
-                    <input type="text" v-model="loginForm.username" placeholder="请输入学号">
-                </div>
-                <div class="input-group" style="position: relative;">
-                    <input :type="showPassword ? 'text' : 'password'" v-model="loginForm.password" placeholder="请输入密码" style="padding-right: 50px;">
-                    <span @click="showPassword = !showPassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 13px; color: #007aff; font-weight: bold;">
-                        {{ showPassword ? '隐藏' : '显示' }}
-                    </span>
-                </div>
-                <div class="captcha-box">
-                    <input type="text" v-model="loginForm.captcha" placeholder="验证码">
-                    <img v-if="captchaImg" :src="captchaImg" @click="fetchCaptcha">
-                </div>
-                <button class="btn" @click="syncAllData" :disabled="loading">{{ loading ? '数据抓取中，请稍候...' : '同步数据' }}</button>
-                <p style="color: red; font-size: 13px; margin-top: 10px; text-align: center;">{{ errorMsg }}</p>
-                <p style="color: green; font-size: 13px; margin-top: 10px; text-align: center;">{{ successMsg }}</p>
-            </div>
-
-            <div class="card">
-                <div class="card-title">🎨 界面设置</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 14px; color: #333; font-weight: bold;">课表显示模式</span>
-
-                    <div class="switch-capsule" style="margin: 0;">
-                        <div class="switch-item" :class="{active: scheduleViewType === 'fixed'}" @click="scheduleViewType = 'fixed'">一屏固定</div>
-                        <div class="switch-item" :class="{active: scheduleViewType === 'scroll'}" @click="scheduleViewType = 'scroll'">自由滑动</div>
-                    </div>
-                </div>
-                <p style="font-size: 12px; color: #888; margin: 0;">一屏固定适合快速扫视，自由滑动字号更宽松。</p>
-            </div>
-
-            <div class="card" v-if="courseList.length > 0 || gradeList.length > 0">
-                <div class="card-title">⚙️ 数据管理</div>
-                <p style="font-size: 12px; color: #666; margin-bottom: 15px;">本地已缓存 <b>{{ courseList.length }}</b> 门课表和 <b>{{ gradeList.length }}</b> 条成绩。</p>
-                <button class="btn btn-danger" @click="clearLocalData">清空本地所有缓存</button>
-            </div>
-        </div>
     </div>
 
     <div class="tabbar">
-        <div class="tab-item" :class="{ active: currentTab === 'schedule' }" @click="switchTab('schedule')">
-            <div class="tab-icon">📅</div><span>课表</span>
-        </div>
-        <div class="tab-item" :class="{ active: currentTab === 'other' }" @click="switchTab('other')">
-            <div class="tab-icon">✨</div><span>其他</span>
-        </div>
-        <div class="tab-item" :class="{ active: currentTab === 'profile' }" @click="switchTab('profile')">
-            <div class="tab-icon">⚙️</div><span>我的</span>
-        </div>
-    </div>
-
-    <div class="modal-overlay" v-if="showModal" @click.self="closeDetails">
-        <div class="modal-content">
-            <div class="modal-title">{{ selectedCourseGroup.length > 1 ? '时段重叠课程 (' + selectedCourseGroup.length + '门)' : '课程详情' }}</div>
-            <div v-for="(course, idx) in selectedCourseGroup" :key="idx">
-                <div v-if="selectedCourseGroup.length > 1" style="font-weight: bold; font-size: 14px; color: #007aff; margin-bottom: 8px;">📚 {{ course.name }}</div>
-                <div v-else style="font-weight: bold; font-size: 15px; color: #333; margin-bottom: 12px; text-align: center;">{{ course.name }}</div>
-
-                <div class="modal-detail-item"><div><strong>教师：</strong>{{ course.teacher || '未知' }}</div></div>
-                <div class="modal-detail-item"><div><strong>教室：</strong>{{ course.room || '待定' }}</div></div>
-                <div class="modal-detail-item"><div><strong>周次：</strong>{{ course.weeks }}</div></div>
-
-                <div class="modal-detail-item" v-if="course.isPending">
-<!--                    <div class="modal-icon">🌐</div>-->
-                    <div><strong>类型：</strong>网络课程 / 时间待定</div>
-                </div>
-                <div class="modal-detail-item" v-else-if="course.day && course.start <= 12">
-<!--                    <div class="modal-icon">⏱️</div>-->
-                    <div><strong>节次：</strong>星期{{ getDayName(course.day) }} (第 {{ course.start }} - {{ course.start + course.duration - 1 }} 节)</div>
-                </div>
-                <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed #ddd; margin: 15px 0;">
-            </div>
-            <button class="modal-close-btn" @click="closeDetails">我知道了</button>
-        </div>
-    </div>
-
-    <div class="modal-overlay" v-if="showBookModal" @click.self="showBookModal = false">
-        <div class="modal-content" style="width: 90%; max-width: 400px;">
-            <div v-if="loadingBook" style="text-align: center; padding: 40px 0;">
-                <div style="font-size: 30px; margin-bottom: 15px; animation: breathing 1.5s infinite;">📖</div>
-                <div style="color: #888; font-size: 14px;">正在努力穿梭图书馆书架...</div>
-            </div>
-
-            <div v-else-if="currentBookDetail">
-                <div class="modal-title" style="margin-bottom: 5px;">{{ currentBookDetail.title }}</div>
-                <div style="text-align: center; color: #666; font-size: 12px; margin-bottom: 15px;">{{ currentBookDetail.author }}</div>
-
-                <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                    <div class="modal-detail-item" v-if="currentBookDetail.info['ISBN及定价']">
-                        <div><strong>ISBN：</strong>{{ currentBookDetail.info['ISBN及定价'] }}</div>
-                    </div>
-                    <div class="modal-detail-item" v-if="currentBookDetail.info['出版发行项']">
-                        <div><strong>出版：</strong>{{ currentBookDetail.info['出版发行项'] }}</div>
-                    </div>
-                    <div class="modal-detail-item" v-if="currentBookDetail.info['中图法分类号']">
-                        <div><strong>分类号：</strong>{{ currentBookDetail.info['中图法分类号'] }}</div>
-                    </div>
-                </div>
-
-                <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">📍 馆藏位置</div>
-                <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
-                    <table class="g-table" style="margin: 0; width: 100%;">
-                        <thead style="position: sticky; top: 0; z-index: 1;">
-                            <tr><th style="text-align:left; padding-left:8px;">馆藏地</th><th>索书号</th><th>状态</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(h, idx) in currentBookDetail.holdings" :key="idx">
-                                <td style="text-align:left; padding-left:8px; font-size: 11px; line-height: 1.3;">{{ h.location }}</td>
-                                <td style="font-size: 11px;">{{ h.call_no }}</td>
-                                <td :style="{ color: h.status.includes('可借') ? '#34c759' : (h.status.includes('阅览') ? '#ff9500' : '#ff3b30'), fontWeight: 'bold', fontSize: '11px' }">
-                                    {{ h.status }}
-                                </td>
-                            </tr>
-                            <tr v-if="currentBookDetail.holdings.length === 0">
-                                <td colspan="3" style="color:#999; padding:15px;">暂无实体馆藏数据</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <button class="modal-close-btn" @click="showBookModal = false">关闭</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" v-if="showWeekSelector" @click.self="showWeekSelector = false">
-        <div class="modal-content" style="max-height: initial;">
-            <div class="modal-title">选择周次</div>
-            <div class="week-grid">
-                <button class="week-btn" v-for="w in 25" :key="w" :class="{ active: currentWeek === w, current: realWeek === w }" @click="selectWeek(w)">{{ w }}</button>
-            </div>
-        </div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'schedule' }" @click="store.currentTab = 'schedule'"><div class="tab-icon">📅</div><span>课表</span></div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'other' }" @click="store.currentTab = 'other'"><div class="tab-icon">✨</div><span>其他</span></div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'profile' }" @click="store.currentTab = 'profile'"><div class="tab-icon">⚙️</div><span>我的</span></div>
     </div>
 </div>
 
 <script src="./vue.global.min.js"></script>
-<script src="app.js"></script>
+<script type="module" src="js/app.js"></script>
 <script>
-      // 注册 Service Worker 来触发 PWA 安装
-      if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-              console.log('SW 注册成功:', registration);
-            })
-            .catch(error => {
-              console.log('SW 注册失败:', error);
-            });
+            navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW 注册成功'))
+            .catch(err => console.log('SW 注册失败', err));
         });
-      }
-    </script>
+    }
+</script>
 </body>
 </html>
