@@ -17,6 +17,7 @@ export default {
 
             <div class="card">
                 <div class="card-title">🔄 教务处同步</div>
+                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">一般账号密码就是学号</p>
                 <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
                 <div class="input-group"><input type="password" v-model="loginForm.password" placeholder="请输入密码"></div>
 
