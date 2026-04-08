@@ -232,12 +232,13 @@
 
 .time-dot {
     position: absolute;
-    top: -3px;
+    top: -4px;
     left: 30%;
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: #ff9500;
+    background-color: #ffffff;
+    border: 2px solid #ff3b30;
     box-shadow: 0 0 8px rgba(255, 149, 0, 0.6);
     animation: breathing 2s infinite ease-in-out;
 }
@@ -245,11 +246,14 @@
 @keyframes breathing {
     0% {
         box-shadow: 0 0 4px rgba(255, 59, 48, 0.4);
+        transform: scale(1);
     }
     50% {
         box-shadow: 0 0 12px rgba(255, 59, 48, 0.9), 0 0 4px rgba(255, 59, 48, 0.5) inset;
+        transform: scale(1.1);
     }
     100% {
         box-shadow: 0 0 4px rgba(255, 59, 48, 0.4);
+        transform: scale(1);
     }
 }
