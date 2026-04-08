@@ -55,7 +55,14 @@ export default {
                                     <div class="course-time" v-if="getStartTime(group[0])">{{ getStartTime(group[0]) }}</div>
                                     <div class="course-room" v-if="group.length === 1 && group[0].room">{{ group[0].room }}</div>
                                 </div>
-                                <div class="course-name" :style="{ '--max-lines': group[0].duration <= 2 ? 2 : 4 }">
+                                <div class="course-name" :style="{
+                                    fontWeight: 'bold',
+                                    fontSize: store.scheduleViewType === 'scroll' ? '12px' : '9px',
+                                    display: '-webkit-box',
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    WebkitLineClamp: store.scheduleViewType === 'scroll' ? 6 : (group[0].duration <= 2 ? 2 : 4)
+                                }">
                                     {{ group[0].name }}
                                 </div>
                                 <div v-if="group.length > 1" class="overlap-badge">{{ group.length }}门交替</div>
@@ -109,20 +116,17 @@ export default {
             viewMode: "week",
             touchStartX: 0, touchStartY: 0,
             colors: [
-                "#FFA07A", // 浅鲑鱼红
-                "#87CEFA", // 天蓝色
-                "#98FB98", // 苍绿色
-                "#DDA0DD", // 梅红色
-                "#F08080", // 浅珊瑚色
-                "#6495ED", // 矢车菊蓝
-                "#FFB6C1", // 浅粉色
-                "#20B2AA", // 浅海洋绿
-                "#F4A460", // 沙褐色
-                "#B0C4DE", // 亮钢兰色
-                "#FFE4B5", // 鹿皮色/浅黄
-                "#48D1CC", // 中绿宝石
-                "#D8BFD8", // 蓟色/浅紫
-                "#FFDAB9"  // 桃色
+                "#87CEFA", // 浅天蓝色 (Light Sky Blue)
+                "#98FB98", // 苍绿色 (Pale Green)
+                "#DDA0DD", // 梅红色/浅紫 (Plum)
+                "#F08080", // 浅珊瑚色 (Light Coral)
+                "#6495ED", // 矢车菊蓝 (Cornflower Blue)
+                "#FFB6C1", // 浅粉色 (Light Pink)
+                "#20B2AA", // 浅海洋绿 (Light Sea Green)
+                "#F4A460", // 沙褐色 (Sandy Brown)
+                "#B0C4DE", // 亮钢兰色/灰蓝 (Light Steel Blue)
+                "#FFE4B5", // 鹿皮色/浅黄 (Moccasin)
+                "#48D1CC", // 中绿宝石/浅青 (Medium Turquoise)
             ],
             showModal: false, showWeekSelector: false, selectedCourseGroup: [],
             currentTimeY: 0, currentDayOfWeek: 1, showTimeLine: false, timeTrackerInterval: null,
@@ -183,6 +187,14 @@ export default {
         'store.scheduleViewType'() { this.calculateSlotHeight(); }
     },
     methods: {
+        getStringHash(str) {
+            let hash = 0;
+            if (!str) return hash;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return Math.abs(hash);
+        },
         calculateSlotHeight() {
             const screenHeight = window.innerHeight; const screenWidth = window.innerWidth;
             if (screenWidth > screenHeight || this.store.scheduleViewType === 'scroll') { this.pixelsPerSlot = 60; } else {
@@ -221,9 +233,11 @@ export default {
             const maxEnd = Math.max(...group.map(c => c.start + c.duration));
             const maxDuration = maxEnd - minStart;
             const firstCourse = group.find(c => c.start === minStart) || group[0];
-            const colorIndex = firstCourse.name.length % this.colors.length;
 
-            // 安全的字符串拼接，防止转义破坏 CSS
+            // 把“课程名称”和“老师名称”拼接起来算哈希
+            const hashString = firstCourse.name + (firstCourse.teacher || "");
+            const colorIndex = this.getStringHash(hashString) % this.colors.length;
+
             return {
                 left: 'calc(' + ((100 / 7) * (firstCourse.day - 1)) + '% + 2px)',
                 top: ((minStart - 1) * this.pixelsPerSlot + 2) + 'px',
