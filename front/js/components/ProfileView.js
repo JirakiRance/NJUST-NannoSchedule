@@ -158,32 +158,12 @@ export default {
         },
         // 检查 APK 外链更新
         async checkApkUpdate() {
-            // 当前 APK 的内置版本号，发新包前记得修改这里
-            const CURRENT_VERSION = "1.0";
 
+            const UPDATE_WEBSITE_URL = "https://JirakiRance.github.io/NannoSchedule-Release/index.html";
 
-            const CHECK_URL = "https://JirakiRance.github.io/NannoSchedule-Release/version.json";
-
-            try {
-                const response = await fetch(`${CHECK_URL}?t=${new Date().getTime()}`);
-                if (!response.ok) {
-                    throw new Error("无法连接更新服务器");
-                }
-
-                const data = await response.json();
-
-                if (data.version !== CURRENT_VERSION) {
-                    const msg = `🎉 发现新版本：v${data.version}\n\n更新日志：\n${data.update_log}\n\n是否前往下载最新版 APK？`;
-                    if (confirm(msg)) {
-                        // 跳转到你部署的网盘/下载页
-                        window.location.href = data.download_url;
-                    }
-                } else {
-                    alert(`您当前使用的已经是最新版本 v${CURRENT_VERSION} 啦！`);
-                }
-            } catch (error) {
-                console.error("检查更新失败:", error);
-                alert("检查更新失败，请稍后再试或检查网络状态。");
+            // 给个温馨弹窗，防止用户误触直接跳出 App
+            if (confirm("即将前往下载页面查看并获取最新版 App，是否继续？")) {
+                window.location.href = UPDATE_WEBSITE_URL;
             }
         }
     },
