@@ -53,8 +53,8 @@ export default {
                 <div class="card-title">🛠️ 系统维护</div>
                 <p style="font-size: 12px; color: #888; margin-bottom: 15px;">如果遇到页面白屏、功能异常，或想获取最新版本代码，请点击拉取更新。</p>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">🚀 强制拉取最新版本</button>
-                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">🗑️ 清空本地教务缓存</button>
+                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">强制拉取最新版本</button>
+                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">清空本地教务缓存</button>
                 </div>
             </div>
         </div>
@@ -108,7 +108,7 @@ export default {
                 showToast("教务缓存已清空", "success");
             }
         },
-        // ✨ 核心机制：强制清除浏览器 SW 缓存并刷新
+        // 核心机制：强制清除浏览器 SW 缓存并刷新
         async forceUpdateApp() {
             if(!confirm("这将会清除网页底层缓存并从服务器下载最新代码，不会清除本地数据。是否继续？")) return;
 
