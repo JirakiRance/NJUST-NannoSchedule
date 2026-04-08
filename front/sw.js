@@ -16,8 +16,10 @@ const urlsToCache = [
   '/js/components/LevelExamsView.js',
   '/js/components/ExamsView.js',
   '/js/lib/vue.global.min.js',
+  '/js/lib/marked.min.js',
   '/img/logo.png',
-  '/manifest.json'
+  '/manifest.json',
+  '/md/contact.md'
 ];
 
 // 1. 安装时：把核心文件全部下载到手机的隐秘空间

@@ -31,7 +31,7 @@
                     <div class="feature-card" @click="store.currentSubPage = 'public_course'"><div class="feature-icon">🎒</div><div class="feature-name">蹭课查询</div></div>
                     <div class="feature-card" @click="store.currentSubPage = 'websites'"><div class="feature-icon">🌐</div><div class="feature-name">常用网站</div></div>
                     <div class="feature-card" @click="store.currentSubPage = 'school_calendar'"><div class="feature-icon">📅</div><div class="feature-name">学校年历</div></div>
-                    <div class="feature-card" style="opacity: 0.5;"><div class="feature-icon">🚪</div><div class="feature-name">敬请期待</div></div>
+                    <div class="feature-card" @click="store.currentSubPage = 'contact'"><div class="feature-icon">✉️</div><div class="feature-name">关于作者</div></div>
 
                 </div>
             </div>
@@ -44,6 +44,7 @@
             <public-course-view v-if="store.currentSubPage === 'public_course'"></public-course-view>
             <empty-rooms-view v-if="store.currentSubPage === 'empty_rooms'"></empty-rooms-view>
             <school-calendar-view v-if="store.currentSubPage === 'school_calendar'"></school-calendar-view>
+            <contact-view v-if="store.currentSubPage === 'contact'"></contact-view>
         </div>
 
         <profile-view v-show="store.currentTab === 'profile'"></profile-view>
@@ -58,6 +59,7 @@
 </div>
 
 <script src="./js/lib/vue.global.min.js"></script>
+<script src="./js/lib/marked.min.js"></script>
 <script type="module" src="js/app.js"></script>
 <script>
     if ('serviceWorker' in navigator) {

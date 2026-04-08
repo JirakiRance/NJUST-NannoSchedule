@@ -9,6 +9,7 @@ import WebsitesView from './components/WebsitesView.js';
 import PublicCourseView from './components/PublicCourseView.js';
 import EmptyRoomsView from './components/EmptyRoomsView.js';
 import SchoolCalendarView from './components/SchoolCalendarView.js';
+import ContactView from './components/ContactView.js';
 
 const { createApp } = Vue;
 
@@ -24,7 +25,8 @@ createApp({
         WebsitesView,
         PublicCourseView,
         EmptyRoomsView,
-        SchoolCalendarView
+        SchoolCalendarView,
+        ContactView
     },
     data() {
         return { store };
@@ -42,7 +44,8 @@ createApp({
                 'websites': '常用网站',
                 'public_course': '蹭课查询',
                 'empty_rooms': '空闲教室',
-                'school_calendar': '学校年历'
+                'school_calendar': '学校年历',
+                'contact': '联系开发者'
                 };
                 return titleMap[this.store.currentSubPage] || '应用中心';
             }
