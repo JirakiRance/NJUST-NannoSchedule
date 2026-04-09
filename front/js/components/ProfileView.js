@@ -159,7 +159,7 @@ export default {
         // 检查 APK 外链更新
         async checkApkUpdate() {
 
-            const UPDATE_WEBSITE_URL = "https://JirakiRance.github.io/NannoSchedule-Release";
+            const UPDATE_WEBSITE_URL = "https://ns-release.jiraki.top/";
 
             // 给个温馨弹窗，防止用户误触直接跳出 App
             if (confirm("即将前往下载页面查看并获取最新版 App，是否继续？")) {

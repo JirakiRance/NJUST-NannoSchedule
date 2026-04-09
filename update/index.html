@@ -28,9 +28,14 @@
             text-align: center;
             box-sizing: border-box;
         }
-        .logo {
-            font-size: 60px;
-            margin-bottom: 10px;
+        /* ✨ 新增的图片 Logo 样式 */
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 18px; /* 经典的 App 图标圆角 */
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 增加一点悬浮质感 */
+            object-fit: cover;
         }
         .title {
             font-size: 22px; font-weight: bold; color: var(--text-main); margin: 0 0 5px 0;
@@ -64,9 +69,9 @@
 <body>
 
 <div class="container">
-    <div class="logo">📅</div>
+    <img src="logo.png" alt="Logo" class="logo-img">
     <h1 class="title">南理工课表 本地版</h1>
-    <div class="version">最新版本 v1.1</div>
+    <div class="version">最新版本 v1.0</div>
 
     <div class="log-box">
         <div class="log-title">✨ 更新日志：</div>
@@ -77,7 +82,7 @@
         </ul>
     </div>
 
-    <a href="https://pan.baidu.com/s/1fkdWGHjMmNMaA9LtMGihkg?pwd=n87d" target="_blank" class="download-btn">
+    <a href="https://pan.baidu.com/s/10ffRr7GTL_8y_VvUkHxtlA?pwd=jjvg" target="_blank" class="download-btn">
         前往网盘下载 APK
     </a>
 
