@@ -5,7 +5,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Android-brightgreen.svg)
 ![TechStack](https://img.shields.io/badge/Tech-Vue.js%20%7C%20Android%20WebView-orange.svg)
 
-> 一款专为南京理工大学学子打造的第三方课表与教务辅助 App。
+> 一款为南京理工大学学子打造的第三方课表与教务辅助 App。
 
 [🚀 前往官方下载页面获取最新版](https://download.jiraki.top) | [反馈问题 (Issues)](https://github.com/JirakiRance/NJUST-NannoSchedule/issues)
 
@@ -34,7 +34,7 @@
 
 ## 💡 原理与使用说明
 
-为了让体验最流畅，同时节约服务器资源，这个 App 在设计上花了一点小心思：
+为了让体验最流畅，同时节约服务器资源，本APP如下设计：
 
 ### 📱 1. 本地优先
 这个 App 的界面本质上是一个网页。所有的代码和图片都已经打包在你的手机里了，**打开它不消耗任何流量**。
