@@ -13,7 +13,12 @@ export default {
                 </div>
 
                 <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
-                <div class="input-group"><input type="password" v-model="loginForm.password" placeholder="请输入密码"></div>
+                <div class="input-group" style="position: relative;">
+                    <input :type="showPassword ? 'text' : 'password'" v-model="loginForm.password" placeholder="请输入密码" style="padding-right: 60px;">
+                    <span @click="showPassword = !showPassword" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--primary-color); cursor: pointer; font-weight: bold; user-select: none;">
+                        {{ showPassword ? '隐藏' : '显示' }}
+                    </span>
+                </div>
 
                 <div class="captcha-box" style="margin-bottom: 8px;">
                     <input type="text" v-model="loginForm.captcha" placeholder="验证码" @keyup.enter="roomLogin">
@@ -69,7 +74,7 @@ export default {
     `,
     data() {
         return {
-            store, roomSessionValid: false, isRoomLoggingIn: false, isFetchingCaptcha: false,
+            store, roomSessionValid: false, isRoomLoggingIn: false, isFetchingCaptcha: false,showPassword: false,
             captchaImg: "", loginForm: { username: "", password: "", captcha: "", session_id: "" },
             searchKeyword: "", isSearching: false, courseList: []
         }

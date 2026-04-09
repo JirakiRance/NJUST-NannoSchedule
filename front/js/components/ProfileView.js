@@ -4,6 +4,20 @@ import { API_BASE, showToast } from '../utils.js';
 export default {
     template: `
         <div class="profile-container">
+            <div v-if="noticeInfo && noticeInfo.show" class="card" style="background: linear-gradient(135deg, #fff8e1, #ffecb3); border-left: 4px solid #ff9800; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 15px; font-weight: bold; color: #e65100;">📢 最新公告 ({{ noticeInfo.version }})</span>
+                    <span style="font-size: 12px; color: #bcaaa4;">{{ noticeInfo.date }}</span>
+                </div>
+                <div style="font-size: 13px; color: #6d4c41; line-height: 1.5; margin-bottom: 12px;">
+                    {{ noticeInfo.content }}
+                </div>
+                <div style="text-align: right;">
+                    <button class="btn" style="background-color: #ff9800; margin: 0; padding: 6px 15px; font-size: 13px; width: auto; font-weight: bold; display: inline-block;" @click="checkApkUpdate">
+                        前往更新
+                    </button>
+                </div>
+            </div>
             <div class="card">
                 <div class="card-title">📅 课表时间校准</div>
                 <p style="font-size: 12px; color: #666; margin-bottom: 12px;">如果发现当前周次不对，请在此手动修正：</p>
@@ -75,7 +89,8 @@ export default {
         return {
             store, loading: false, isFetchingCaptcha: false,showPassword: false,
             captchaImg: "", loginForm: { username: "", password: "", captcha: "", session_id: "" },
-            settingWeek: store.realWeek
+            settingWeek: store.realWeek,
+            noticeInfo: null
         };
     },
     watch: {
@@ -84,6 +99,19 @@ export default {
         }
     },
     methods: {
+        // 拉取更新公告（带时间戳防止缓存）
+        async fetchNotice() {
+            try {
+                const timestamp = new Date().getTime();
+                const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
+                if (res.ok) {
+                    this.noticeInfo = await res.json();
+                }
+            } catch (e) {
+                console.log("获取公告失败，静默处理"); // 网络差就不显示，不打扰用户
+            }
+        },
+
         async fetchCaptcha() {
             if (this.isFetchingCaptcha) return;
             this.isFetchingCaptcha = true;
@@ -168,6 +196,7 @@ export default {
         }
     },
     mounted() {
+        this.fetchNotice();
         if(store.currentTab === 'profile')
             this.fetchCaptcha();
         this.settingWeek = this.store.realWeek;
