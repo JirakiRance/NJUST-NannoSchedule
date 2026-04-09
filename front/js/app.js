@@ -52,9 +52,27 @@ createApp({
             return 'NannoSchedule';
         }
     },
+
+    methods: {
+        openSubPage(pageName) {
+            this.store.currentSubPage = pageName;
+            window.history.pushState({ target: 'subPage' }, '', '#subPage');
+        },
+        closeSubPage() {
+            // 点击左上角返回时，调用系统后退，触发下方的 popstate 监听
+            window.history.back();
+        },
+        handleSystemBack(event) {
+            // 当触发手机侧边滑动返回，或上面的 history.back() 时，清空子页面状态
+            if (this.store.currentSubPage !== '') {
+                this.store.currentSubPage = '';
+            }
+        }
+    },
+
     mounted() {
-
-
+        // 监听系统的历史回退事件
+        window.addEventListener('popstate', this.handleSystemBack);
         // 读取本地缓存
         try {
             const saved = localStorage.getItem("my_njust_data");
