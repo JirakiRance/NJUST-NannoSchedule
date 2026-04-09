@@ -105,7 +105,15 @@ export default {
             if (!this.searchKeyword.trim()) return showToast("请输入课程名称");
             this.isSearching = true; this.courseList = [];
             try {
-                const res = await fetch(`${API_BASE}/search_public_courses`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: this.loginForm.session_id, keyword: this.searchKeyword }) });
+                //const res = await fetch(`${API_BASE}/search_public_courses`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: this.loginForm.session_id, keyword: this.searchKeyword }) });
+                const res = await fetch(`${API_BASE}/search_public_courses`, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        session_id: this.loginForm.session_id,
+                        term: store.currentTerm,
+                        keyword: this.searchKeyword
+                    })
+                });
                 const result = await res.json();
                 if (res.ok) {
                     this.courseList = result.data; if (this.courseList.length === 0) showToast("未找到相关课程");

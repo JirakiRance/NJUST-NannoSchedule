@@ -136,7 +136,14 @@ export default {
             try {
                 const res = await fetch(`${API_BASE}/empty_rooms`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ session_id: this.loginForm.session_id, week: targetWeek.toString(), day: targetDay.toString(), period_list: this.roomQuery.periods, building: this.roomQuery.building })
+                    body: JSON.stringify({
+                        session_id: this.loginForm.session_id,
+                        term: store.currentTerm,
+                        week: targetWeek.toString(),
+                        day: targetDay.toString(),
+                        period_list: this.roomQuery.periods,
+                        building: this.roomQuery.building
+                    })
                 });
                 const result = await res.json();
                 if (res.ok) {

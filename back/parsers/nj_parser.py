@@ -237,3 +237,33 @@ def parse_empty_rooms_matrix(html_content):
         room_matrix[room_name] = days_free
 
     return room_matrix
+
+
+def parse_exams(html_content):
+    soup = BeautifulSoup(html_content, 'lxml')
+    # 根据你提供的结构，表格 class 是 Nsb_r_list
+    table = soup.find('table', id='dataList') or soup.find('table', class_='Nsb_r_list')
+    if not table: return []
+
+    results = []
+    # [1:] 跳过第一行的表头
+    for row in table.find_all('tr')[1:]:
+        tds = row.find_all('td')
+        if len(tds) >= 7:
+            results.append({
+                "session": tds[1].get_text(strip=True),  # 考试场次
+                "course_id": tds[2].get_text(strip=True),  # 课程编号
+                "course_name": tds[3].get_text(strip=True),  # 课程名称
+                "time": tds[4].get_text(strip=True),  # 考试时间
+                "room": tds[5].get_text(strip=True),  # 考场
+                "seat": tds[6].get_text(strip=True)  # 座位号
+            })
+    return results
+
+def parse_term_options(html_content):
+    soup = BeautifulSoup(html_content, 'lxml')
+    select = soup.find('select', id='xnxq01id')
+    if not select:
+        return []
+    # 提取所有 option 的 value，过滤掉空的（比如 全部 ）
+    return [opt.get('value', '').strip() for opt in select.find_all('option') if opt.get('value', '').strip()]

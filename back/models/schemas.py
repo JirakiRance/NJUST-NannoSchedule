@@ -5,6 +5,7 @@ class LoginRequest(BaseModel):
     username: str
     password: str
     captcha: str
+    term: str
 
 class BookSearchRequest(BaseModel):
     keyword: str
@@ -14,12 +15,12 @@ class BookDetailRequest(BaseModel):
 
 class PublicCourseRequest(BaseModel):
     session_id: str
-    term: str = "2025-2026-2"
+    term: str
     keyword: str
 
 class EmptyRoomRequest(BaseModel):
     session_id: str
-    term: str = "2025-2026-2"
+    term: str
     week: str
     day: str
     period_list: list

@@ -1,204 +1,224 @@
 import { store } from '../store.js';
-import { API_BASE, showToast } from '../utils.js';
+import { showToast } from '../utils.js';
 
 export default {
     template: `
-        <div class="profile-container">
-            <div v-if="noticeInfo && noticeInfo.show" class="card" style="background: linear-gradient(135deg, #fff8e1, #ffecb3); border-left: 4px solid #ff9800; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.1);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-size: 15px; font-weight: bold; color: #e65100;">📢 最新公告 ({{ noticeInfo.version }})</span>
-                    <span style="font-size: 12px; color: #bcaaa4;">{{ noticeInfo.date }}</span>
-                </div>
-                <div style="font-size: 13px; color: #6d4c41; line-height: 1.5; margin-bottom: 12px;">
-                    {{ noticeInfo.content }}
-                </div>
-                <div style="text-align: right;">
-                    <button class="btn" style="background-color: #ff9800; margin: 0; padding: 6px 15px; font-size: 13px; width: auto; font-weight: bold; display: inline-block;" @click="checkApkUpdate">
-                        前往更新
-                    </button>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">📅 课表时间校准</div>
-                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">如果发现当前周次不对，请在此手动修正：</p>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <span style="font-size: 14px; white-space: nowrap;">当前为第</span>
-                    <input type="number" v-model.number="settingWeek" min="1" max="25" style="width: 55px; padding: 8px 4px; border: 1px solid #ddd; border-radius: 6px; text-align: center;">
-                    <span style="font-size: 14px; white-space: nowrap;">周</span>
-                    <div style="flex: 1;"></div> <button class="btn" style="padding: 8px 15px; width: auto; white-space: nowrap; flex-shrink: 0; margin: 0;" @click="calibrateWeek">一键校准</button>
-                </div>
-            </div>
+        <div class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
+            <div style="font-size: 13px; color: #888; margin-bottom: 15px; text-align: center; position: relative; padding: 0 60px;">
+                <span @click="clearExpiredExams" style="position: absolute; left: 0; top: 0; color: #ff3b30; font-size: 11px; cursor: pointer; padding: 2px;">
+                    🧹 清理过期
+                </span>
 
-            <div class="card">
-                <div class="card-title">🔄 教务处同步</div>
-                <p style="font-size: 12px; color: #666; margin-bottom: 12px;">一般账号密码就是学号</p>
-                <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
-                <div class="input-group" style="position: relative;">
-                    <input :type="showPassword ? 'text' : 'password'" v-model="loginForm.password" placeholder="请输入密码" style="padding-right: 60px;">
-                    <span @click="showPassword = !showPassword" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--primary-color); cursor: pointer; font-weight: bold; user-select: none;">
-                        {{ showPassword ? '隐藏' : '显示' }}
+                <span style="font-weight: bold; color: #333; font-size: 14px;">
+                    {{ showHistory ? '🕰️ 历史学期考试' : '📅 本学期考试' }}
+                </span>
+
+                <div style="position: absolute; right: 0; top: 0; display: flex; gap: 8px;">
+                    <span @click="showHistory = !showHistory" style="color: #ff9500; font-size: 11px; cursor: pointer; padding: 2px; font-weight: bold;">
+                        {{ showHistory ? '返回本学期' : '历史学期' }}
+                    </span>
+                    <span v-show="false" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 2px;">
+                        [测试]
                     </span>
                 </div>
-                <div class="captcha-box" style="margin-bottom: 8px;">
-                    <input type="text" v-model="loginForm.captcha" placeholder="验证码" @keyup.enter="syncAllData">
-                    <img v-if="captchaImg && !isFetchingCaptcha" :src="captchaImg" @click="fetchCaptcha" title="点击刷新">
-                    <div v-else class="captcha-placeholder" @click="fetchCaptcha">
-                        <span v-if="isFetchingCaptcha" style="animation: breathing 1.5s infinite;">加载中...</span>
-                        <span v-else>点击获取</span>
-                    </div>
-                </div>
-                <div style="font-size: 11px; color: #ff9500; margin-bottom: 15px; text-align: right;">
-                    * 教务处响应较慢，验证码可能需等待 5-10 秒
-                </div>
-
-                <button class="btn" @click="syncAllData" :disabled="loading || isFetchingCaptcha">
-                    {{ loading ? '数据抓取中...' : '同步数据' }}
-                </button>
             </div>
 
-            <div class="card">
-                <div class="card-title">🎨 界面设置</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 14px; color: #333; font-weight: bold;">课表显示模式</span>
-                    <div class="switch-capsule" style="margin: 0;">
-                        <div class="switch-item" :class="{active: store.scheduleViewType === 'fixed'}" @click="store.scheduleViewType = 'fixed'">一屏固定</div>
-                        <div class="switch-item" :class="{active: store.scheduleViewType === 'scroll'}" @click="store.scheduleViewType = 'scroll'">自由滑动</div>
-                    </div>
-                </div>
-                <p style="font-size: 12px; color: #888; margin: 0;">一屏固定适合快速扫视，自由滑动字号更宽松。</p>
+            <div v-if="!displayExams || displayExams.length === 0" class="empty-state">
+                <div style="font-size: 45px; margin-bottom: 10px;">{{ showHistory ? '🗄️' : '☕' }}</div>
+                <p>{{ showHistory ? '暂无历史考试记录' : '本学期暂无考试安排' }}</p>
+                <div style="font-size: 12px; color: #999; margin-top: 5px;">同步教务处后数据将持久化保存在本地</div>
             </div>
 
-            <div class="card">
-                <div class="card-title">🛠️ 系统维护</div>
-                <p style="font-size: 12px; color: #888; margin-bottom: 15px;">网页异常可尝试拉取或清缓存；如需安装全新功能请检查 App 更新。</p>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">
-                        拉取网页最新版本
-                    </button>
-                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">
-                        清空本地教务缓存
-                    </button>
-                    <button class="btn" style="background-color: #007aff; margin: 0; font-weight: bold;" @click="checkApkUpdate">
-                        检查软件最新版本
-                    </button>
+            <div v-else style="flex: 1; overflow-y: auto; padding-bottom: 20px;">
+                <div v-for="exam in displayExams" :key="exam.course_id + exam.term"
+                     class="list-card"
+                     :style="getCardStyle(exam.time)">
+
+                    <div class="list-card-header" style="border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                <span style="font-size: 10px; background: #f2f2f7; color: #666; padding: 2px 6px; border-radius: 4px; border: 1px solid #ddd;">
+                                    {{ exam.term }}
+                                </span>
+                                <span v-if="exam.session" style="font-size: 10px; background: #fff7e6; color: #fa8c16; padding: 2px 6px; border-radius: 4px;">
+                                    {{ exam.session }}
+                                </span>
+                            </div>
+                            <span class="list-card-title" :style="getTitleStyle(exam.time)">
+                                {{ exam.course_name }}
+                            </span>
+                        </div>
+
+                        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                            <span :style="getStatusTagStyle(exam.time)">
+                                {{ getExamStatus(exam.time).text }}
+                            </span>
+                            <span v-if="getExamStatus(exam.time).code === 2" style="font-size: 12px; font-weight: bold; color: #ff3b30; font-family: monospace;">
+                                {{ getExamStatus(exam.time).countdown }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 13px; color: #555; line-height: 1.8; position: relative;">
+                        <div><span style="color: #999;">🕙 时间：</span>{{ exam.time }}</div>
+                        <div><span style="color: #999;">📍 考场：</span><b>{{ exam.room || '待定' }}</b></div>
+                        <div><span style="color: #999;">🪑 座位：</span><b style="color: #ff9500;">{{ exam.seat || '--' }}</b></div>
+
+                        <button v-if="getExamStatus(exam.time).code === 0"
+                                @click="removeExam(exam)"
+                                style="position: absolute; right: 0; bottom: 0; background: none; border: 1px solid #ddd; color: #999; padding: 2px 8px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+                            移除
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     `,
     data() {
         return {
-            store, loading: false, isFetchingCaptcha: false,showPassword: false,
-            captchaImg: "", loginForm: { username: "", password: "", captcha: "", session_id: "" },
-            settingWeek: store.realWeek,
-            noticeInfo: null
+            store,
+            now: new Date(),
+            refreshTimer: null,
+            showHistory: false // 状态开关：默认展示本学期
         };
     },
-    watch: {
-        'store.scheduleViewType'(newVal) {
-            localStorage.setItem("my_njust_view_type", newVal);
-        }
-    },
-    methods: {
-        // 拉取更新公告（带时间戳防止缓存）
-        async fetchNotice() {
-            try {
-                const timestamp = new Date().getTime();
-                const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
-                if (res.ok) {
-                    this.noticeInfo = await res.json();
-                }
-            } catch (e) {
-                console.log("获取公告失败，静默处理"); // 网络差就不显示，不打扰用户
-            }
-        },
+    computed: {
+        // 核心展示逻辑：动态过滤并精确排序
+        displayExams() {
+            if (!store.examsList) return [];
 
-        async fetchCaptcha() {
-            if (this.isFetchingCaptcha) return;
-            this.isFetchingCaptcha = true;
-            this.captchaImg = "";
-            try {
-                const res = await fetch(`${API_BASE}/captcha`);
-                const data = await res.json();
-                this.captchaImg = data.captcha_image;
-                this.loginForm.session_id = data.session_id;
-            } catch (e) {
-                showToast("无法获取验证码，请重试");
-            } finally {
-                this.isFetchingCaptcha = false;
-            }
-        },
-        async syncAllData() {
-            if(!this.loginForm.username || !this.loginForm.captcha) { showToast("请填写完整账号和验证码", "error"); return; }
-            this.loading = true;
-            try {
-                const res = await fetch(`${API_BASE}/sync_all`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(this.loginForm) });
-                const result = await res.json();
-                if (res.ok) {
-                    store.courseList = result.data.courses; store.gradeList = result.data.grades; store.levelExamsList = result.data.level_exams || [];
-                    localStorage.setItem("my_njust_data", JSON.stringify(result.data));
-                    showToast("同步成功！", "success"); store.currentTab = 'schedule';
-                } else {
-                    showToast(result.detail, "error"); this.fetchCaptcha();
-                }
-            } catch (e) { showToast("网络异常"); } finally { this.loading = false; }
-        },
-        clearLocalData() {
-            if(confirm("确定要清空课表和成绩缓存吗？（需重新登录获取）")) {
-                localStorage.removeItem("my_njust_data"); store.courseList = []; store.gradeList = []; store.levelExamsList = [];
-                showToast("教务缓存已清空", "success");
-            }
-        },
-        // 核心机制：强制清除浏览器 SW 缓存并刷新
-        async forceUpdateApp() {
-            if(!confirm("这将会清除网页底层缓存并从服务器下载最新代码，不会清除本地数据。是否继续？")) return;
+            let filtered = [];
+            const currentTerm = store.currentTerm;
 
-            try {
-                // 1. 注销 Service Worker
-                if ('serviceWorker' in navigator) {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    for (let registration of registrations) {
-                        await registration.unregister();
-                    }
+            if (this.showHistory) {
+                // 历史模式：过滤出非当前学期的记录
+                filtered = store.examsList.filter(e => e.term !== currentTerm);
+            } else {
+                // 主页模式：仅保留当前学期
+                filtered = store.examsList.filter(e => e.term === currentTerm || !e.term);
+            }
+
+            // 执行排序
+            return filtered.sort((a, b) => {
+                if (this.showHistory && a.term !== b.term) {
+                    return b.term.localeCompare(a.term);
                 }
 
-                // 2. 清空 Cache Storage (存放 js/css/html 的地方)
-                if ('caches' in window) {
-                    const cacheNames = await caches.keys();
-                    await Promise.all(cacheNames.map(name => caches.delete(name)));
-                }
+                // 精确提取完整时间进行时间戳比对
+                const parsedA = this.parseTime(a.time);
+                const parsedB = this.parseTime(b.time);
+                const timeA = parsedA ? parsedA.start.getTime() : 0;
+                const timeB = parsedB ? parsedB.start.getTime() : 0;
 
-                showToast("缓存已清除，正在重新加载...", "success");
-
-                // 3. 延迟 1 秒后强制刷新，跳过浏览器本地缓存读取最新文件
-                setTimeout(() => {
-                    window.location.reload(true);
-                }, 1000);
-            } catch (e) {
-                showToast("更新指令执行失败，请手动清理浏览器缓存", "error");
-            }
-        },
-        calibrateWeek() {
-            let now = new Date(); now.setHours(0,0,0,0); let day = now.getDay() || 7;
-            let monday = new Date(now); monday.setDate(monday.getDate() - day + 1); monday.setDate(monday.getDate() - (this.settingWeek - 1) * 7);
-            let yyyy = monday.getFullYear(); let mm = String(monday.getMonth() + 1).padStart(2, '0'); let dd = String(monday.getDate()).padStart(2, '0');
-            store.termStartDate = `${yyyy}-${mm}-${dd}`; localStorage.setItem("my_njust_start_date", store.termStartDate);
-            showToast("校准成功", "success"); window.location.reload();
-        },
-        // 检查 APK 外链更新
-        async checkApkUpdate() {
-
-            const UPDATE_WEBSITE_URL = "https://ns-release.jiraki.top/";
-
-            // 给个温馨弹窗，防止用户误触直接跳出 App
-            if (confirm("即将前往下载页面查看并获取最新版 App，是否继续？")) {
-                window.location.href = UPDATE_WEBSITE_URL;
-            }
+                return timeA - timeB;
+            });
         }
     },
     mounted() {
-        this.fetchNotice();
-        if(store.currentTab === 'profile')
-            this.fetchCaptcha();
-        this.settingWeek = this.store.realWeek;
+        this.refreshTimer = setInterval(() => { this.now = new Date(); }, 60000);
+    },
+    unmounted() { clearInterval(this.refreshTimer); },
+    methods: {
+        parseTime(timeStr) {
+            try {
+                const match = timeStr.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})/);
+                if (!match) return null;
+                return {
+                    start: new Date(match[1].replace(/-/g, '/') + ' ' + match[2] + ':00'),
+                    end: new Date(match[1].replace(/-/g, '/') + ' ' + match[3] + ':00')
+                };
+            } catch (e) { return null; }
+        },
+        getExamStatus(timeStr) {
+            const parsed = this.parseTime(timeStr);
+            if (!parsed) return { code: -1, text: '时间未定' };
+
+            const now = this.now.getTime();
+            const start = parsed.start.getTime();
+            const end = parsed.end.getTime();
+
+            if (now > end) return { code: 0, text: '已结束' };
+            if (now >= start && now <= end) return { code: 1, text: '考试中' };
+
+            const diff = start - now;
+            const days = Math.floor(diff / 86400000);
+            const hours = Math.floor((diff % 86400000) / 3600000);
+            const mins = Math.floor((diff % 3600000) / 60000);
+
+            let cd = '';
+            if (days > 0) cd = `倒计时 ${days}天`;
+            else if (hours > 0) cd = `倒计时 ${hours}时${mins}分`;
+            else cd = `即将开始 ${mins}分`;
+
+            return { code: 2, text: '待考试', countdown: cd };
+        },
+        getCardStyle(timeStr) {
+            const code = this.getExamStatus(timeStr).code;
+            if (code === 0) return { opacity: '0.6', filter: 'grayscale(0.8)', background: '#f9f9f9' };
+            if (code === 1) return { border: '2px solid #ff3b30', background: '#fffcfc', boxShadow: '0 4px 12px rgba(255,0,0,0.05)' };
+            return { borderLeft: '4px solid #007aff' };
+        },
+        getTitleStyle(timeStr) {
+            return this.getExamStatus(timeStr).code === 0 ? { textDecoration: 'line-through', color: '#999' } : { fontWeight: 'bold' };
+        },
+        getStatusTagStyle(timeStr) {
+            const code = this.getExamStatus(timeStr).code;
+            const style = { fontSize: '11px', padding: '2px 8px', borderRadius: '10px' };
+            if (code === 0) return { ...style, background: '#eee', color: '#999' };
+            if (code === 1) return { ...style, background: '#ff3b30', color: '#fff' };
+            return { ...style, background: '#e1f0ff', color: '#007aff' };
+        },
+
+        removeExam(examObj) {
+            if (confirm('是否移除该考试记录？(移除后需重新同步方可找回)')) {
+                const realIndex = store.examsList.findIndex(e => e === examObj);
+                if (realIndex !== -1) {
+                    store.examsList.splice(realIndex, 1);
+                    this.saveToLocal();
+                }
+            }
+        },
+
+        clearExpiredExams() {
+            if (!store.examsList || store.examsList.length === 0) return showToast("当前没有考试记录");
+
+            const expiredCount = store.examsList.filter(exam => this.getExamStatus(exam.time).code === 0).length;
+            if (expiredCount === 0) return showToast("没有已过期的考试");
+
+            if (confirm(`一键清除 ${expiredCount} 门已结束的考试记录？\n(清除后可通过重新同步相应学期找回)`)) {
+                store.examsList = store.examsList.filter(exam => this.getExamStatus(exam.time).code !== 0);
+                this.saveToLocal();
+                showToast(`成功清理 ${expiredCount} 门考试`, "success");
+            }
+        },
+
+        saveToLocal() {
+            const data = JSON.parse(localStorage.getItem("my_njust_data") || "{}");
+            data.exams = store.examsList;
+            localStorage.setItem("my_njust_data", JSON.stringify(data));
+        },
+
+        injectMultiTermData() {
+            const n = new Date();
+            const fmt = (d) => {
+                const p = (v) => v.toString().padStart(2, '0');
+                return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+            };
+
+            const curr = store.currentTerm;
+
+            store.examsList = [
+                { term: curr, course_name: "线性代数 (几天后)", course_id: "MATH102", session: "期末考试", room: "YF-402", seat: "110", time: `${fmt(new Date(n.getTime() + 86400000*5))}-${fmt(new Date(n.getTime() + 86400000*5 + 7200000)).split(' ')[1]}` },
+                { term: "2023-2024-2", course_name: "大学计算机基础", course_id: "CS001", session: "期末考试", room: "III-201", seat: "01", time: `${fmt(new Date(n.getTime() - 86400000*300))}-${fmt(new Date(n.getTime() - 86400000*300 + 7200000)).split(' ')[1]}` },
+                { term: curr, course_name: "面向对象编程 (马上考)", course_id: "CS205", session: "随堂测验", room: "机房A", seat: "10", time: `${fmt(new Date(n.getTime() + 1800000))}-${fmt(new Date(n.getTime() + 9000000)).split(' ')[1]}` },
+                { term: "2024-2025-1", course_name: "高等数学 (上学期历史)", course_id: "MATH001", session: "期末考试", room: "IV-C101", seat: "22", time: `${fmt(new Date(n.getTime() - 86400000*30))}-${fmt(new Date(n.getTime() - 86400000*30 + 7200000)).split(' ')[1]}` },
+                { term: curr, course_name: "数据结构 (正在考试)", course_id: "CS102", session: "期中考试", room: "I-201", seat: "45", time: `${fmt(new Date(n.getTime() - 1800000))}-${fmt(new Date(n.getTime() + 5400000)).split(' ')[1]}` },
+                { term: "2026-2027-1", course_name: "操作系统 (未来学期)", course_id: "CS301", session: "期末考试", room: "未知", seat: "未知", time: `${fmt(new Date(n.getTime() + 86400000*120))}-${fmt(new Date(n.getTime() + 86400000*120 + 7200000)).split(' ')[1]}` },
+                { term: curr, course_name: "大学物理 (明天考)", course_id: "PHY202", session: "期末考试", room: "II-405", seat: "12", time: `${fmt(new Date(n.getTime() + 86400000))}-${fmt(new Date(n.getTime() + 86400000 + 7200000)).split(' ')[1]}` },
+                { term: curr, course_name: "马原 (刚刚考完)", course_id: "POL301", session: "期中考试", room: "II-101", seat: "08", time: `${fmt(new Date(n.getTime() - 14400000))}-${fmt(new Date(n.getTime() - 7200000)).split(' ')[1]}` }
+            ];
+
+            showToast("全状态测试数据已注入！");
+        }
     }
 }
