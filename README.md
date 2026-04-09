@@ -7,7 +7,7 @@
 
 > 一款为南京理工大学学子打造的第三方课表与教务辅助 App。
 
-[🚀 前往官方下载页面获取最新版](https://download.jiraki.top) | [反馈问题 (Issues)](https://github.com/JirakiRance/NJUST-NannoSchedule/issues)
+[🚀 前往下载页面获取最新版](https://ns-release.jiraki.top) | [反馈问题 (Issues)](https://github.com/JirakiRance/NJUST-NannoSchedule/issues)
 
 ---
 
