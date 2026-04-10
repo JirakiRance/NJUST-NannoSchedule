@@ -100,8 +100,13 @@ export default {
                         <div class="modal-detail-item" v-if="course.isPending">
                             <div><i class="ri-information-line" style="margin-right: 4px; color:#999;"></i><strong>类型：</strong>网络课程 / 时间待定</div>
                         </div>
-                        <div class="modal-detail-item" v-else-if="course.day && course.start <= 12">
-                            <div><i class="ri-time-line" style="margin-right: 4px; color:#999;"></i><strong>节次：</strong>星期{{ getDayName(course.day) }} (第 {{ course.start }} - {{ course.start + course.duration - 1 }} 节)</div>
+                        <div class="modal-detail-item" v-else-if="course.day && course.start <= 13">
+                            <div>
+                                <i class="ri-time-line" style="margin-right: 4px; color:#999;"></i><strong>节次：</strong>星期{{ getDayName(course.day) }} (第 {{ course.start }}-{{ course.start + course.duration - 1 }} 节)
+                                <div style="color: var(--primary-color); font-weight: bold; font-size: 12px; margin-top: 4px; padding-left: 20px;">
+                                    <i class="ri-alarm-line" style="margin-right: 4px; vertical-align: text-bottom;"></i> {{ getCourseTimeRange(course.start, course.duration) }}
+                                </div>
+                            </div>
                         </div>
                         <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed #ddd; margin: 15px 0;">
                     </div>
@@ -266,6 +271,17 @@ export default {
         'store.scheduleViewType'() { this.calculateSlotHeight(); }
     },
     methods: {
+        getCourseTimeRange(start, duration) {
+            const startTimes = ["", "08:00", "08:50", "09:40", "10:40", "11:30", "14:00", "14:50", "15:50", "16:40", "17:30", "19:00", "19:50", "20:40"];
+            const endTimes =   ["", "08:45", "09:35", "10:25", "11:25", "12:15", "14:45", "15:35", "16:35", "17:25", "18:15", "19:45", "20:35", "21:25"];
+
+            if (start < 1 || start > 13) return "";
+
+            const end = Math.min(13, start + duration - 1);
+
+            return `${startTimes[start]} - ${endTimes[end]}`;
+        },
+
         getSlotTimeStr(s) {
             const times = [
                 "",
