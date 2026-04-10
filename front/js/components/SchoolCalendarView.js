@@ -48,16 +48,19 @@ export default {
     },
     methods: {
         downloadImage() {
-            // 利用 HTML5 机制纯前端触发下载
+            // 先把全屏遮罩关掉
+            this.showPreview = false;
+            showToast("正在处理下载请求...", "success");
+
+            const absoluteUrl = new URL('./img/calendar_2025_2026.jpg', window.location.href).href;
+
             const link = document.createElement('a');
-            link.href = './img/calendar_2025_2026.jpg';
-            // 设置下载的默认文件名
-            link.download = 'NJUST_Calendar_25-26.jpg';
+            link.href = absoluteUrl;
+            link.download = 'NJUST_Calendar_25_26.jpg';
+            link.target = '_blank'; // 加上这个，防止部分严格的电脑浏览器直接在当前页打开图片
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
-            showToast("正在为您保存校历...", "success");
         }
     }
 }
