@@ -61,11 +61,13 @@ export default {
                                     <div class="course-time" v-if="getStartTime(group[0])">{{ getStartTime(group[0]) }}</div>
                                     <div class="course-room" v-if="group.length === 1 && group[0].room">{{ group[0].room }}</div>
                                 </div>
+                                <div v-if="group[0].isCustom" style="position: absolute; bottom: 0; right: 0; background: rgba(0,0,0,0.15); color: #fff; font-size: 8px; padding: 2px 4px; border-bottom-left-radius: 6px; z-index: 2; font-weight: normal;">自建</div>
+
                                 <div class="course-name" :style="{
                                     fontSize: store.scheduleViewType === 'scroll' ? '12px' : '9px',
-                                    WebkitLineClamp: store.scheduleViewType === 'scroll' ? 6 : (group[0].duration <= 2 ? 2 : 4)
+                                    WebkitLineClamp: store.scheduleViewType === 'scroll' ? 6 : (group[0].duration <= 2 ? 2 : 4),
+                                    marginTop: group[0].isCustom ? '10px' : 'auto'
                                 }">
-                                    <span v-if="group[0].isCustom" class="custom-tag">自</span>
                                     {{ group[0].name }}
                                 </div>
                                 <div v-if="group.length > 1" class="overlap-badge">{{ group.length }}门交替</div>

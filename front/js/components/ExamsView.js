@@ -17,7 +17,7 @@ export default {
                         <i :class="showHistory ? 'ri-arrow-go-back-line' : 'ri-folder-history-line'" style="vertical-align: text-bottom;"></i>
                         {{ showHistory ? '返回本学期' : '历史学期' }}
                     </span>
-                    <span v-show="true" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 2px;">
+                    <span v-show="false" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 2px;">
                         [测试]
                     </span>
                 </div>
