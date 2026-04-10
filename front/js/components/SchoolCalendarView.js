@@ -1,3 +1,5 @@
+import { showToast } from '../utils.js';
+
 export default {
     template: `
         <div class="subpage-container" style="text-align: center;">
@@ -18,16 +20,44 @@ export default {
                  style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; animation: fadeIn 0.2s ease;">
 
                 <img src="./img/calendar_2025_2026.jpg"
-                     style="width: 100%; max-height: 85vh; object-fit: contain;"
-                     @click.stop="showPreview = false"> <div style="color: #aaa; font-size: 12px; margin-top: 25px; letter-spacing: 1px;">
-                    长按图片即可保存 · 点击任意处返回
+                     style="width: 100%; max-height: 75vh; object-fit: contain;">
+
+                <div style="margin-top: 40px; display: flex; gap: 30px; align-items: center;">
+
+                    <div @click.stop="downloadImage" style="display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer;">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.2); display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+
+                        </div>
+                        <span style="color: rgba(255,255,255,0.8); font-size: 11px; letter-spacing: 1px;">保存到手机</span>
+                    </div>
+
                 </div>
             </div>
         </div>
     `,
     data() {
         return {
-            showPreview: false // 控制大图显示的开关
+            showPreview: false
+        }
+    },
+    methods: {
+        downloadImage() {
+            // 利用 HTML5 机制纯前端触发下载
+            const link = document.createElement('a');
+            link.href = './img/calendar_2025_2026.jpg';
+            // 设置下载的默认文件名
+            link.download = 'NJUST_Calendar_25-26.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("正在为您保存校历...", "success");
         }
     }
 }
