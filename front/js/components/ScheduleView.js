@@ -60,6 +60,7 @@ export default {
                                     <div class="course-room" v-if="group.length === 1 && group[0].room">{{ group[0].room }}</div>
                                 </div>
                                 <div class="course-name" :style="{
+                                    fontSize: store.scheduleViewType === 'scroll' ? '12px' : '9px',
                                     WebkitLineClamp: store.scheduleViewType === 'scroll' ? 6 : (group[0].duration <= 2 ? 2 : 4)
                                 }">
                                     <span v-if="group[0].isCustom" class="custom-tag">自</span>
@@ -184,7 +185,6 @@ export default {
             store,
             viewMode: "week",
             touchStartX: 0, touchStartY: 0,
-            // ✨ 重新搭配的高级柔和色系（已删去刺眼的浅绿色）
             colors: [
                 "#87CEFA", "#DDA0DD", "#F08080", "#6495ED", "#FFB6C1",
                 "#20B2AA", "#F4A460", "#B0C4DE", "#FFDAB9", "#9370DB", "#40E0D0"
@@ -359,7 +359,7 @@ export default {
             const maxDuration = maxEnd - minStart;
             const firstCourse = group.find(c => c.start === minStart) || group[0];
 
-            const hashString = firstCourse.name; // ✨ 完美哈希：只根据课程名称上色
+            const hashString = firstCourse.name;
             const colorIndex = this.getStringHash(hashString) % this.colors.length;
 
             return {

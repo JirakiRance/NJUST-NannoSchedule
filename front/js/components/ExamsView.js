@@ -4,17 +4,15 @@ import { showToast } from '../utils.js';
 export default {
     template: `
         <div class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
-            <div style="font-size: 13px; color: #888; margin-bottom: 15px; text-align: center; position: relative; padding: 0 60px;">
-                <span @click="clearExpiredExams" style="position: absolute; left: 0; top: 0; color: #ff3b30; font-size: 11px; cursor: pointer; padding: 2px;">
+            <div class="exam-view-header">
+                <span @click="clearExpiredExams" class="exam-action-clear">
                     🧹 清理过期
                 </span>
-
-                <span style="font-weight: bold; color: #333; font-size: 14px;">
+                <span class="exam-header-title">
                     {{ showHistory ? '🕰️ 历史学期考试' : '📅 本学期考试' }}
                 </span>
-
-                <div style="position: absolute; right: 0; top: 0; display: flex; gap: 8px;">
-                    <span @click="showHistory = !showHistory" style="color: #ff9500; font-size: 11px; cursor: pointer; padding: 2px; font-weight: bold;">
+                <div class="exam-header-actions">
+                    <span @click="showHistory = !showHistory" class="exam-action-toggle">
                         {{ showHistory ? '返回本学期' : '历史学期' }}
                     </span>
                     <span v-show="false" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 2px;">
@@ -24,49 +22,44 @@ export default {
             </div>
 
             <div v-if="!displayExams || displayExams.length === 0" class="empty-state">
-                <div style="font-size: 45px; margin-bottom: 10px;">{{ showHistory ? '🗄️' : '☕' }}</div>
+                <div class="empty-emoji">{{ showHistory ? '🗄️' : '☕' }}</div>
                 <p>{{ showHistory ? '暂无历史考试记录' : '本学期暂无考试安排' }}</p>
                 <div style="font-size: 12px; color: #999; margin-top: 5px;">同步教务处后数据将持久化保存在本地</div>
             </div>
 
-            <div v-else style="flex: 1; overflow-y: auto; padding-bottom: 20px;">
+            <div v-else class="exam-list-area">
                 <div v-for="exam in displayExams" :key="exam.course_id + exam.term"
                      class="list-card"
                      :style="getCardStyle(exam.time)">
 
-                    <div class="list-card-header" style="border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div style="flex: 1;">
-                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                <span style="font-size: 10px; background: #f2f2f7; color: #666; padding: 2px 6px; border-radius: 4px; border: 1px solid #ddd;">
-                                    {{ exam.term }}
-                                </span>
-                                <span v-if="exam.session" style="font-size: 10px; background: #fff7e6; color: #fa8c16; padding: 2px 6px; border-radius: 4px;">
-                                    {{ exam.session }}
-                                </span>
+                    <div class="exam-card-header-flex">
+                        <div class="exam-card-title-group">
+                            <div class="exam-tag-group">
+                                <span class="exam-tag-term">{{ exam.term }}</span>
+                                <span v-if="exam.session" class="exam-tag-session">{{ exam.session }}</span>
                             </div>
                             <span class="list-card-title" :style="getTitleStyle(exam.time)">
                                 {{ exam.course_name }}
                             </span>
                         </div>
-
-                        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <div class="exam-status-group">
                             <span :style="getStatusTagStyle(exam.time)">
                                 {{ getExamStatus(exam.time).text }}
                             </span>
-                            <span v-if="getExamStatus(exam.time).code === 2" style="font-size: 12px; font-weight: bold; color: #ff3b30; font-family: monospace;">
+                            <span v-if="getExamStatus(exam.time).code === 2" class="exam-countdown">
                                 {{ getExamStatus(exam.time).countdown }}
                             </span>
                         </div>
                     </div>
 
-                    <div style="font-size: 13px; color: #555; line-height: 1.8; position: relative;">
-                        <div><span style="color: #999;">🕙 时间：</span>{{ exam.time }}</div>
-                        <div><span style="color: #999;">📍 考场：</span><b>{{ exam.room || '待定' }}</b></div>
-                        <div><span style="color: #999;">🪑 座位：</span><b style="color: #ff9500;">{{ exam.seat || '--' }}</b></div>
+                    <div class="exam-details">
+                        <div><span class="exam-detail-label">🕙 时间：</span>{{ exam.time }}</div>
+                        <div><span class="exam-detail-label">📍 考场：</span><b>{{ exam.room || '待定' }}</b></div>
+                        <div><span class="exam-detail-label">🪑 座位：</span><b class="exam-seat-highlight">{{ exam.seat || '--' }}</b></div>
 
                         <button v-if="getExamStatus(exam.time).code === 0"
                                 @click="removeExam(exam)"
-                                style="position: absolute; right: 0; bottom: 0; background: none; border: 1px solid #ddd; color: #999; padding: 2px 8px; border-radius: 6px; font-size: 11px; cursor: pointer;">
+                                class="exam-btn-remove">
                             移除
                         </button>
                     </div>
@@ -79,11 +72,10 @@ export default {
             store,
             now: new Date(),
             refreshTimer: null,
-            showHistory: false // ✨ 状态开关：默认展示本学期
+            showHistory: false
         };
     },
     computed: {
-        // ✨ 核心展示逻辑：动态过滤并排序
         displayExams() {
             if (!store.examsList) return [];
 
@@ -91,16 +83,11 @@ export default {
             const currentTerm = store.currentTerm;
 
             if (this.showHistory) {
-                // 历史模式：过滤出非当前学期的记录
                 filtered = store.examsList.filter(e => e.term !== currentTerm);
             } else {
-                // 主页模式：仅保留当前学期（以及旧版缓存中没有学期字段的兜底数据）
                 filtered = store.examsList.filter(e => e.term === currentTerm || !e.term);
             }
 
-            // 执行排序：
-            // 1. 若为历史学期，先按学期倒序排 (2024 在前，2023 在后)
-            // 2. 所有数据，均按考试时间正序排 (越早考的越在上面)
             return filtered.sort((a, b) => {
                 if (this.showHistory && a.term !== b.term) {
                     return b.term.localeCompare(a.term);
@@ -169,7 +156,6 @@ export default {
             return { ...style, background: '#e1f0ff', color: '#007aff' };
         },
 
-        // 移除单条数据：通过对象匹配原数组索引，防止在 filtered 数组中删错
         removeExam(examObj) {
             if (confirm('是否移除该考试记录？(移除后需重新同步方可找回)')) {
                 const realIndex = store.examsList.findIndex(e => e === examObj);
@@ -183,7 +169,6 @@ export default {
         clearExpiredExams() {
             if (!store.examsList || store.examsList.length === 0) return showToast("当前没有考试记录");
 
-            // 扫描全局过期的考试
             const expiredCount = store.examsList.filter(exam => this.getExamStatus(exam.time).code === 0).length;
             if (expiredCount === 0) return showToast("没有已过期的考试");
 
@@ -206,21 +191,11 @@ export default {
                 const p = (v) => v.toString().padStart(2, '0');
                 return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
             };
-
-            // 将模拟数据的当前学期与全局 store 绑定，确保无论选择什么学期都能测试
             const curr = store.currentTerm;
-
             store.examsList = [
                 { term: curr, course_name: "线性代数 (几天后)", course_id: "MATH102", session: "期末考试", room: "YF-402", seat: "110", time: `${fmt(new Date(n.getTime() + 86400000*5))}-${fmt(new Date(n.getTime() + 86400000*5 + 7200000)).split(' ')[1]}` },
-                { term: "2023-2024-2", course_name: "大学计算机基础", course_id: "CS001", session: "期末考试", room: "III-201", seat: "01", time: `${fmt(new Date(n.getTime() - 86400000*300))}-${fmt(new Date(n.getTime() - 86400000*300 + 7200000)).split(' ')[1]}` },
-                { term: curr, course_name: "面向对象编程 (马上考)", course_id: "CS205", session: "随堂测验", room: "机房A", seat: "10", time: `${fmt(new Date(n.getTime() + 1800000))}-${fmt(new Date(n.getTime() + 9000000)).split(' ')[1]}` },
-                { term: "2024-2025-1", course_name: "高等数学 (上学期历史)", course_id: "MATH001", session: "期末考试", room: "IV-C101", seat: "22", time: `${fmt(new Date(n.getTime() - 86400000*30))}-${fmt(new Date(n.getTime() - 86400000*30 + 7200000)).split(' ')[1]}` },
-                { term: curr, course_name: "数据结构 (正在考试)", course_id: "CS102", session: "期中考试", room: "I-201", seat: "45", time: `${fmt(new Date(n.getTime() - 1800000))}-${fmt(new Date(n.getTime() + 5400000)).split(' ')[1]}` },
-                { term: "2026-2027-1", course_name: "操作系统 (未来学期)", course_id: "CS301", session: "期末考试", room: "未知", seat: "未知", time: `${fmt(new Date(n.getTime() + 86400000*120))}-${fmt(new Date(n.getTime() + 86400000*120 + 7200000)).split(' ')[1]}` },
-                { term: curr, course_name: "大学物理 (明天考)", course_id: "PHY202", session: "期末考试", room: "II-405", seat: "12", time: `${fmt(new Date(n.getTime() + 86400000))}-${fmt(new Date(n.getTime() + 86400000 + 7200000)).split(' ')[1]}` },
-                { term: curr, course_name: "马原 (刚刚考完)", course_id: "POL301", session: "期中考试", room: "II-101", seat: "08", time: `${fmt(new Date(n.getTime() - 14400000))}-${fmt(new Date(n.getTime() - 7200000)).split(' ')[1]}` }
+                { term: "2023-2024-2", course_name: "大学计算机基础", course_id: "CS001", session: "期末考试", room: "III-201", seat: "01", time: `${fmt(new Date(n.getTime() - 86400000*300))}-${fmt(new Date(n.getTime() - 86400000*300 + 7200000)).split(' ')[1]}` }
             ];
-
             showToast("全状态测试数据已注入！");
         }
     }

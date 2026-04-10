@@ -92,10 +92,20 @@ export default {
         async roomLogin() {
             if(!this.loginForm.username || !this.loginForm.password || !this.loginForm.captcha) return showToast("请填写完整");
             this.isRoomLoggingIn = true;
+            const requestPayload = {
+                ...this.loginForm,
+                term: store.currentTerm
+            };
             try {
-                const res = await fetch(`${API_BASE}/pure_login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(this.loginForm) });
+                const res = await fetch(`${API_BASE}/pure_login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestPayload) });
                 const result = await res.json();
-                if (res.ok) { this.roomSessionValid = true; showToast("连接教务处成功", "success"); } else { showToast(result.detail || "验证失败", "error"); this.fetchCaptcha(); }
+                if (res.ok) {
+                    this.roomSessionValid = true; showToast("连接教务处成功", "success");
+                } else {
+                    const errorMsg = typeof result.detail === 'string' ? result.detail : "参数缺失或验证失败";
+                    showToast(errorMsg, "error");
+                    this.fetchCaptcha();
+                }
             } catch (e) { showToast("网络异常"); } finally { this.isRoomLoggingIn = false; }
         },
         async searchCourses() {

@@ -14,28 +14,28 @@ export default {
                         <div class="book-info">
                             <div class="book-title">{{ book.title }}</div>
                             <div class="book-author">{{ book.author }} | {{ book.publisher }}</div>
-                            <div class="book-stock"><span class="stock-badge" style="background: #e1f0ff; color: #007aff;">📍 点击查看馆藏</span></div>
+                            <div class="book-stock"><span class="stock-badge available">📍 点击查看馆藏</span></div>
                         </div>
                         <div style="display: flex; align-items: center; color: #ccc; font-weight: bold; font-size: 16px;">〉</div>
                     </div>
                 </div>
                 <div class="empty-state" v-else-if="!isSearchingBooks">
-                    <div style="font-size: 40px; margin-bottom: 10px;">🔍</div><p>输入关键词寻找书籍</p>
+                    <div class="empty-emoji">🔍</div><p>输入关键词寻找书籍</p>
                 </div>
             </div>
 
             <div class="modal-overlay" v-if="showBookModal" @click.self="showBookModal = false">
                 <div class="modal-content" style="width: 90%; max-width: 400px;">
-                    <div v-if="loadingBook" style="text-align: center; padding: 40px 0;">📖<br>正在穿梭书架...</div>
+                    <div v-if="loadingBook" class="library-modal-loading">📖<br>正在穿梭书架...</div>
                     <div v-else-if="currentBookDetail">
                         <div class="modal-title">{{ currentBookDetail.title }}</div>
-                        <div style="max-height: 250px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; margin-top:10px;">
-                            <table class="g-table" style="margin: 0; width: 100%;">
-                                <thead><tr><th style="text-align:left; padding-left:8px;">馆藏地</th><th>索书号</th><th>状态</th></tr></thead>
+                        <div class="library-modal-holdings">
+                            <table class="g-table library-table">
+                                <thead><tr><th class="library-th-left">馆藏地</th><th>索书号</th><th>状态</th></tr></thead>
                                 <tbody>
                                     <tr v-for="(h, idx) in currentBookDetail.holdings" :key="idx">
-                                        <td style="text-align:left; padding-left:8px; font-size: 11px;">{{ h.location }}</td>
-                                        <td style="font-size: 11px;">{{ h.call_no }}</td>
+                                        <td class="library-td-left">{{ h.location }}</td>
+                                        <td class="library-td-center">{{ h.call_no }}</td>
                                         <td :style="{ color: h.status.includes('可借') ? '#34c759' : '#ff3b30', fontWeight: 'bold', fontSize: '11px' }">{{ h.status }}</td>
                                     </tr>
                                 </tbody>
