@@ -6,7 +6,10 @@ export default {
         <div class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
             <div class="search-bar-wrapper">
                 <input type="text" v-model="bookKeyword" placeholder="输入书名或关键词..." @keyup.enter="searchLibrary">
-                <button class="search-btn" @click="searchLibrary" :disabled="isSearchingBooks">{{ isSearchingBooks ? '...' : '搜索' }}</button>
+                <button class="search-btn" @click="searchLibrary" :disabled="isSearchingBooks">
+                    <i v-if="isSearchingBooks" class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i>
+                    {{ isSearchingBooks ? '检索中' : '搜索' }}
+                </button>
             </div>
             <div class="search-results-area" style="flex: 1; overflow-y: auto; padding-top: 15px;">
                 <div v-if="bookList.length > 0">
@@ -14,19 +17,21 @@ export default {
                         <div class="book-info">
                             <div class="book-title">{{ book.title }}</div>
                             <div class="book-author">{{ book.author }} | {{ book.publisher }}</div>
-                            <div class="book-stock"><span class="stock-badge available">📍 点击查看馆藏</span></div>
+                            <div class="book-stock"><span class="stock-badge available"><i class="ri-map-pin-line" style="vertical-align: text-bottom;"></i> 点击查看馆藏</span></div>
                         </div>
-                        <div style="display: flex; align-items: center; color: #ccc; font-weight: bold; font-size: 16px;">〉</div>
+                        <div style="display: flex; align-items: center; color: #ccc; font-size: 20px;"><i class="ri-arrow-right-s-line"></i></div>
                     </div>
                 </div>
                 <div class="empty-state" v-else-if="!isSearchingBooks">
-                    <div class="empty-emoji">🔍</div><p>输入关键词寻找书籍</p>
+                    <div class="empty-emoji"><i class="ri-search-eye-line" style="color: #999;"></i></div><p>输入关键词寻找书籍</p>
                 </div>
             </div>
 
             <div class="modal-overlay" v-if="showBookModal" @click.self="showBookModal = false">
                 <div class="modal-content" style="width: 90%; max-width: 400px;">
-                    <div v-if="loadingBook" class="library-modal-loading">📖<br>正在穿梭书架...</div>
+                    <div v-if="loadingBook" class="library-modal-loading">
+                        <i class="ri-book-read-line ri-spin" style="font-size: 30px; color: var(--primary-color);"></i><br><br>正在穿梭书架...
+                    </div>
                     <div v-else-if="currentBookDetail">
                         <div class="modal-title">{{ currentBookDetail.title }}</div>
                         <div class="library-modal-holdings">

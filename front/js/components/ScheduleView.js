@@ -11,18 +11,20 @@ export default {
                         <div class="switch-item" :class="{active: viewMode === 'week'}" @click="viewMode = 'week'">单周模式</div>
                         <div class="switch-item" :class="{active: viewMode === 'semester'}" @click="viewMode = 'semester'">全学期模式</div>
                     </div>
-                    <button class="icon-btn btn-add-custom" @click="openCustomManager">+</button>
+                    <button class="icon-btn btn-add-custom" style="width: auto; font-size: 14px; display: flex; align-items: center; gap: 3px;" @click="openCustomManager">
+                        <i class="ri-add-box-line" style="font-size: 18px;"></i> 添加
+                    </button>
                 </div>
 
                 <div class="week-nav" v-show="viewMode === 'week'">
-                    <button class="icon-btn" @click="changeWeek(-1)">&#9664;</button>
+                    <button class="icon-btn" @click="changeWeek(-1)"><i class="ri-arrow-left-s-line"></i></button>
                     <div class="week-title" @click="showWeekSelector = true">
                         第 {{ store.currentWeek }} 周 <span class="week-tag" v-if="store.currentWeek === store.realWeek">本周</span>
                     </div>
-                    <button class="icon-btn" @click="changeWeek(1)">&#9654;</button>
+                    <button class="icon-btn" @click="changeWeek(1)"><i class="ri-arrow-right-s-line"></i></button>
                 </div>
                 <div class="week-nav" v-show="viewMode === 'semester'" style="justify-content: center;">
-                    <div class="setting-desc" style="margin:0;">点击重叠卡片，可查看该时段所有课程</div>
+                    <div class="setting-desc" style="margin:0;"><i class="ri-information-line" style="vertical-align: middle;"></i> 点击重叠卡片，可查看该时段所有课程</div>
                 </div>
 
                 <div class="schedule-container">
@@ -74,7 +76,7 @@ export default {
             </div>
 
             <div class="empty-state" v-else>
-                <div class="empty-emoji">📭</div>
+                <div class="empty-emoji"><i class="ri-calendar-2-line"></i></div>
                 <p>课表空空如也，请前往同步</p>
                 <button class="btn btn-submit" style="width: auto; margin-top: 15px;" @click="openCustomManager">手动添加课程</button>
             </div>
@@ -84,21 +86,22 @@ export default {
                     <div class="modal-title">{{ selectedCourseGroup.length > 1 ? '时段重叠课程 (' + selectedCourseGroup.length + '门)' : '课程详情' }}</div>
                     <div v-for="(course, idx) in selectedCourseGroup" :key="idx">
                         <div v-if="selectedCourseGroup.length > 1" style="font-weight: bold; font-size: 14px; color: #007aff; margin-bottom: 8px;">
-                            📚 <span v-if="course.isCustom" style="color: #ff9500; font-size: 12px;">[自]</span> {{ course.name }}
+                            <i class="ri-book-read-line" style="margin-right: 4px; vertical-align: text-bottom;"></i>
+                            <span v-if="course.isCustom" style="color: #ff9500; font-size: 12px;">[自]</span> {{ course.name }}
                         </div>
                         <div v-else style="font-weight: bold; font-size: 15px; color: #333; margin-bottom: 12px; text-align: center;">
                             <span v-if="course.isCustom" style="color: #ff9500; font-size: 12px;">[自]</span> {{ course.name }}
                         </div>
 
-                        <div class="modal-detail-item"><div><strong>教师：</strong>{{ course.teacher || '未知' }}</div></div>
-                        <div class="modal-detail-item"><div><strong>教室：</strong>{{ course.room || '待定' }}</div></div>
-                        <div class="modal-detail-item"><div><strong>周次：</strong>{{ course.weeks }}</div></div>
+                        <div class="modal-detail-item"><div><i class="ri-user-smile-line" style="margin-right: 4px; color:#999;"></i><strong>教师：</strong>{{ course.teacher || '未知' }}</div></div>
+                        <div class="modal-detail-item"><div><i class="ri-map-pin-2-line" style="margin-right: 4px; color:#999;"></i><strong>教室：</strong>{{ course.room || '待定' }}</div></div>
+                        <div class="modal-detail-item"><div><i class="ri-calendar-todo-line" style="margin-right: 4px; color:#999;"></i><strong>周次：</strong>{{ course.weeks }}</div></div>
 
                         <div class="modal-detail-item" v-if="course.isPending">
-                            <div><strong>类型：</strong>网络课程 / 时间待定</div>
+                            <div><i class="ri-information-line" style="margin-right: 4px; color:#999;"></i><strong>类型：</strong>网络课程 / 时间待定</div>
                         </div>
                         <div class="modal-detail-item" v-else-if="course.day && course.start <= 12">
-                            <div><strong>节次：</strong>星期{{ getDayName(course.day) }} (第 {{ course.start }} - {{ course.start + course.duration - 1 }} 节)</div>
+                            <div><i class="ri-time-line" style="margin-right: 4px; color:#999;"></i><strong>节次：</strong>星期{{ getDayName(course.day) }} (第 {{ course.start }} - {{ course.start + course.duration - 1 }} 节)</div>
                         </div>
                         <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed #ddd; margin: 15px 0;">
                     </div>
@@ -117,7 +120,11 @@ export default {
 
             <div class="modal-overlay" v-if="showCustomManager" @click.self="showCustomManager = false">
                 <div class="modal-content custom-manager-modal">
-                    <div class="modal-title" style="margin-bottom: 10px;">{{ isEditingCustom ? (customForm.id ? '编辑自定义课程' : '新建课程') : '自定义课表管理' }}</div>
+                    <div class="modal-title" style="margin-bottom: 10px;">
+                        <i v-if="!isEditingCustom" class="ri-equalizer-line" style="margin-right: 4px; color: var(--primary-color);"></i>
+                        <i v-else class="ri-edit-box-line" style="margin-right: 4px; color: var(--primary-color);"></i>
+                        {{ isEditingCustom ? (customForm.id ? '编辑自定义课程' : '新建课程') : '自定义课表管理' }}
+                    </div>
 
                     <div v-if="!isEditingCustom" class="custom-manager-scroll">
                         <p class="custom-manager-subtitle">当前学期: {{ store.currentTerm }}</p>
@@ -132,8 +139,8 @@ export default {
                             <div class="custom-course-meta">{{ c.room || '无教室' }} | {{ c.teacher || '无教师' }} | {{ c.weeks }}周</div>
 
                             <div class="custom-course-actions">
-                                <button class="icon-btn action-btn-edit" @click="editCustomCourse(c)">✎</button>
-                                <button class="icon-btn action-btn-del" @click="deleteCustomCourse(c.id)">✖</button>
+                                <button class="icon-btn action-btn-edit" @click="editCustomCourse(c)"><i class="ri-pencil-line"></i></button>
+                                <button class="icon-btn action-btn-del" @click="deleteCustomCourse(c.id)"><i class="ri-delete-bin-6-line"></i></button>
                             </div>
                         </div>
 

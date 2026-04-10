@@ -5,7 +5,7 @@ export default {
         <div class="grades-container">
             <div v-if="store.gradeList.length > 0">
                 <div class="summary-card">
-                    <div class="summary-title">实时成绩统计</div>
+                    <div class="summary-title"><i class="ri-pie-chart-line" style="vertical-align: text-bottom; margin-right: 4px; color: var(--primary-color);"></i>实时成绩统计</div>
                     <table class="g-table">
                         <thead><tr><th>范围</th><th>总学分</th><th>加权均分</th><th>GPA</th></tr></thead>
                         <tbody>
@@ -16,9 +16,9 @@ export default {
                 </div>
 
                 <div class="semester-block" v-for="semester in semesters" :key="semester.name">
-                    <div class="semester-header">🗓️ {{ semester.name }}</div>
+                    <div class="semester-header"><i class="ri-calendar-event-line" style="margin-right: 6px; color: var(--text-sub);"></i>{{ semester.name }}</div>
                     <table class="g-table">
-                        <thead><tr><th style="width:30px;">选</th><th style="text-align:left; padding-left:10px;">详情</th><th style="width:40px">成绩</th><th style="width:35px">学分</th><th style="width:35px">绩点</th></tr></thead>
+                        <thead><tr><th style="width:30px;">选择</th><th style="text-align:left; padding-left:10px;">详情</th><th style="width:40px">成绩</th><th style="width:35px">学分</th><th style="width:35px">绩点</th></tr></thead>
                         <tbody>
                             <tr v-for="course in semester.courses">
                                 <td @click="course.selected = !course.selected"><div class="custom-checkbox" :class="{ checked: course.selected }"></div></td>
@@ -37,7 +37,8 @@ export default {
                 </div>
             </div>
             <div class="empty-state" v-else>
-                <div style="font-size: 40px; margin-bottom: 10px;">📊</div><p>暂无成绩数据，请前往同步</p>
+                <div class="empty-emoji"><i class="ri-bar-chart-2-line"></i></div>
+                <p>暂无成绩数据，请前往同步</p>
             </div>
         </div>
     `,

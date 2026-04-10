@@ -7,7 +7,7 @@ export default {
 
             <div v-if="!roomSessionValid" class="card" style="margin-top: 15px;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <div class="empty-emoji">🎓</div>
+                    <div class="empty-emoji"><i class="ri-radar-line" style="color: #ff2d55;"></i></div>
                     <div class="list-card-title">全校课程雷达</div>
                     <div class="setting-desc" style="margin-top: 5px;">查询蹭课需要保持教务处连接</div>
                 </div>
@@ -29,10 +29,11 @@ export default {
                     </div>
                 </div>
                 <div style="font-size: 11px; color: #ff9500; margin-bottom: 15px; text-align: right;">
-                    * 教务处响应较慢，验证码可能需等待 5-10 秒
+                    <i class="ri-information-line" style="vertical-align: middle;"></i> 教务处响应较慢，验证码可能需等待 5-10 秒
                 </div>
 
                 <button class="btn" @click="roomLogin" :disabled="isRoomLoggingIn || isFetchingCaptcha">
+                    <i v-if="isRoomLoggingIn" class="ri-loader-4-line ri-spin" style="margin-right: 5px;"></i>
                     {{ isRoomLoggingIn ? '正在建立加密通道...' : '连接并查询' }}
                 </button>
             </div>
@@ -41,7 +42,8 @@ export default {
                 <div class="search-bar-wrapper">
                     <input type="text" v-model="searchKeyword" placeholder="输入课程名(如: 数据结构)" @keyup.enter="searchCourses">
                     <button class="search-btn" @click="searchCourses" :disabled="isSearching">
-                        {{ isSearching ? '...' : '雷达扫描' }}
+                        <i v-if="isSearching" class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i>
+                        {{ isSearching ? '扫描中' : '雷达扫描' }}
                     </button>
                 </div>
 
@@ -51,22 +53,22 @@ export default {
 
                         <div class="list-card" v-for="(c, idx) in courseList" :key="idx">
                             <div class="list-card-header" style="margin-bottom: 8px; padding-bottom: 8px;">
-                                <span class="list-card-title">📚 {{ c.course_name }}</span>
+                                <span class="list-card-title"><i class="ri-book-read-line" style="color: var(--primary-color); vertical-align: text-bottom; margin-right: 4px;"></i>{{ c.course_name }}</span>
                                 <span class="list-card-date" style="color: var(--primary-color); background: #e1f0ff; font-weight:bold;">
-                                    {{ c.day_str }} | {{ c.slot_str }}
+                                    <i class="ri-calendar-todo-line"></i> {{ c.day_str }} | {{ c.slot_str }}
                                 </span>
                             </div>
                             <div style="font-size: 13px; color: #555; line-height: 1.6;">
-                                <div><strong>👨‍🏫 教师：</strong>{{ c.teacher }}</div>
-                                <div><strong>📍 教室：</strong>{{ c.room || '待定' }}</div>
-                                <div><strong>📅 周次：</strong>{{ c.weeks }}</div>
+                                <div><i class="ri-user-voice-line" style="color: #999; margin-right: 4px;"></i><strong>教师：</strong>{{ c.teacher }}</div>
+                                <div><i class="ri-map-pin-line" style="color: #999; margin-right: 4px;"></i><strong>教室：</strong>{{ c.room || '待定' }}</div>
+                                <div><i class="ri-calendar-event-line" style="color: #999; margin-right: 4px;"></i><strong>周次：</strong>{{ c.weeks }}</div>
                                 <div style="font-size: 11px; color: #999; margin-top: 4px;">班级代码: {{ c.class_id }}</div>
                             </div>
                         </div>
                     </div>
 
                     <div class="empty-state" v-else-if="!isSearching">
-                        <div class="empty-emoji">🎒</div><p>输入课程名，发掘感兴趣的旁听课</p>
+                        <div class="empty-emoji"><i class="ri-search-eye-line" style="color: #999;"></i></div><p>输入课程名，发掘感兴趣的旁听课</p>
                     </div>
                 </div>
             </div>

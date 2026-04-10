@@ -3,19 +3,22 @@ import { showToast } from '../utils.js';
 export default {
     template: `
         <div class="subpage-container" style="text-align: center;">
-            <div class="card" style="padding: 10px; overflow: hidden;">
+            <div class="card" style="padding: 10px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                 <img src="./img/calendar_2025_2026.jpg"
                      alt="学校年历"
                      style="width: 100%; height: auto; display: block; border-radius: 6px; cursor: pointer;"
                      @click="showPreview = true">
             </div>
 
-            <div class="setting-desc" style="margin-top: 15px;">
-                📅 2025-2026学年校历<br>
+            <div style="font-size: 12px; color: #888; margin-top: 15px; line-height: 1.6;">
+                <i class="ri-calendar-event-line" style="vertical-align: text-bottom;"></i> 2025-2026学年校历<br>
                 提示：点击图片查看详情
             </div>
 
-            <div v-if="showPreview" @click="showPreview = false" class="fullscreen-preview">
+            <div v-if="showPreview"
+                 @click="showPreview = false"
+                 class="fullscreen-preview">
+
                 <img src="./img/calendar_2025_2026.jpg" class="preview-img">
 
                 <div class="preview-actions">

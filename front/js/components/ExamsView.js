@@ -6,23 +6,25 @@ export default {
         <div class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
             <div class="exam-view-header">
                 <span @click="clearExpiredExams" class="exam-action-clear">
-                    🧹 清理过期
+                    <i class="ri-delete-bin-line" style="vertical-align: text-bottom;"></i> 清理过期
                 </span>
                 <span class="exam-header-title">
-                    {{ showHistory ? '🕰️ 历史学期考试' : '📅 本学期考试' }}
+                    <i :class="showHistory ? 'ri-history-line' : 'ri-calendar-event-line'" style="vertical-align: text-bottom; margin-right: 4px;"></i>
+                    {{ showHistory ? '历史学期考试' : '本学期考试' }}
                 </span>
                 <div class="exam-header-actions">
                     <span @click="showHistory = !showHistory" class="exam-action-toggle">
+                        <i :class="showHistory ? 'ri-arrow-go-back-line' : 'ri-folder-history-line'" style="vertical-align: text-bottom;"></i>
                         {{ showHistory ? '返回本学期' : '历史学期' }}
                     </span>
-                    <span v-show="false" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 2px;">
+                    <span v-show="true" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 2px;">
                         [测试]
                     </span>
                 </div>
             </div>
 
             <div v-if="!displayExams || displayExams.length === 0" class="empty-state">
-                <div class="empty-emoji">{{ showHistory ? '🗄️' : '☕' }}</div>
+                <div class="empty-emoji"><i :class="showHistory ? 'ri-inbox-archive-line' : 'ri-cup-line'"></i></div>
                 <p>{{ showHistory ? '暂无历史考试记录' : '本学期暂无考试安排' }}</p>
                 <div style="font-size: 12px; color: #999; margin-top: 5px;">同步教务处后数据将持久化保存在本地</div>
             </div>
@@ -53,9 +55,9 @@ export default {
                     </div>
 
                     <div class="exam-details">
-                        <div><span class="exam-detail-label">🕙 时间：</span>{{ exam.time }}</div>
-                        <div><span class="exam-detail-label">📍 考场：</span><b>{{ exam.room || '待定' }}</b></div>
-                        <div><span class="exam-detail-label">🪑 座位：</span><b class="exam-seat-highlight">{{ exam.seat || '--' }}</b></div>
+                        <div><span class="exam-detail-label"><i class="ri-time-line" style="vertical-align: middle;"></i> 时间：</span>{{ exam.time }}</div>
+                        <div><span class="exam-detail-label"><i class="ri-map-pin-line" style="vertical-align: middle;"></i> 考场：</span><b>{{ exam.room || '待定' }}</b></div>
+                        <div><span class="exam-detail-label"><i class="ri-user-location-line" style="vertical-align: middle;"></i> 座位：</span><b class="exam-seat-highlight">{{ exam.seat || '--' }}</b></div>
 
                         <button v-if="getExamStatus(exam.time).code === 0"
                                 @click="removeExam(exam)"
@@ -78,16 +80,13 @@ export default {
     computed: {
         displayExams() {
             if (!store.examsList) return [];
-
             let filtered = [];
             const currentTerm = store.currentTerm;
-
             if (this.showHistory) {
                 filtered = store.examsList.filter(e => e.term !== currentTerm);
             } else {
                 filtered = store.examsList.filter(e => e.term === currentTerm || !e.term);
             }
-
             return filtered.sort((a, b) => {
                 if (this.showHistory && a.term !== b.term) {
                     return b.term.localeCompare(a.term);
@@ -96,7 +95,6 @@ export default {
                 const parsedB = this.parseTime(b.time);
                 const timeA = parsedA ? parsedA.start.getTime() : 0;
                 const timeB = parsedB ? parsedB.start.getTime() : 0;
-
                 return timeA - timeB;
             });
         }
@@ -155,7 +153,6 @@ export default {
             if (code === 1) return { ...style, background: '#ff3b30', color: '#fff' };
             return { ...style, background: '#e1f0ff', color: '#007aff' };
         },
-
         removeExam(examObj) {
             if (confirm('是否移除该考试记录？(移除后需重新同步方可找回)')) {
                 const realIndex = store.examsList.findIndex(e => e === examObj);
@@ -165,10 +162,8 @@ export default {
                 }
             }
         },
-
         clearExpiredExams() {
             if (!store.examsList || store.examsList.length === 0) return showToast("当前没有考试记录");
-
             const expiredCount = store.examsList.filter(exam => this.getExamStatus(exam.time).code === 0).length;
             if (expiredCount === 0) return showToast("没有已过期的考试");
 
@@ -178,13 +173,11 @@ export default {
                 showToast(`成功清理 ${expiredCount} 门考试`, "success");
             }
         },
-
         saveToLocal() {
             const data = JSON.parse(localStorage.getItem("my_njust_data") || "{}");
             data.exams = store.examsList;
             localStorage.setItem("my_njust_data", JSON.stringify(data));
         },
-
         injectMultiTermData() {
             const n = new Date();
             const fmt = (d) => {

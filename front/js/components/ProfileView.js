@@ -6,7 +6,7 @@ export default {
         <div class="profile-container">
             <div v-if="noticeInfo && noticeInfo.show" class="card notice-card">
                 <div class="notice-header">
-                    <span class="notice-title">📢 最新公告 ({{ noticeInfo.version }})</span>
+                    <span class="notice-title"><i class="ri-notification-3-line" style="vertical-align: text-bottom; margin-right: 4px;"></i>最新公告 ({{ noticeInfo.version }})</span>
                     <span class="notice-date">{{ noticeInfo.date }}</span>
                 </div>
                 <div class="notice-content">
@@ -18,31 +18,7 @@ export default {
             </div>
 
             <div class="card">
-                <div class="card-title">🗓️ 当前学期设置</div>
-                <p class="setting-desc">此设置将全局影响课表同步、考试、空闲教室等查询：</p>
-                <div class="setting-row">
-                    <select v-model="store.currentTerm" @change="saveTerm" class="term-select">
-                        <option v-for="t in store.termOptions" :key="t" :value="t">
-                            {{ t }} {{ t === store.currentTerm ? '(当前选中)' : '' }}
-                        </option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">📅 课表时间校准</div>
-                <p class="setting-desc">如果发现当前周次不对，请在此手动修正：</p>
-                <div class="setting-row">
-                    <span style="font-size: 14px; white-space: nowrap;">当前为第</span>
-                    <input type="number" v-model.number="settingWeek" min="1" max="25" class="week-input">
-                    <span style="font-size: 14px; white-space: nowrap;">周</span>
-                    <div style="flex: 1;"></div>
-                    <button class="btn btn-calibrate" @click="calibrateWeek">一键校准</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">🔄 教务处同步</div>
+                <div class="card-title"><i class="ri-refresh-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>教务处同步</div>
                 <p class="setting-desc">一般账号密码就是学号</p>
                 <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
                 <div class="input-group" style="position: relative;">
@@ -60,16 +36,43 @@ export default {
                     </div>
                 </div>
                 <div style="font-size: 11px; color: #ff9500; margin-bottom: 15px; text-align: right;">
-                    * 教务处响应较慢，验证码可能需等待 5-10 秒
+                    <i class="ri-information-line" style="vertical-align: middle;"></i> 教务处响应较慢，验证码可能需等待 5-10 秒
                 </div>
 
                 <button class="btn" @click="syncAllData" :disabled="loading || isFetchingCaptcha">
+                    <i v-if="loading" class="ri-loader-4-line ri-spin" style="margin-right: 5px;"></i>
                     {{ loading ? '数据抓取中...' : '同步数据' }}
                 </button>
             </div>
 
             <div class="card">
-                <div class="card-title">🎨 界面设置</div>
+                <div class="card-title"><i class="ri-calendar-todo-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>当前学期设置</div>
+                <p class="setting-desc">此设置将全局影响课表同步、考试、空闲教室等查询：</p>
+                <div class="setting-row">
+                    <select v-model="store.currentTerm" @change="saveTerm" class="term-select">
+                        <option v-for="t in store.termOptions" :key="t" :value="t">
+                            {{ t }} {{ t === store.currentTerm ? '(当前选中)' : '' }}
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="ri-timer-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>课表时间校准</div>
+                <p class="setting-desc">如果发现当前周次不对，请在此手动修正：</p>
+                <div class="setting-row">
+                    <span style="font-size: 14px; white-space: nowrap;">当前为第</span>
+                    <input type="number" v-model.number="settingWeek" min="1" max="25" class="week-input">
+                    <span style="font-size: 14px; white-space: nowrap;">周</span>
+                    <div style="flex: 1;"></div>
+                    <button class="btn btn-calibrate" @click="calibrateWeek">一键校准</button>
+                </div>
+            </div>
+
+
+
+            <div class="card">
+                <div class="card-title"><i class="ri-palette-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>界面设置</div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span style="font-size: 14px; color: #333; font-weight: bold;">课表显示模式</span>
                     <div class="switch-capsule" style="margin: 0;">
@@ -81,12 +84,21 @@ export default {
             </div>
 
             <div class="card">
-                <div class="card-title">🛠️ 系统维护</div>
+                <div class="card-title"><i class="ri-tools-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>系统维护</div>
                 <p class="setting-desc">网页异常可尝试拉取或清缓存；如需安装全新功能请检查 App 更新。</p>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">拉取网页最新版本</button>
-                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">清空本地教务缓存</button>
-                    <button class="btn" style="background-color: #007aff; margin: 0; font-weight: bold;" @click="checkApkUpdate">检查软件最新版本</button>
+
+                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">
+                        <i class="ri-delete-bin-line" style="margin-right: 4px;"></i> 清除本地缓存
+                    </button>
+
+                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">
+                        <i class="ri-cloud-windy-line" style="margin-right: 4px;"></i> 更新网页版本
+                    </button>
+
+                    <button class="btn" style="background-color: #007aff; margin: 0; font-weight: bold;" @click="checkApkUpdate">
+                        <i class="ri-smartphone-line" style="margin-right: 4px;"></i> 检查软件更新
+                    </button>
                 </div>
             </div>
         </div>

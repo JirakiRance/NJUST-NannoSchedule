@@ -6,10 +6,10 @@ export default {
         <div class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
 
             <div v-if="!roomSessionValid" class="card" style="margin-top: 15px;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <div style="font-size: 45px; margin-bottom: 10px;">☕</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333;">寻找安静的角落</div>
-                    <div style="font-size: 12px; color: #888; margin-top: 5px;">查询空教室需要保持教务处连接</div>
+                <div class="empty-room-header">
+                    <div class="empty-room-icon"><i class="ri-cup-line" style="color: #8d6e63;"></i></div>
+                    <div class="empty-room-title">寻找安静的角落</div>
+                    <div class="empty-room-desc">查询空教室需要保持教务处连接</div>
                 </div>
                 <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
                 <div class="input-group" style="position: relative;">
@@ -28,22 +28,23 @@ export default {
                     </div>
                 </div>
                 <div style="font-size: 11px; color: #ff9500; margin-bottom: 15px; text-align: right;">
-                    * 教务处响应较慢，验证码可能需等待 5-10 秒
+                    <i class="ri-information-line" style="vertical-align: middle;"></i> 教务处响应较慢，验证码可能需等待 5-10 秒
                 </div>
 
                 <button class="btn" @click="roomLogin" :disabled="isRoomLoggingIn || isFetchingCaptcha">
+                    <i v-if="isRoomLoggingIn" class="ri-loader-4-line ri-spin" style="margin-right: 5px;"></i>
                     {{ isRoomLoggingIn ? '建立连接中...' : '连接并查询' }}
                 </button>
             </div>
 
             <div v-else style="display: flex; flex-direction: column; height: 100%;">
-                <div class="filter-dashboard" style="background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 15px; flex-shrink: 0;">
-                    <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-                        <select v-model.number="roomQuery.dateOffset" class="custom-select" style="padding:10px; border:1px solid #ddd; border-radius:8px; flex:1;">
+                <div class="empty-room-filter-dashboard">
+                    <div class="empty-room-filter-row">
+                        <select v-model.number="roomQuery.dateOffset" class="custom-select" style="flex:1;">
                             <option :value="0">今天</option><option :value="1">明天</option>
                             <option :value="2">后天</option><option :value="3">大后天</option>
                         </select>
-                        <select v-model="roomQuery.building" class="custom-select" style="padding:10px; border:1px solid #ddd; border-radius:8px; flex:1.5;">
+                        <select v-model="roomQuery.building" class="custom-select" style="flex:1.5;">
                             <option value="all">全校所有楼</option>
                             <option value="I">I 区教学楼</option><option value="II">II 区教学楼</option>
                             <option value="IV">IV 区教学楼</option><option value="YF">逸夫楼</option>
@@ -51,37 +52,38 @@ export default {
                         </select>
                     </div>
 
-                    <div style="font-size: 12px; color: #888; margin-bottom: 6px;">选择时段 (可多选，求交集)：</div>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="empty-room-filter-label">选择时段 (可多选，求交集)：</div>
+                    <div class="empty-room-period-grid">
                         <label v-for="p in periodOptions" :key="p.value" class="period-checkbox" :class="{active: roomQuery.periods.includes(p.value)}">
                             <input type="checkbox" :value="p.value" v-model="roomQuery.periods" style="display: none;">
                             {{ p.name }}
                         </label>
                     </div>
 
-                    <button class="btn" style="padding: 10px; font-size: 15px;" @click="searchEmptyRooms" :disabled="isSearchingRooms">
+                    <button class="btn empty-room-btn-search" @click="searchEmptyRooms" :disabled="isSearchingRooms">
+                        <i v-if="isSearchingRooms" class="ri-radar-line ri-spin" style="margin-right: 5px;"></i>
                         {{ isSearchingRooms ? '深度扫描中...' : '开始查询' }}
                     </button>
                 </div>
 
-                <div v-if="allEmptyRooms.length > 0" style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 10px; border-radius: 4px; font-size: 11px; color: #b45309; margin-bottom: 15px; line-height: 1.5;">
-                    <b>🎓 温馨提示：</b> 查出的部分全天空闲教室可能是考研学子的“固定根据地”。推门如发现堆满厚厚的书本或已有大佬在苦读，请把安静留给他们，咱们换下一间哦！
+                <div v-if="allEmptyRooms.length > 0" class="empty-room-warning">
+                    <b><i class="ri-lightbulb-flash-line"></i> 温馨提示：</b> 查出的部分全天空闲教室可能是考研学子的“固定根据地”。推门如发现堆满厚厚的书本或已有大佬在苦读，请把安静留给他们，咱们换下一间哦！
                 </div>
 
-                <div style="flex: 1; overflow-y: auto;">
+                <div class="empty-room-result-area">
                     <div v-if="allEmptyRooms.length > 0">
-                        <div style="font-size: 12px; color: #34c759; margin-bottom: 10px; font-weight: bold;">
-                            ✅ 扫描完毕！找到 {{ allEmptyRooms.length }} 个完美自习室：
+                        <div class="empty-room-result-title">
+                            <i class="ri-check-line" style="vertical-align: text-bottom;"></i> 扫描完毕！找到 {{ allEmptyRooms.length }} 个完美自习室：
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding-bottom: 20px;">
-                            <div v-for="(roomName, idx) in allEmptyRooms" :key="idx"
-                                 style="background: #fff; border-radius: 8px; padding: 12px; border: 1px solid #e5e7eb; text-align: center; font-weight: bold; color: #374151; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                        <div class="empty-room-grid">
+                            <div v-for="(roomName, idx) in allEmptyRooms" :key="idx" class="empty-room-item">
                                 {{ roomName }}
                             </div>
                         </div>
                     </div>
                     <div class="empty-state" v-else-if="!isSearchingRooms">
-                        <div style="font-size: 40px; margin-bottom: 10px;">☕</div><p>选择时间，寻找安静的角落</p>
+                        <div class="empty-emoji"><i class="ri-door-open-line"></i></div>
+                        <p>选择时间，寻找安静的角落</p>
                     </div>
                 </div>
             </div>

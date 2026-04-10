@@ -4,18 +4,18 @@ import { showToast } from '../utils.js';
 export default {
     template: `
         <div class="subpage-container">
-            <div class="setting-desc" style="text-align: center;">
-                点击卡片即可一键复制网址
+            <div style="font-size: 12px; color: #888; margin-bottom: 15px; text-align: center;">
+                <i class="ri-information-line" style="vertical-align: middle;"></i> 点击卡片即可一键复制网址
             </div>
 
             <div class="list-card" v-for="(site, index) in sites" :key="index" @click="copyUrl(site.url)" style="cursor: pointer; transition: transform 0.1s;">
                 <div class="list-card-header" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
-                    <span class="list-card-title">🌐 {{ site.name }}</span>
+                    <span class="list-card-title"><i class="ri-global-line" style="color: #007aff; margin-right: 4px; vertical-align: text-bottom;"></i>{{ site.name }}</span>
                     <span class="list-card-date" style="color: var(--primary-color); background: #e1f0ff; font-weight: bold;">
-                        📄 复制
+                        <i class="ri-file-copy-line" style="vertical-align: middle;"></i> 复制
                     </span>
                 </div>
-                <div style="font-size: 12px; color: #888; margin-top: 8px; word-break: break-all; padding-left: 28px;">
+                <div style="font-size: 12px; color: #888; margin-top: 8px; word-break: break-all; padding-left: 24px;">
                     {{ site.url }}
                 </div>
             </div>

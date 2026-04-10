@@ -4,7 +4,7 @@ export default {
     template: `
         <div class="subpage-container contact-page">
             <div class="card contact-card">
-                <div class="contact-icon">👨‍💻</div>
+                <div class="contact-icon"><i class="ri-terminal-box-line" style="color: #333;"></i></div>
                 <h2 class="contact-title">联系开发者</h2>
                 <p class="contact-desc">如果您在使用过程中遇到任何 Bug，或者有神仙功能建议，欢迎随时通过邮件与我联系！</p>
 
@@ -20,12 +20,12 @@ export default {
     data() {
         return {
             developerEmail: "ralowd22@gmail.com",
-            rawMarkdown: `<div class="markdown-loading">正在加载文档...</div>`
+            rawMarkdown: `<div class="markdown-loading"><i class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i> 正在加载文档...</div>`
         }
     },
     computed: {
         compiledMarkdown() {
-            if (typeof marked === 'undefined') return '<p style="color: red;">Markdown 解析器加载失败，请检查网络。</p>';
+            if (typeof marked === 'undefined') return '<p style="color: red;"><i class="ri-error-warning-line"></i> Markdown 解析器加载失败，请检查网络。</p>';
             if (this.rawMarkdown.includes("正在加载文档")) return this.rawMarkdown;
             return marked.parse(this.rawMarkdown);
         }
