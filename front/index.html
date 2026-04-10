@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>NannoSchedule</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,8 +12,9 @@
 
 <div id="app">
     <div class="header" style="position: relative;">
-
-        <div v-if="store.currentTab === 'other' && store.currentSubPage" class="back-btn" @click="closeSubPage()">◀ 返回</div>
+        <div v-if="store.currentTab === 'other' && store.currentSubPage" class="back-btn" @click="closeSubPage()">
+            <i class="ri-arrow-left-s-line" style="vertical-align: middle; margin-right: 2px;"></i>返回
+        </div>
         {{ pageTitle }}
     </div>
 
@@ -24,16 +26,15 @@
             <div v-show="!store.currentSubPage" class="other-container">
                 <div class="feature-group-title">常用查询</div>
                 <div class="feature-grid">
-
-                    <div class="feature-card" @click="openSubPage('exams')"><div class="feature-icon">📝</div><div class="feature-name">考试安排</div></div>
-                    <div class="feature-card" @click="openSubPage('grades')"><div class="feature-icon">🏆</div><div class="feature-name">成绩查询</div></div>
-                    <div class="feature-card" @click="openSubPage('level_exams')"><div class="feature-icon">🏅</div><div class="feature-name">等级考试</div></div>
-                    <div class="feature-card" @click="openSubPage('books')"><div class="feature-icon">📚</div><div class="feature-name">图书查询</div></div>
-                    <div class="feature-card" @click="openSubPage('empty_rooms')"><div class="feature-icon">🚪</div><div class="feature-name">空闲教室</div></div>
-                    <div class="feature-card" @click="openSubPage('public_course')"><div class="feature-icon">🎒</div><div class="feature-name">蹭课查询</div></div>
-                    <div class="feature-card" @click="openSubPage('websites')"><div class="feature-icon">🌐</div><div class="feature-name">常用网站</div></div>
-                    <div class="feature-card" @click="openSubPage('school_calendar')"><div class="feature-icon">📅</div><div class="feature-name">学校年历</div></div>
-                    <div class="feature-card" @click="openSubPage('contact')"><div class="feature-icon">✉️</div><div class="feature-name">关于作者</div></div>
+                    <div class="feature-card" @click="openSubPage('exams')"><div class="feature-icon"><i class="ri-file-edit-line" style="color: #ff9500;"></i></div><div class="feature-name">考试安排</div></div>
+                    <div class="feature-card" @click="openSubPage('grades')"><div class="feature-icon"><i class="ri-bar-chart-box-line" style="color: #34c759;"></i></div><div class="feature-name">成绩查询</div></div>
+                    <div class="feature-card" @click="openSubPage('level_exams')"><div class="feature-icon"><i class="ri-medal-line" style="color: #ffcc00;"></i></div><div class="feature-name">等级考试</div></div>
+                    <div class="feature-card" @click="openopenSubPage('books')"><div class="feature-icon"><i class="ri-book-open-line" style="color: #5856d6;"></i></div><div class="feature-name">图书查询</div></div>
+                    <div class="feature-card" @click="openSubPage('empty_rooms')"><div class="feature-icon"><i class="ri-door-open-line" style="color: #8e8e93;"></i></div><div class="feature-name">空闲教室</div></div>
+                    <div class="feature-card" @click="openSubPage('public_course')"><div class="feature-icon"><i class="ri-radar-line" style="color: #ff2d55;"></i></div><div class="feature-name">蹭课雷达</div></div>
+                    <div class="feature-card" @click="openSubPage('websites')"><div class="feature-icon"><i class="ri-global-line" style="color: #007aff;"></i></div><div class="feature-name">常用网站</div></div>
+                    <div class="feature-card" @click="openSubPage('school_calendar')"><div class="feature-icon"><i class="ri-calendar-event-line" style="color: #af52de;"></i></div><div class="feature-name">学校年历</div></div>
+                    <div class="feature-card" @click="openSubPage('contact')"><div class="feature-icon"><i class="ri-mail-send-line" style="color: #5ac8fa;"></i></div><div class="feature-name">关于作者</div></div>
                 </div>
             </div>
 
@@ -53,9 +54,9 @@
     </div>
 
     <div class="tabbar">
-        <div class="tab-item" :class="{ active: store.currentTab === 'schedule' }" @click="store.currentTab = 'schedule'"><div class="tab-icon">📅</div><span>课表</span></div>
-        <div class="tab-item" :class="{ active: store.currentTab === 'other' }" @click="store.currentTab = 'other'"><div class="tab-icon">✨</div><span>其他</span></div>
-        <div class="tab-item" :class="{ active: store.currentTab === 'profile' }" @click="store.currentTab = 'profile'"><div class="tab-icon">⚙️</div><span>我的</span></div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'schedule' }" @click="store.currentTab = 'schedule'"><div class="tab-icon"><i class="ri-calendar-todo-line"></i></div><span>课表</span></div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'other' }" @click="store.currentTab = 'other'"><div class="tab-icon"><i class="ri-apps-2-line"></i></div><span>应用</span></div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'profile' }" @click="store.currentTab = 'profile'"><div class="tab-icon"><i class="ri-user-settings-line"></i></div><span>我的</span></div>
     </div>
 </div>
 
