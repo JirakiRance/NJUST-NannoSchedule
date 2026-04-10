@@ -7,9 +7,9 @@ export default {
 
             <div v-if="!roomSessionValid" class="card" style="margin-top: 15px;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <div style="font-size: 45px; margin-bottom: 10px;">🎓</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333;">全校课程雷达</div>
-                    <div style="font-size: 12px; color: #888; margin-top: 5px;">查询蹭课需要保持教务处连接</div>
+                    <div class="empty-emoji">🎓</div>
+                    <div class="list-card-title">全校课程雷达</div>
+                    <div class="setting-desc" style="margin-top: 5px;">查询蹭课需要保持教务处连接</div>
                 </div>
 
                 <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
@@ -47,7 +47,7 @@ export default {
 
                 <div class="search-results-area" style="flex: 1; overflow-y: auto; padding-top: 15px;">
                     <div v-if="courseList.length > 0">
-                        <div style="font-size: 12px; color: #888; margin-bottom: 10px;">发现 {{ courseList.length }} 个可以旁听的教学班</div>
+                        <div class="setting-desc" style="margin-bottom: 10px;">发现 {{ courseList.length }} 个可以旁听的教学班</div>
 
                         <div class="list-card" v-for="(c, idx) in courseList" :key="idx">
                             <div class="list-card-header" style="margin-bottom: 8px; padding-bottom: 8px;">
@@ -66,7 +66,7 @@ export default {
                     </div>
 
                     <div class="empty-state" v-else-if="!isSearching">
-                        <div style="font-size: 40px; margin-bottom: 10px;">🎒</div><p>输入课程名，发掘感兴趣的旁听课</p>
+                        <div class="empty-emoji">🎒</div><p>输入课程名，发掘感兴趣的旁听课</p>
                     </div>
                 </div>
             </div>
@@ -82,8 +82,7 @@ export default {
     methods: {
         async fetchCaptcha() {
             if (this.isFetchingCaptcha) return;
-            this.isFetchingCaptcha = true;
-            this.captchaImg = "";
+            this.isFetchingCaptcha = true; this.captchaImg = "";
             try {
                 const res = await fetch(`${API_BASE}/captcha`);
                 const data = await res.json();
@@ -96,23 +95,16 @@ export default {
             try {
                 const res = await fetch(`${API_BASE}/pure_login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(this.loginForm) });
                 const result = await res.json();
-                if (res.ok) {
-                    this.roomSessionValid = true; showToast("连接教务处成功", "success");
-                } else { showToast(result.detail || "验证失败", "error"); this.fetchCaptcha(); }
+                if (res.ok) { this.roomSessionValid = true; showToast("连接教务处成功", "success"); } else { showToast(result.detail || "验证失败", "error"); this.fetchCaptcha(); }
             } catch (e) { showToast("网络异常"); } finally { this.isRoomLoggingIn = false; }
         },
         async searchCourses() {
             if (!this.searchKeyword.trim()) return showToast("请输入课程名称");
             this.isSearching = true; this.courseList = [];
             try {
-                //const res = await fetch(`${API_BASE}/search_public_courses`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: this.loginForm.session_id, keyword: this.searchKeyword }) });
                 const res = await fetch(`${API_BASE}/search_public_courses`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        session_id: this.loginForm.session_id,
-                        term: store.currentTerm,
-                        keyword: this.searchKeyword
-                    })
+                    body: JSON.stringify({ session_id: this.loginForm.session_id, term: store.currentTerm, keyword: this.searchKeyword })
                 });
                 const result = await res.json();
                 if (res.ok) {

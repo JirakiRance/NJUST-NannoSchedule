@@ -257,3 +257,147 @@
         transform: scale(1);
     }
 }
+
+
+/* ================= 自定义课表 & 导航样式 ================= */
+.top-nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 6px 15px 0 15px;
+}
+
+.nav-placeholder {
+    width: 32px;
+}
+
+.btn-add-custom {
+    width: 32px;
+    height: 32px;
+    font-size: 24px;
+    line-height: 1;
+    padding: 0;
+    color: var(--must-color);
+    margin: 0;
+    background: transparent;
+    border: none;
+}
+
+.custom-tag {
+    background: rgba(0,0,0,0.15);
+    color: #fff;
+    padding: 1px 3px;
+    border-radius: 3px;
+    margin-right: 2px;
+    font-weight: normal;
+    font-size: 8px;
+}
+
+.custom-manager-modal {
+    width: 90%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-manager-scroll {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.custom-manager-subtitle {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.custom-course-item {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    text-align: left;
+    position: relative;
+}
+
+.custom-course-title {
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+    padding-right: 60px;
+}
+
+.custom-course-time {
+    font-size: 12px;
+    color: #666;
+}
+
+.custom-course-meta {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.custom-course-actions {
+    position: absolute;
+    right: 10px;
+    top: 15px;
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn-edit {
+    color: var(--must-color);
+    font-size: 14px;
+}
+
+.action-btn-del {
+    color: #ff3b30;
+    font-size: 14px;
+}
+
+.custom-form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.custom-form-col {
+    flex: 1;
+}
+
+.custom-form-label {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.custom-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    outline: none;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-cancel {
+    background: #e5e5ea;
+    color: #333;
+    margin: 0;
+}
+
+.btn-submit {
+    background: #34c759;
+    margin: 0;
+}

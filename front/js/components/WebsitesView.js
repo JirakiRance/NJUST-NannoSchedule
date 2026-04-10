@@ -4,7 +4,7 @@ import { showToast } from '../utils.js';
 export default {
     template: `
         <div class="subpage-container">
-            <div style="font-size: 12px; color: #888; margin-bottom: 15px; text-align: center;">
+            <div class="setting-desc" style="text-align: center;">
                 点击卡片即可一键复制网址
             </div>
 
@@ -44,11 +44,9 @@ export default {
     methods: {
         async copyUrl(url) {
             try {
-                // 现代浏览器原生剪贴板 API
                 await navigator.clipboard.writeText(url);
                 showToast("链接已复制，快去粘贴吧！", "success");
             } catch (err) {
-                // 兼容老旧手机浏览器的后备方案
                 const input = document.createElement('input');
                 input.setAttribute('value', url);
                 document.body.appendChild(input);
