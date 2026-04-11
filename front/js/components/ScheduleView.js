@@ -24,15 +24,20 @@ export default {
                     </button>
                 </div>
 
-                <div class="week-nav" v-show="viewMode === 'week'">
-                    <button class="icon-btn" @click="changeWeek(-1)"><i class="ri-arrow-left-s-line"></i></button>
-                    <div class="week-title" @click="showWeekSelector = true">
-                        第 {{ store.currentWeek }} 周 <span class="week-tag" v-if="store.currentWeek === store.realWeek">本周</span>
+                <div class="week-nav" v-show="viewMode === 'week'" style="display: flex; height: 36px; padding: 0;">
+                    <button class="icon-btn" style="height: 100%; display: flex; align-items: center; padding: 0 20px;" @click="changeWeek(-1)"><i class="ri-arrow-left-s-line"></i></button>
+                    <div class="week-title" style="height: 100%; display: flex; align-items: center; justify-content: center; min-width: 80px; transition: color 0.2s;"
+                         :style="{ color: store.currentWeek === store.realWeek ? 'var(--primary-color)' : '#333' }"
+                         @click="showWeekSelector = true">
+                        第 {{ store.currentWeek }} 周
                     </div>
-                    <button class="icon-btn" @click="changeWeek(1)"><i class="ri-arrow-right-s-line"></i></button>
+                    <button class="icon-btn" style="height: 100%; display: flex; align-items: center; padding: 0 20px;" @click="changeWeek(1)"><i class="ri-arrow-right-s-line"></i></button>
                 </div>
-                <div class="week-nav" v-show="viewMode === 'semester'" style="justify-content: center;">
-                    <div class="setting-desc" style="margin:0;"><i class="ri-information-line" style="vertical-align: middle;"></i> 点击重叠卡片，可查看该时段所有课程</div>
+
+                <div class="week-nav" v-show="viewMode === 'semester'" style="display: flex; justify-content: center; height: 36px; padding: 0;">
+                    <div class="setting-desc" style="margin: 0; font-size: 12px; color: #888; display: flex; align-items: center; height: 100%;">
+                        <i class="ri-information-line" style="margin-right: 4px; font-size: 14px;"></i> 点击重叠卡片，可查看该时段所有课程
+                    </div>
                 </div>
 
                 <div class="schedule-container">
@@ -138,6 +143,17 @@ export default {
                 </div>
             </div>
 
+            <div class="modal-overlay" v-if="showBgMenu" @click.self="showBgMenu = false">
+                <div class="modal-content" style="max-height: initial; padding: 20px;">
+                    <div class="modal-title" style="margin-bottom: 20px;">背景设置</div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button class="btn" style="margin: 0;" @click="execChangeBg">更改背景</button>
+                        <button class="btn btn-danger" style="margin: 0;" @click="execClearBg">清除背景</button>
+                        <button class="btn" style="margin: 0; background: #e5e5ea; color: #333;" @click="showBgMenu = false">取消</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="modal-overlay" v-if="showCustomManager" @click.self="showCustomManager = false">
                 <div class="modal-content custom-manager-modal">
                     <div class="modal-title" style="margin-bottom: 10px;">
@@ -233,6 +249,7 @@ export default {
             touchStartX: 0, touchStartY: 0,
             bgImage: localStorage.getItem('njust_schedule_bg') || '',
             showCropper: false, rawImgSrc: '',
+            showBgMenu: false,
             cropX: 0, cropY: 0, cropScale: 1,
             lastCropX: 0, lastCropY: 0, lastScale: 1,
             isDragging: false, isPinching: false, touchStartDist: 0, startTouches: [],
@@ -307,23 +324,45 @@ export default {
         }
     },
     watch: {
-        'store.scheduleViewType'() { this.calculateSlotHeight(); }
+        'store.scheduleViewType'() {
+            this.calculateSlotHeight();
+        },
+        viewMode() {
+            this.$nextTick(() => {
+                this.calculateSlotHeight();
+                const container = document.querySelector('.content-area');
+                if (container && this.store.scheduleViewType === 'scroll') {
+                    container.scrollTop = 0;
+                }
+            });
+        }
     },
     methods: {
 
         // 触发背景图片选择
+        // 1. 触发背景按钮点击
         triggerBgUpload() {
             if (this.bgImage) {
-                if(confirm("确定要更换背景吗？点击【取消】将清除当前背景。")) {
-                    document.getElementById('bgUploader').click();
-                } else {
-                    this.bgImage = '';
-                    localStorage.removeItem('njust_schedule_bg');
-                    showToast("背景已清除");
-                }
+                // 如果已经有背景了，不再用原生的 confirm，而是打开我们写的三个选项菜单
+                this.showBgMenu = true;
             } else {
+                // 没有背景时，直接唤起相册
                 document.getElementById('bgUploader').click();
             }
+        },
+
+        // 2. 执行：更改背景
+        execChangeBg() {
+            this.showBgMenu = false;
+            document.getElementById('bgUploader').click();
+        },
+
+        // 3. 执行：清除背景
+        execClearBg() {
+            this.showBgMenu = false;
+            this.bgImage = '';
+            localStorage.removeItem('njust_schedule_bg');
+            showToast("背景已清除", "success");
         },
 
         // 图片选择后，利用 Canvas 强力压缩，转存 Base64
@@ -525,7 +564,9 @@ export default {
         calculateSlotHeight() {
             const screenHeight = window.innerHeight; const screenWidth = window.innerWidth;
             if (screenWidth > screenHeight || this.store.scheduleViewType === 'scroll') { this.pixelsPerSlot = 60; } else {
-                const availableHeight = screenHeight - 200; this.pixelsPerSlot = availableHeight / this.totalSlots;
+
+                const availableHeight = screenHeight - 240;
+                this.pixelsPerSlot = availableHeight / this.totalSlots;
             }
             document.documentElement.style.setProperty('--slot-height', this.pixelsPerSlot + 'px');
         },
@@ -594,7 +635,13 @@ export default {
         }
     },
     mounted() {
-        this.calculateSlotHeight();
+        this.$nextTick(() => {
+            this.calculateSlotHeight();
+            const container = document.querySelector('.content-area');
+            if (container) {
+                container.scrollTop = 0;
+            }
+        });
         window.addEventListener('resize', this.calculateSlotHeight);
         this.updateTimeLine();
         this.timeTrackerInterval = setInterval(() => { this.updateTimeLine(); }, 60000);
