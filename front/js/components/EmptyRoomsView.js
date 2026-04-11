@@ -52,10 +52,12 @@ export default {
                         </select>
                     </div>
 
-                    <div class="empty-room-filter-label">选择时段 (可多选，求交集)：</div>
+                    <div class="empty-room-filter-label">选择时段 (最多可选 4 个，求交集)：</div>
                     <div class="empty-room-period-grid">
-                        <label v-for="p in periodOptions" :key="p.value" class="period-checkbox" :class="{active: roomQuery.periods.includes(p.value)}">
-                            <input type="checkbox" :value="p.value" v-model="roomQuery.periods" style="display: none;">
+                        <label v-for="p in periodOptions" :key="p.value"
+                               class="period-checkbox"
+                               :class="{active: roomQuery.periods.includes(p.value)}"
+                               @click="togglePeriod(p.value)">
                             {{ p.name }}
                         </label>
                     </div>
@@ -67,7 +69,7 @@ export default {
                 </div>
 
                 <div v-if="allEmptyRooms.length > 0" class="empty-room-warning">
-                    <b><i class="ri-lightbulb-flash-line"></i> 温馨提示：</b> 查出的部分全天空闲教室可能是考研学子的“固定根据地”。推门如发现堆满厚厚的书本或已有大佬在苦读，请把安静留给他们，咱们换下一间哦！
+                    <b><i class="ri-lightbulb-flash-line"></i> 温馨提示：</b> 咱们已经特意避开了全天空闲的“考研神仙教室”，如果推门还是发现大佬在苦读，请把安静留给他们，换下一间哦！
                 </div>
 
                 <div class="empty-room-result-area">
@@ -91,7 +93,7 @@ export default {
     `,
     data() {
         return {
-            store, roomSessionValid: false, isRoomLoggingIn: false, isFetchingCaptcha: false,showPassword: false,
+            store, roomSessionValid: false, isRoomLoggingIn: false, isFetchingCaptcha: false, showPassword: false,
             captchaImg: "", loginForm: { username: "", password: "", captcha: "", session_id: "" },
             isSearchingRooms: false, allEmptyRooms: [],
             periodOptions: [
@@ -103,6 +105,22 @@ export default {
         }
     },
     methods: {
+        // 接管时段点击逻辑
+        togglePeriod(val) {
+            const idx = this.roomQuery.periods.indexOf(val);
+            if (idx !== -1) {
+                // 如果已选中，则取消选中
+                this.roomQuery.periods.splice(idx, 1);
+            } else {
+                // 如果未选中，先判断是不是已经选了 4 个了
+                if (this.roomQuery.periods.length >= 4) {
+                    showToast("为考研学子留片天地，最多只允许同时选择 4 个时段", "error");
+                    return; // 物理阻断，无法继续添加
+                }
+                this.roomQuery.periods.push(val);
+            }
+        },
+
         async fetchCaptcha() {
             if (this.isFetchingCaptcha) return;
             this.isFetchingCaptcha = true;
@@ -134,7 +152,9 @@ export default {
         },
         async searchEmptyRooms() {
             if (this.roomQuery.periods.length === 0) return showToast("请至少勾选一个大节", "error");
-            this.isSearchingRooms = true; this.allEmptyRooms = [];
+            this.isSearchingRooms = true;
+            this.allEmptyRooms = [];
+
             let targetDate = new Date(); targetDate.setDate(targetDate.getDate() + this.roomQuery.dateOffset);
             let start = new Date(store.termStartDate); start.setHours(0, 0, 0, 0); targetDate.setHours(0, 0, 0, 0);
             let diffDays = Math.floor((targetDate - start) / (1000 * 60 * 60 * 24));
@@ -142,25 +162,49 @@ export default {
             let targetDay = targetDate.getDay() || 7;
 
             try {
-                const res = await fetch(`${API_BASE}/empty_rooms`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        session_id: this.loginForm.session_id,
-                        term: store.currentTerm,
-                        week: targetWeek.toString(),
-                        day: targetDay.toString(),
-                        period_list: this.roomQuery.periods,
-                        building: this.roomQuery.building
-                    })
-                });
-                const result = await res.json();
-                if (res.ok) {
-                    this.allEmptyRooms = result.data.sort((a, b) => a.localeCompare(b, 'zh-CN', {numeric: true}));
-                    if (this.allEmptyRooms.length === 0) showToast("该时段暂无空闲教室", "error");
-                } else {
-                    if (res.status === 400 || res.status === 401) { this.roomSessionValid = false; this.fetchCaptcha(); showToast("连接断开，请重新验证", "error"); } else showToast(result.detail || "查询失败");
+                let intersectedRooms = null;
+
+                for (const period of this.roomQuery.periods) {
+                    const res = await fetch(`${API_BASE}/empty_rooms`, {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            session_id: this.loginForm.session_id,
+                            term: store.currentTerm,
+                            week: targetWeek.toString(),
+                            day: targetDay.toString(),
+                            period_list: [period],
+                            building: this.roomQuery.building
+                        })
+                    });
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        if (intersectedRooms === null) {
+                            intersectedRooms = result.data || [];
+                        } else {
+                            intersectedRooms = intersectedRooms.filter(r => (result.data || []).includes(r));
+                        }
+                        if (intersectedRooms.length === 0) break;
+                    } else {
+                        if (res.status === 400 || res.status === 401) {
+                            this.roomSessionValid = false;
+                            this.fetchCaptcha();
+                            showToast("连接断开，请重新验证", "error");
+                        } else {
+                            showToast(result.detail || "查询失败");
+                        }
+                        return;
+                    }
                 }
-            } catch (e) { showToast("网络异常"); } finally { this.isSearchingRooms = false; }
+
+                this.allEmptyRooms = (intersectedRooms || []).sort((a, b) => a.localeCompare(b, 'zh-CN', {numeric: true}));
+                if (this.allEmptyRooms.length === 0) showToast("该组合时段内无完美空闲教室", "error");
+
+            } catch (e) {
+                showToast("网络异常");
+            } finally {
+                this.isSearchingRooms = false;
+            }
         }
     },
     mounted() { this.fetchCaptcha(); }
