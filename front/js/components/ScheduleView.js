@@ -565,7 +565,7 @@ export default {
             const screenHeight = window.innerHeight; const screenWidth = window.innerWidth;
             if (screenWidth > screenHeight || this.store.scheduleViewType === 'scroll') { this.pixelsPerSlot = 60; } else {
 
-                const availableHeight = screenHeight - 240;
+                const availableHeight = screenHeight - 210;
                 this.pixelsPerSlot = availableHeight / this.totalSlots;
             }
             document.documentElement.style.setProperty('--slot-height', this.pixelsPerSlot + 'px');
