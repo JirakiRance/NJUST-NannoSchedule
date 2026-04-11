@@ -243,6 +243,17 @@
     animation: breathing 2s infinite ease-in-out;
 }
 
+/* 今日整列高亮背景 */
+.current-day-column {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    /* 使用与表头 is-today 完全一致的 rgba 浅蓝色，保证视觉统一 */
+    background-color: rgba(91, 155, 213, 0.2);
+    z-index: 1; /* 放在底层，不遮挡课程卡片 */
+    pointer-events: none; /* 事件穿透，确保不会阻挡用户的滑动或点击操作 */
+}
+
 @keyframes breathing {
     0% {
         box-shadow: 0 0 4px rgba(255, 59, 48, 0.4);
@@ -400,4 +411,103 @@
 .btn-submit {
     background: #34c759;
     margin: 0;
+}
+
+/* ================= 背景图与全局半透明适配 ================= */
+
+.schedule-bg-layer {
+    position: fixed !important; /* 强制锁定在设备屏幕视口上 */
+    top: 0;
+    left: 0;
+    width: 100vw; /* 撑满整个屏幕的宽 */
+    height: 100vh; /* 撑满整个屏幕的高 */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1; /* 改为 -1，彻底沉入最底端，绝不遮挡任何弹窗或菜单 */
+    pointer-events: none;
+}
+
+/* 降低原本网格系统的 z-index，让它浮在背景上 */
+.has-bg .schedule-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* 动态透明化：当有背景图时，让所有顶栏、边栏变成透明磨砂玻璃效果 */
+.has-bg .top-nav-bar,
+.has-bg .week-nav,
+.has-bg .time-sidebar,
+.has-bg .week-header {
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* 让主体网格区域彻底透明 */
+.has-bg .course-grid {
+    background-color: transparent !important;
+}
+
+/* 微调透明模式下的卡片，让文字更清晰 */
+.has-bg .course-card {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* ================= 全屏图片裁剪器 ================= */
+.cropper-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+}
+
+.cropper-viewport {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+}
+
+.cropper-viewport:active {
+    cursor: grabbing;
+}
+
+.cropper-img {
+    position: absolute;
+    top: 0; left: 0;
+    transform-origin: 0 0;
+    touch-action: none; /* 让浏览器放弃触控接管，交给我们自己处理拖拽 */
+    will-change: transform;
+}
+
+.cropper-mask {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    box-shadow: inset 0 0 0 2px var(--primary-color);
+    pointer-events: none; /* 让事件穿透到下面的图片上 */
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 30px;
+}
+
+.cropper-guide {
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    backdrop-filter: blur(4px);
+}
+
+.cropper-actions {
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    background: #111;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }

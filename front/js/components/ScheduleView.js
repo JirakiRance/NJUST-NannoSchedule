@@ -3,15 +3,23 @@ import { showToast } from '../utils.js';
 
 export default {
     template: `
-        <div style="height: 100%; position: relative;" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
+        <div style="height: 100%; position: relative;" @touchstart="handleTouchStart" @touchend="handleTouchEnd" :class="{'has-bg': bgImage}">
+
+            <div v-if="bgImage" :style="{ backgroundImage: 'url(' + bgImage + ')' }" class="schedule-bg-layer"></div>
+
+            <input type="file" id="bgUploader" accept="image/*" style="display: none" @change="handleBgUpload">
+
             <div v-if="combinedCourseList.length > 0 || store.customCoursesList.length > 0">
                 <div class="top-nav-bar">
-                    <div class="nav-placeholder"></div>
+                    <button class="icon-btn btn-set-bg" style="width: 50px; display: flex; align-items: center; justify-content: flex-start; gap: 3px; padding: 0; margin: 0; color: var(--primary-color); background: transparent; border: none;" @click="triggerBgUpload">
+                        <i class="ri-image-add-line" style="font-size: 18px;"></i> 背景
+                    </button>
+
                     <div class="switch-capsule" style="margin: 0;">
                         <div class="switch-item" :class="{active: viewMode === 'week'}" @click="viewMode = 'week'">单周模式</div>
                         <div class="switch-item" :class="{active: viewMode === 'semester'}" @click="viewMode = 'semester'">全学期模式</div>
                     </div>
-                    <button class="icon-btn btn-add-custom" style="width: auto; font-size: 14px; display: flex; align-items: center; gap: 3px;" @click="openCustomManager">
+                    <button class="icon-btn btn-add-custom" style="width: 50px; font-size: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 3px; padding: 0; margin: 0; color: var(--primary-color); background: transparent; border: none;" @click="openCustomManager">
                         <i class="ri-add-box-line" style="font-size: 18px;"></i> 添加
                     </button>
                 </div>
@@ -46,6 +54,11 @@ export default {
                             </div>
                         </div>
                         <div class="course-grid">
+                            <div class="current-day-column"
+                                 v-if="store.currentWeek === store.realWeek"
+                                 :style="{ left: 'calc(' + ((100 / 7) * (currentDayOfWeek - 1)) + '%)', width: 'calc(100% / 7)' }">
+                            </div>
+
                             <div class="time-line"
                                  v-if="viewMode === 'week' && store.currentWeek === store.realWeek && showTimeLine"
                                  :style="{ top: currentTimeY + 'px', left: 'calc(' + ((100 / 7) * (currentDayOfWeek - 1)) + '%)', width: 'calc(100% / 7)' }">
@@ -192,6 +205,25 @@ export default {
                     </div>
                 </div>
             </div>
+
+            <div class="cropper-overlay" v-if="showCropper" @touchmove.prevent>
+                <div class="cropper-viewport"
+                     @touchstart="cropStart" @mousedown="cropStart"
+                     @touchmove="cropMove" @mousemove="cropMove"
+                     @touchend="cropEnd" @mouseup="cropEnd" @mouseleave="cropEnd"
+                     @wheel.prevent="cropWheel">
+                    <img :src="rawImgSrc" class="cropper-img" ref="cropImg"
+                         :style="{ transform: 'translate(' + cropX + 'px, ' + cropY + 'px) scale(' + cropScale + ')' }">
+                    <div class="cropper-mask">
+                        <div class="cropper-guide">可以单指拖拽定位，双指缩放大小</div>
+                    </div>
+                </div>
+                <div class="cropper-actions">
+                    <button class="btn btn-cancel" @click="showCropper = false" style="margin:0;">取消</button>
+                    <button class="btn btn-submit" @click="confirmCrop" style="margin:0;">保存为背景</button>
+                </div>
+            </div>
+
         </div>
     `,
     data() {
@@ -199,6 +231,11 @@ export default {
             store,
             viewMode: "week",
             touchStartX: 0, touchStartY: 0,
+            bgImage: localStorage.getItem('njust_schedule_bg') || '',
+            showCropper: false, rawImgSrc: '',
+            cropX: 0, cropY: 0, cropScale: 1,
+            lastCropX: 0, lastCropY: 0, lastScale: 1,
+            isDragging: false, isPinching: false, touchStartDist: 0, startTouches: [],
             colors: [
                 "#87CEFA", "#DDA0DD", "#F08080", "#6495ED", "#FFB6C1",
                 "#20B2AA", "#F4A460", "#B0C4DE", "#FFDAB9", "#9370DB", "#40E0D0"
@@ -273,6 +310,146 @@ export default {
         'store.scheduleViewType'() { this.calculateSlotHeight(); }
     },
     methods: {
+
+        // 触发背景图片选择
+        triggerBgUpload() {
+            if (this.bgImage) {
+                if(confirm("确定要更换背景吗？点击【取消】将清除当前背景。")) {
+                    document.getElementById('bgUploader').click();
+                } else {
+                    this.bgImage = '';
+                    localStorage.removeItem('njust_schedule_bg');
+                    showToast("背景已清除");
+                }
+            } else {
+                document.getElementById('bgUploader').click();
+            }
+        },
+
+        // 图片选择后，利用 Canvas 强力压缩，转存 Base64
+        handleBgUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    this.rawImgSrc = e.target.result;
+                    this.showCropper = true;
+
+                    // 计算让图片恰好填满屏幕的初始缩放比例 (Cover 模式)
+                    const screenW = window.innerWidth;
+                    const screenH = window.innerHeight;
+                    const scale = Math.max(screenW / img.width, screenH / img.height);
+
+                    this.cropScale = scale;
+                    this.lastScale = scale;
+                    // 默认居中显示
+                    this.cropX = (screenW - img.width * scale) / 2;
+                    this.cropY = (screenH - img.height * scale) / 2;
+                    this.lastCropX = this.cropX;
+                    this.lastCropY = this.cropY;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        },
+
+        cropWheel(e) {
+            // 设置每次滚动的缩放灵敏度（0.1代表每次滚动变化10%）
+            const zoomFactor = 0.1;
+
+            if (e.deltaY < 0) {
+                // 滚轮向上滚：放大
+                this.cropScale = this.lastScale * (1 + zoomFactor);
+            } else {
+                // 滚轮向下滚：缩小
+                this.cropScale = this.lastScale * (1 - zoomFactor);
+            }
+
+            // 加一个极限保护，防止缩得太小找不到图片，或者放得太大浏览器卡死
+            if (this.cropScale < 0.1) this.cropScale = 0.1;
+            if (this.cropScale > 10) this.cropScale = 10;
+
+            // 同步 lastScale，保证下次拖拽或继续滚动时基准正确
+            this.lastScale = this.cropScale;
+        },
+
+        // 触摸/鼠标 按下：记录初始位置和双指距离
+        cropStart(e) {
+            if (e.type === 'touchstart' && e.touches.length === 2) {
+                this.isPinching = true;
+                this.touchStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                return;
+            }
+            this.isDragging = true;
+            this.isPinching = false;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            this.startTouches = [{ x: clientX, y: clientY }];
+        },
+
+        // 触摸/鼠标 移动：计算平移或缩放
+        cropMove(e) {
+            if (!this.isDragging && !this.isPinching) return;
+            e.preventDefault(); // 阻止屏幕跟随滚动
+
+            if (this.isPinching && e.touches && e.touches.length === 2) {
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const scaleDelta = dist / this.touchStartDist;
+                this.cropScale = this.lastScale * scaleDelta;
+                return;
+            }
+
+            if (this.isDragging) {
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                this.cropX = this.lastCropX + (clientX - this.startTouches[0].x);
+                this.cropY = this.lastCropY + (clientY - this.startTouches[0].y);
+            }
+        },
+
+        // 触摸/鼠标 抬起：保存最后的位置参数
+        cropEnd() {
+            this.isDragging = false;
+            this.isPinching = false;
+            this.lastCropX = this.cropX;
+            this.lastCropY = this.cropY;
+            this.lastScale = this.cropScale;
+        },
+
+        // 点击确认：截取屏幕可视区域，压制 Base64 保存！
+        confirmCrop() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+
+            // 划定 Canvas 尺寸与屏幕 1:1 等大
+            canvas.width = screenW;
+            canvas.height = screenH;
+
+            const img = this.$refs.cropImg;
+
+            // 绘制核心：通过坐标转换，把拖拽好的画面精确“印”到画布上
+            ctx.translate(this.cropX, this.cropY);
+            ctx.scale(this.cropScale, this.cropScale);
+            ctx.drawImage(img, 0, 0);
+
+            // 导出 60% 画质的 JPEG（背景图 60% 足够清晰且体积超小）
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+
+            try {
+                localStorage.setItem('njust_schedule_bg', compressedBase64);
+                this.bgImage = compressedBase64;
+                this.showCropper = false;
+                showToast("背景裁剪并设置成功！", "success");
+            } catch (err) {
+                showToast("图片依然过大，保存失败", "error");
+            }
+        },
+
         getCourseTimeRange(start, duration) {
             const startTimes = ["", "08:00", "08:50", "09:40", "10:40", "11:30", "14:00", "14:50", "15:50", "16:40", "17:30", "19:00", "19:50", "20:40"];
             const endTimes =   ["", "08:45", "09:35", "10:25", "11:25", "12:15", "14:45", "15:35", "16:35", "17:25", "18:15", "19:45", "20:35", "21:25"];
