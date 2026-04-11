@@ -66,7 +66,7 @@ export default {
 
                             <div class="time-line"
                                  v-if="viewMode === 'week' && store.currentWeek === store.realWeek && showTimeLine"
-                                 :style="{ top: currentTimeY + 'px', left: 'calc(' + ((100 / 7) * (currentDayOfWeek - 1)) + '%)', width: 'calc(100% / 7)' }">
+                                 :style="{ top: currentTimeY + 'px', left: 'calc(' + ((100 / 7) * (currentDayOfWeek - 1)) + '%)', width: 'calc(100% / 7)', transition: isTimeLineAnimating ? 'top 1s linear' : 'none' }">
                                  <div class="time-dot"></div>
                             </div>
 
@@ -260,6 +260,7 @@ export default {
             showModal: false, showWeekSelector: false, selectedCourseGroup: [],
             currentTimeY: 0, currentDayOfWeek: 1, showTimeLine: false, timeTrackerInterval: null,
             pixelsPerSlot: 60, totalSlots: 15,
+            isTimeLineAnimating: false, animTimer: null,
 
             showCustomManager: false,
             isEditingCustom: false,
@@ -562,13 +563,20 @@ export default {
             return Math.abs(hash);
         },
         calculateSlotHeight() {
+            // 重新排版前先关闭动画，防止光追线乱飞
+            this.isTimeLineAnimating = false;
+
             const screenHeight = window.innerHeight; const screenWidth = window.innerWidth;
             if (screenWidth > screenHeight || this.store.scheduleViewType === 'scroll') { this.pixelsPerSlot = 60; } else {
-
                 const availableHeight = screenHeight - 210;
                 this.pixelsPerSlot = availableHeight / this.totalSlots;
             }
             document.documentElement.style.setProperty('--slot-height', this.pixelsPerSlot + 'px');
+            this.updateTimeLine();
+
+            // 排版瞬间就位后（延时100毫秒），重新开启一分钟一次的自然平滑动画
+            if (this.animTimer) clearTimeout(this.animTimer);
+            this.animTimer = setTimeout(() => { this.isTimeLineAnimating = true; }, 100);
         },
         getStartTime(course) {
             if (course.isPending) return "";
@@ -643,7 +651,7 @@ export default {
             }
         });
         window.addEventListener('resize', this.calculateSlotHeight);
-        this.updateTimeLine();
+        //this.updateTimeLine();
         this.timeTrackerInterval = setInterval(() => { this.updateTimeLine(); }, 60000);
     },
     unmounted() {
