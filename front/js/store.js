@@ -11,6 +11,14 @@ const defaultTerms = ["2026-2027-2", "2026-2027-1", "2025-2026-2", "2025-2026-1"
 // 读取本地持久化的自定义课表
 const savedCustomCourses = JSON.parse(localStorage.getItem("my_njust_custom_courses") || "[]");
 
+// 读取并立即应用主题颜色，防止闪烁
+const savedThemeColor = localStorage.getItem("my_njust_theme_color") || "#5b9bd5";
+document.documentElement.style.setProperty('--primary-color', savedThemeColor);
+
+// 读取并立即应用深浅色模式，防止闪烁
+const savedThemeMode = localStorage.getItem("my_njust_theme_mode") || "light";
+document.documentElement.setAttribute('data-theme', savedThemeMode);
+
 export const store = reactive({
     currentTab: "schedule",
     currentSubPage: "",
@@ -30,5 +38,14 @@ export const store = reactive({
     scheduleViewType: localStorage.getItem("my_njust_view_type") || "fixed",
     termStartDate: savedStartDate,
     currentWeek: initWeek,
-    realWeek: initWeek
+    realWeek: initWeek,
+
+    // 主题颜色状态
+    themeColor: savedThemeColor,
+    themeMode: savedThemeMode,
+
+    // 三个精细化不透明度状态
+    highlightOpacity: Number(localStorage.getItem("my_njust_highlight_opacity") ?? 0.2),
+    cardOpacity: Number(localStorage.getItem("my_njust_card_opacity") ?? 0.95),
+    bgOpacity: Number(localStorage.getItem("my_njust_bg_opacity") ?? 1.0)
 });

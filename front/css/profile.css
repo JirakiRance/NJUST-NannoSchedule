@@ -367,3 +367,101 @@
     flex-shrink: 0;
     margin: 0;
 }
+
+/* ================= 颜色主题选择器 ================= */
+.theme-color-row {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    justify-content: space-between;
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.color-swatch:active {
+    transform: scale(0.9);
+}
+
+.color-swatch.active {
+    transform: scale(1.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    border: 2px solid #fff;
+}
+
+/* ================= 设置页不透明度调节区 ================= */
+.opacity-settings-section {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px dashed #eee;
+}
+
+.opacity-settings-title {
+    font-size: 14px;
+    color: #333;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.opacity-slider-group {
+    margin-bottom: 15px;
+}
+
+.opacity-slider-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+/* ================= 优雅的自定义滑动条 ================= */
+/* 彻底覆盖系统自带的 range 样式，告别强制黑色对比度轨道 */
+.custom-range {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+    margin: 6px 0;
+}
+
+.custom-range:focus {
+    outline: none;
+}
+
+/* 自定义轨道：永远保持干净的浅灰色 */
+.custom-range::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    background: #e5e5ea;
+    border-radius: 4px;
+}
+
+/* 自定义滑块圆点：完美跟随主题色，带立体阴影 */
+.custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    margin-top: -7px; /* 调整圆点与轨道的垂直居中 */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.custom-range::-webkit-slider-thumb:active {
+    transform: scale(1.15); /* 拖拽时的小气泡反馈 */
+}

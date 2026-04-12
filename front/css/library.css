@@ -37,7 +37,9 @@
 }
 
 .search-btn:disabled {
-    background: #a0cfff;
+    background-color: var(--primary-color);
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .book-card {

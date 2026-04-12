@@ -5,7 +5,7 @@ export default {
     template: `
         <div style="height: 100%; position: relative;" @touchstart="handleTouchStart" @touchend="handleTouchEnd" :class="{'has-bg': bgImage}">
 
-            <div v-if="bgImage" :style="{ backgroundImage: 'url(' + bgImage + ')' }" class="schedule-bg-layer"></div>
+            <div v-if="bgImage" :style="{ backgroundImage: 'url(' + bgImage + ')', opacity: store.bgOpacity }" class="schedule-bg-layer"></div>
 
             <input type="file" id="bgUploader" accept="image/*" style="display: none" @change="handleBgUpload">
 
@@ -61,7 +61,7 @@ export default {
                         <div class="course-grid">
                             <div class="current-day-column"
                                  v-if="store.currentWeek === store.realWeek"
-                                 :style="{ left: 'calc(' + ((100 / 7) * (currentDayOfWeek - 1)) + '%)', width: 'calc(100% / 7)' }">
+                                 :style="{ left: 'calc(' + ((100 / 7) * (currentDayOfWeek - 1)) + '%)', width: 'calc(100% / 7)', backgroundColor: getHighlightColor() }">
                             </div>
 
                             <div class="time-line"
@@ -604,6 +604,18 @@ export default {
         openDetails(group) { this.selectedCourseGroup = group; this.showModal = true; },
         closeDetails() { this.showModal = false; this.selectedCourseGroup = []; },
         getDayName(d) { return ["一", "二", "三", "四", "五", "六", "日"][d - 1] || "未知"; },
+
+        // 动态解析主题色并注入不透明度 (给当日列高亮使用)
+        getHighlightColor() {
+            let hex = this.store.themeColor || '#5b9bd5';
+            if (hex.startsWith('#')) hex = hex.slice(1);
+            let r = parseInt(hex.substring(0, 2), 16) || 91;
+            let g = parseInt(hex.substring(2, 4), 16) || 155;
+            let b = parseInt(hex.substring(4, 6), 16) || 213;
+            return `rgba(${r}, ${g}, ${b}, ${this.store.highlightOpacity})`;
+        },
+
+        // 让卡片也支持不透明度渲染
         getGroupCardStyle(group, index) {
             const minStart = Math.min(...group.map(c => c.start));
             const maxEnd = Math.max(...group.map(c => c.start + c.duration));
@@ -613,11 +625,21 @@ export default {
             const hashString = firstCourse.name;
             const colorIndex = this.getStringHash(hashString) % this.colors.length;
 
+            // 获取计算出的基础 Hex 颜色
+            let baseHex = firstCourse.isCustom ? this.shadeColor(this.colors[colorIndex], -10) : this.colors[colorIndex];
+
+            // 转化为 RGBA 并混入用户设置的卡片透明度
+            if (baseHex.startsWith('#')) baseHex = baseHex.slice(1);
+            let r = parseInt(baseHex.substring(0, 2), 16);
+            let g = parseInt(baseHex.substring(2, 4), 16);
+            let b = parseInt(baseHex.substring(4, 6), 16);
+            let rgbaColor = `rgba(${r}, ${g}, ${b}, ${this.store.cardOpacity})`;
+
             return {
                 left: 'calc(' + ((100 / 7) * (firstCourse.day - 1)) + '% + 2px)',
                 top: ((minStart - 1) * this.pixelsPerSlot + 2) + 'px',
                 height: (maxDuration * this.pixelsPerSlot - 4) + 'px',
-                backgroundColor: firstCourse.isCustom ? this.shadeColor(this.colors[colorIndex], -10) : this.colors[colorIndex],
+                backgroundColor: rgbaColor,
                 border: firstCourse.isCustom ? '1px dashed rgba(0,0,0,0.2)' : 'none'
             };
         },

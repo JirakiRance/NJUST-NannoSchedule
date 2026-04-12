@@ -3,7 +3,7 @@ import { API_BASE, showToast } from '../utils.js';
 
 export default {
     template: `
-        <div class="profile-container">
+        <div class="profile-container" style="padding-bottom: 80px;">
             <div v-if="noticeInfo && noticeInfo.show" class="card notice-card">
                 <div class="notice-header">
                     <span class="notice-title"><i class="ri-notification-3-line" style="vertical-align: text-bottom; margin-right: 4px;"></i>最新公告 ({{ noticeInfo.version }})</span>
@@ -45,74 +45,21 @@ export default {
                 </button>
             </div>
 
-            <div class="card">
-                <div class="card-title"><i class="ri-calendar-todo-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>当前学期设置</div>
-                <p class="setting-desc">此设置将全局影响课表同步、考试、空闲教室等查询：</p>
-                <div class="setting-row">
-                    <select v-model="store.currentTerm" @change="saveTerm" class="term-select">
-                        <option v-for="t in store.termOptions" :key="t" :value="t">
-                            {{ t }} {{ t === store.currentTerm ? '(当前选中)' : '' }}
-                        </option>
-                    </select>
+            <div class="card" @click="openSettings" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 18px 15px; margin-top: 20px;">
+                <div style="display: flex; align-items: center;">
+                    <i class="ri-settings-4-line" style="margin-right: 8px; color: #8e8e93; font-size: 20px;"></i>
+                    <span style="font-size: 15px; font-weight: bold; color: #333;">更多设置</span>
                 </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="ri-timer-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>课表时间校准</div>
-                <p class="setting-desc">如果发现当前周次不对，请在此手动修正：</p>
-                <div class="setting-row">
-                    <span style="font-size: 14px; white-space: nowrap;">当前为第</span>
-                    <input type="number" v-model.number="settingWeek" min="1" max="25" class="week-input">
-                    <span style="font-size: 14px; white-space: nowrap;">周</span>
-                    <div style="flex: 1;"></div>
-                    <button class="btn btn-calibrate" @click="calibrateWeek">一键校准</button>
-                </div>
-            </div>
-
-
-
-            <div class="card">
-                <div class="card-title"><i class="ri-palette-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>界面设置</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 14px; color: #333; font-weight: bold;">课表显示模式</span>
-                    <div class="switch-capsule" style="margin: 0;">
-                        <div class="switch-item" :class="{active: store.scheduleViewType === 'fixed'}" @click="store.scheduleViewType = 'fixed'">一屏固定</div>
-                        <div class="switch-item" :class="{active: store.scheduleViewType === 'scroll'}" @click="store.scheduleViewType = 'scroll'">自由滑动</div>
-                    </div>
-                </div>
-                <p style="font-size: 12px; color: #888; margin: 0;">一屏固定适合快速扫视，自由滑动字号更宽松。</p>
-            </div>
-
-            <div class="card">
-                <div class="card-title"><i class="ri-tools-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>系统维护</div>
-                <p class="setting-desc">网页异常可尝试拉取或清缓存；如需安装全新功能请检查 App 更新。</p>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-
-                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">
-                        <i class="ri-delete-bin-line" style="margin-right: 4px;"></i> 清除本地缓存
-                    </button>
-
-                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">
-                        <i class="ri-cloud-windy-line" style="margin-right: 4px;"></i> 更新网页版本
-                    </button>
-
-                    <button class="btn" style="background-color: #007aff; margin: 0; font-weight: bold;" @click="checkApkUpdate">
-                        <i class="ri-smartphone-line" style="margin-right: 4px;"></i> 检查软件更新
-                    </button>
-                </div>
+                <i class="ri-arrow-right-s-line" style="color: #c7c7cc; font-size: 20px;"></i>
             </div>
         </div>
     `,
     data() {
         return {
-            store, loading: false, isFetchingCaptcha: false,showPassword: false,
+            store, loading: false, isFetchingCaptcha: false, showPassword: false,
             captchaImg: "", loginForm: { username: "", password: "", captcha: "", session_id: "" },
-            settingWeek: store.realWeek,
             noticeInfo: null
         };
-    },
-    watch: {
-        'store.scheduleViewType'(newVal) { localStorage.setItem("my_njust_view_type", newVal); }
     },
     methods: {
         async fetchNotice() {
@@ -129,10 +76,6 @@ export default {
                 const res = await fetch(`${API_BASE}/captcha`); const data = await res.json();
                 this.captchaImg = data.captcha_image; this.loginForm.session_id = data.session_id;
             } catch (e) { showToast("无法获取验证码，请重试"); } finally { this.isFetchingCaptcha = false; }
-        },
-        saveTerm() {
-            localStorage.setItem("my_njust_term", store.currentTerm);
-            showToast("学期已切换为 " + store.currentTerm, "success");
         },
         async syncAllData() {
             if(!this.loginForm.username || !this.loginForm.captcha) { showToast("请填写完整账号和验证码", "error"); return; }
@@ -166,42 +109,17 @@ export default {
                 } else { showToast(result.detail, "error"); this.fetchCaptcha(); }
             } catch (e) { showToast("网络异常"); } finally { this.loading = false; }
         },
-        clearLocalData() {
-            if(confirm("确定要清空教务缓存缓存吗？（您的课表、成绩和手动添加的自定义课表都会被清空）")) {
-                localStorage.removeItem("my_njust_data"); localStorage.removeItem("my_njust_custom_courses");
-                store.courseList = []; store.gradeList = []; store.levelExamsList = []; store.examsList = []; store.customCoursesList = [];
-                showToast("教务及本地缓存已清空", "success");
-            }
-        },
-        async forceUpdateApp() {
-            if(!confirm("这将会清除网页底层缓存并从服务器下载最新代码，不会清除本地数据。是否继续？")) return;
-            try {
-                if ('serviceWorker' in navigator) {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    for (let registration of registrations) await registration.unregister();
-                }
-                if ('caches' in window) {
-                    const cacheNames = await caches.keys();
-                    await Promise.all(cacheNames.map(name => caches.delete(name)));
-                }
-                showToast("缓存已清除，正在重新加载...", "success");
-                setTimeout(() => { window.location.reload(true); }, 1000);
-            } catch (e) { showToast("更新指令执行失败，请手动清理浏览器缓存", "error"); }
-        },
-        calibrateWeek() {
-            let now = new Date(); now.setHours(0,0,0,0); let day = now.getDay() || 7;
-            let monday = new Date(now); monday.setDate(monday.getDate() - day + 1); monday.setDate(monday.getDate() - (this.settingWeek - 1) * 7);
-            let yyyy = monday.getFullYear(); let mm = String(monday.getMonth() + 1).padStart(2, '0'); let dd = String(monday.getDate()).padStart(2, '0');
-            store.termStartDate = `${yyyy}-${mm}-${dd}`; localStorage.setItem("my_njust_start_date", store.termStartDate);
-            showToast("校准成功", "success"); window.location.reload();
-        },
         async checkApkUpdate() {
             if (confirm("即将前往下载页面查看并获取最新版 App，是否继续？")) window.location.href = "https://ns-release.jiraki.top/";
+        },
+        // 打开设置子页面的方法
+        openSettings() {
+            store.currentSubPage = 'settings';
+            window.history.pushState({ target: 'subPage' }, '', '#subPage');
         }
     },
     mounted() {
         this.fetchNotice();
         if(store.currentTab === 'profile') this.fetchCaptcha();
-        this.settingWeek = this.store.realWeek;
     }
 }

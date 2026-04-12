@@ -12,8 +12,8 @@
 
 <div id="app">
     <div class="header" style="position: relative;">
-        <div v-if="store.currentTab === 'other' && store.currentSubPage" class="back-btn" @click="closeSubPage()">
-            <i class="ri-arrow-left-s-line" style="vertical-align: middle; margin-right: 2px;"></i>返回
+        <div v-if="(store.currentTab === 'other' || store.currentTab === 'profile') && store.currentSubPage" class="back-btn" @click="closeSubPage()">
+             <i class="ri-arrow-left-s-line" style="vertical-align: middle; margin-right: 2px;"></i>返回
         </div>
         {{ pageTitle }}
     </div>
@@ -49,14 +49,23 @@
             <contact-view v-if="store.currentSubPage === 'contact'"></contact-view>
         </div>
 
-        <profile-view v-show="store.currentTab === 'profile'"></profile-view>
+        <div v-show="store.currentTab === 'profile'" style="height: 100%; overflow-y: auto;">
+             <profile-view v-show="!store.currentSubPage"></profile-view>
+             <settings-view v-if="store.currentSubPage === 'settings'"></settings-view>
+        </div>
 
     </div>
 
     <div class="tabbar">
-        <div class="tab-item" :class="{ active: store.currentTab === 'schedule' }" @click="store.currentTab = 'schedule'"><div class="tab-icon"><i class="ri-calendar-todo-line"></i></div><span>课表</span></div>
-        <div class="tab-item" :class="{ active: store.currentTab === 'other' }" @click="store.currentTab = 'other'"><div class="tab-icon"><i class="ri-apps-2-line"></i></div><span>应用</span></div>
-        <div class="tab-item" :class="{ active: store.currentTab === 'profile' }" @click="store.currentTab = 'profile'"><div class="tab-icon"><i class="ri-user-settings-line"></i></div><span>我的</span></div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'schedule' }" @click="switchTab('schedule')">
+            <div class="tab-icon"><i class="ri-calendar-todo-line"></i></div><span>课表</span>
+        </div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'other' }" @click="switchTab('other')">
+            <div class="tab-icon"><i class="ri-apps-2-line"></i></div><span>应用</span>
+        </div>
+        <div class="tab-item" :class="{ active: store.currentTab === 'profile' }" @click="switchTab('profile')">
+            <div class="tab-icon"><i class="ri-user-settings-line"></i></div><span>我的</span>
+        </div>
     </div>
 </div>
 

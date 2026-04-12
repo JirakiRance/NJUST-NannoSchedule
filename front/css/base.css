@@ -2,22 +2,36 @@
 
 :root {
     --bg-color: #f7f8fa;
+    --card-bg: #ffffff;
     --grid-border: #edf0f2;
-    --text-main: #333;
-    --text-sub: #888;
+    --text-main: #333333;
+    --text-sub: #888888;
+    --input-bg: #f4f5f7;      /* 新增：输入框和按钮的浅灰背景 */
+    --glass-bg: rgba(255, 255, 255, 0.6); /* 新增：透明模式下的毛玻璃颜色 */
     --primary-color: #5b9bd5;
     --must-color: #007aff;
     --slot-height: 60px;
+}
+
+:root[data-theme="dark"] {
+    --bg-color: #121212;
+    --card-bg: #1c1c1e;
+    --grid-border: #2c2c2e;
+    --text-main: #e5e5ea;
+    --text-sub: #8e8e93;
+    --input-bg: #2c2c2e;      /* 暗黑模式下的输入框背景 */
+    --glass-bg: rgba(28, 28, 30, 0.7); /* 暗黑模式下的深色毛玻璃 */
 }
 
 body {
     margin: 0;
     padding: 0;
     background-color: var(--bg-color);
+    color: var(--text-main);
     font-family: -apple-system, sans-serif;
     height: 100vh;
     height: 100dvh;
-    overflow: hidden; /* 锁死外部，仅允许内容区滚动 */
+    overflow: hidden;
 }
 
 #app {
@@ -108,7 +122,9 @@ body {
 }
 
 .btn:disabled {
-    background-color: #a0cfff;
+    background-color: var(--primary-color);
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .btn-danger {
@@ -388,4 +404,12 @@ body {
 .ri-spin {
     animation: spin 1s linear infinite;
     display: inline-block; /* 必须加 inline-block 才能旋转 */
+}
+
+/* ================= 全局表单控件主题色 ================= */
+input[type="range"],
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--primary-color);
+    cursor: pointer;
 }

@@ -10,6 +10,7 @@ import PublicCourseView from './components/PublicCourseView.js';
 import EmptyRoomsView from './components/EmptyRoomsView.js';
 import SchoolCalendarView from './components/SchoolCalendarView.js';
 import ContactView from './components/ContactView.js';
+import SettingsView from './components/SettingsView.js';
 
 const { createApp } = Vue;
 
@@ -26,26 +27,35 @@ createApp({
         PublicCourseView,
         EmptyRoomsView,
         SchoolCalendarView,
-        ContactView
+        ContactView,
+        SettingsView
     },
     data() {
         return { store };
     },
     computed: {
         pageTitle() {
+            // 1. 课表页标题
             if (this.store.currentTab === 'schedule') return '我的课表';
-            if (this.store.currentTab === 'profile') return '我的设置';
+
+            // 2. 个人中心页标题 (处理子页面逻辑)
+            if (this.store.currentTab === 'profile') {
+                if (this.store.currentSubPage === 'settings') return '更多设置';
+                return '个人中心'; // Profile 主界面标题
+            }
+
+            // 3. 应用中心页标题
             if (this.store.currentTab === 'other') {
                 const titleMap = {
-                'grades': '成绩查询',
-                'exams': '考试安排',
-                'level_exams': '等级考试',
-                'books': '图书查询' ,
-                'websites': '常用网站',
-                'public_course': '蹭课查询',
-                'empty_rooms': '空闲教室',
-                'school_calendar': '学校年历',
-                'contact': '联系开发者'
+                    'grades': '成绩查询',
+                    'exams': '考试安排',
+                    'level_exams': '等级考试',
+                    'books': '图书查询',
+                    'websites': '常用网站',
+                    'public_course': '蹭课查询',
+                    'empty_rooms': '空闲教室',
+                    'school_calendar': '学校年历',
+                    'contact': '联系开发者'
                 };
                 return titleMap[this.store.currentSubPage] || '应用中心';
             }
@@ -59,13 +69,23 @@ createApp({
             window.history.pushState({ target: 'subPage' }, '', '#subPage');
         },
         closeSubPage() {
-            // 点击左上角返回时，调用系统后退，触发下方的 popstate 监听
             window.history.back();
         },
         handleSystemBack(event) {
-            // 当触发手机侧边滑动返回，或上面的 history.back() 时，清空子页面状态
             if (this.store.currentSubPage !== '') {
                 this.store.currentSubPage = '';
+            }
+        },
+        switchTab(tabName) {
+            if (this.store.currentTab === tabName) {
+                // 如果用户连续点击当前高亮的 Tab，且正处于子页面中，则快速返回主界面
+                if (this.store.currentSubPage !== '') {
+                    this.closeSubPage();
+                }
+            } else {
+                // 如果切换到其他 Tab，强制清空子页面状态，彻底防止“串台”导致的白屏
+                this.store.currentSubPage = '';
+                this.store.currentTab = tabName;
             }
         }
     },
