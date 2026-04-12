@@ -45,7 +45,7 @@ body {
     padding: 8px 0;
     font-size: 16px;
     font-weight: bold;
-    color: #fff;
+    color: var(--card-bg);
     background: var(--primary-color);
     box-shadow: 0 1px 5px rgba(0,0,0,0.1);
     z-index: 100;
@@ -79,8 +79,8 @@ body {
 /* ================= 底部 Tabbar ================= */
 .tabbar {
     display: flex;
-    background: #fff;
-    border-top: 1px solid #eee;
+    background: var(--card-bg);
+    border-top: 1px solid var(--grid-border);
     padding-bottom: env(safe-area-inset-bottom);
     flex-shrink: 0;
     z-index: 100;
@@ -144,7 +144,7 @@ body {
 /* 视图切换胶囊 */
 .switch-capsule {
     display: flex;
-    background: #f0f0f5;
+    background: var(--input-bg);
     border-radius: 6px;
     padding: 2px;
 }
@@ -152,7 +152,7 @@ body {
 .switch-item {
     padding: 4px 15px;
     font-size: 12px;
-    color: #666;
+    color: var(--text-sub);
     cursor: pointer;
     border-radius: 4px;
     font-weight: bold;
@@ -163,7 +163,7 @@ body {
 }
 
 .switch-item.active {
-    background: #fff;
+    background: var(--card-bg);
     color: var(--primary-color);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -184,7 +184,7 @@ body {
 }
 
 .modal-content {
-    background: #fff;
+    background: var(--card-bg);
     width: 85%;
     max-width: 340px;
     border-radius: 16px;
@@ -197,7 +197,7 @@ body {
 .modal-title {
     font-size: 16px;
     font-weight: bold;
-    color: #333;
+    color: var(--text-main);
     margin-bottom: 15px;
     text-align: center;
     border-bottom: 2px solid var(--primary-color);
@@ -207,13 +207,14 @@ body {
 .modal-detail-item {
     margin-bottom: 10px;
     font-size: 13px;
-    color: #555;
+    color: var(--text-main);
     display: flex;
     align-items: flex-start;
 }
 
 .modal-close-btn {
-    background: #f0f0f0;
+    background: var(--input-bg);
+    color: var(--text-main);
     border: none;
     width: 100%;
     padding: 12px;
@@ -273,7 +274,7 @@ body {
 .feature-group-title {
     font-size: 14px;
     font-weight: bold;
-    color: #666;
+    color: var(--text-sub);
     margin-bottom: 15px;
 }
 
@@ -284,7 +285,7 @@ body {
 }
 
 .feature-card {
-    background: #fff;
+    background: var(--card-bg);
     border-radius: 12px;
     padding: 20px 10px;
     display: flex;
@@ -297,7 +298,7 @@ body {
 
 .feature-card:active {
     transform: scale(0.95);
-    background-color: #f9f9f9;
+    background-color: var(--input-bg);
 }
 
 .feature-icon {
@@ -307,13 +308,13 @@ body {
 
 .feature-name {
     font-size: 13px;
-    color: #333;
+    color: var(--text-main);
     font-weight: bold;
 }
 
 .period-checkbox {
-    background: #f0f0f0;
-    color: #666;
+    background: var(--input-bg);
+    color: var(--text-main);
     text-align: center;
     padding: 8px 2px;
     border-radius: 6px;
