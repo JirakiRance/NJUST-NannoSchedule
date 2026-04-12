@@ -66,8 +66,50 @@ export default {
             try {
                 const timestamp = new Date().getTime();
                 const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
-                if (res.ok) { this.noticeInfo = await res.json(); }
-            } catch (e) { console.log("获取公告失败，静默处理"); }
+                if (res.ok) {
+                    this.noticeInfo = await res.json();
+
+                    // 动态学期与起始时间热更新校准逻辑
+                    if (this.noticeInfo.term_update) {
+                        const remoteConfig = this.noticeInfo.term_update;
+                        // 读取本地记录的配置版本号
+                        const localConfigVersion = localStorage.getItem("my_njust_term_config_version");
+
+                        // 如果本地没有记录过这个版本，说明是官方(你)发布了新学期！
+                        if (localConfigVersion !== remoteConfig.version_id) {
+
+                            // 1. 自动更新全局 Store 和 LocalStorage 的学期及起始日
+                            store.currentTerm = remoteConfig.term;
+                            store.termStartDate = remoteConfig.start_date;
+                            localStorage.setItem("my_njust_term", remoteConfig.term);
+                            localStorage.setItem("my_njust_start_date", remoteConfig.start_date);
+
+                            // 2. 将新的配置版本号写入本地，防止无限循环覆盖（保护用户手动切换学期的权利）
+                            localStorage.setItem("my_njust_term_config_version", remoteConfig.version_id);
+
+                            // 3. 动态维护学期选项数组 (防止新学期还不在下拉列表里导致 UI 异常)
+                            if (!store.termOptions.includes(remoteConfig.term)) {
+                                store.termOptions.unshift(remoteConfig.term);
+                                localStorage.setItem("my_njust_term_options", JSON.stringify(store.termOptions));
+                            }
+
+                            // 4. 重新计算当前真实周次
+                            let start = new Date(remoteConfig.start_date);
+                            start.setHours(0, 0, 0, 0);
+                            let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
+                            store.realWeek = Math.max(1, Math.min(weekCount, 25));
+                            store.currentWeek = store.realWeek;
+
+                            // 5. 给用户一个优雅的系统提示
+                            setTimeout(() => {
+                                showToast(`已自动为您校准至 ${remoteConfig.term} 学期`, "success");
+                            }, 800);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log("获取公告失败，静默处理");
+            }
         },
         async fetchCaptcha() {
             if (this.isFetchingCaptcha) return;

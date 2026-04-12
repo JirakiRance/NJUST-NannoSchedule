@@ -216,25 +216,37 @@ export default {
     methods: {
 
         async toggleReminder(status) {
-            // 拦截生产环境网页端操作，但放行本地测试
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+            const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
 
             if (status && !isMobile && !isLocal) {
                 showToast("该功能仅在手机端 App 或 PWA 模式下可用", "error");
                 return;
             }
+
             if (status) {
-                // 请求权限
-                if (!("Notification" in window)) {
-                    showToast("您的浏览器不支持系统通知", "error");
+                // 1. 嗅探安卓原生桥接环境
+                if (window.AndroidNative) {
+                    this.store.examReminder.enabled = true;
+                    localStorage.setItem("exam_reminder_enabled", "true");
+                    showToast("原生系统提醒已开启", "success");
                     return;
                 }
+
+                // 2. 嗅探纯浏览器环境，如果没有通知 API，则优雅降级
+                if (!("Notification" in window)) {
+                    showToast("当前环境不支持系统通知，已降级为应用内悬浮提醒", "success");
+                    this.store.examReminder.enabled = true;
+                    localStorage.setItem("exam_reminder_enabled", "true");
+                    return;
+                }
+
+                // 3. 纯血 PWA 或 桌面浏览器环境，请求授权
                 const permission = await Notification.requestPermission();
                 if (permission === "granted") {
                     this.store.examReminder.enabled = true;
                     localStorage.setItem("exam_reminder_enabled", "true");
-                    showToast("提醒已开启", "success");
+                    showToast("系统提醒已开启", "success");
                 } else {
                     showToast("请在浏览器设置中允许通知权限", "error");
                 }

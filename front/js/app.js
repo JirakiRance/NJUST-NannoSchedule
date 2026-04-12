@@ -114,24 +114,26 @@ createApp({
         },
 
         // 检查并触发考试提醒
-        // 检查并触发考试提醒
         checkExamNotifications() {
-            console.log("[通知雷达] 📡 开始扫描考试时间...");
+            console.log("[通知扫描] 开始扫描考试时间...");
             if (!this.isEligibleEnv()) {
-                console.log("[通知雷达] 🚫 检测为生产网页端，已跳过");
+                console.log("[通知扫描] 检测为生产网页端，已跳过");
                 return;
             }
 
             if (!this.store.examReminder.enabled) {
-                console.log("[通知雷达] 🚫 用户未在设置中开启考试提醒");
+                console.log("[通知扫描] 用户未开启考试提醒");
                 return;
             }
-            if (Notification.permission !== 'granted') {
-                console.log(`[通知雷达] 🚫 无浏览器通知权限 (当前状态: ${Notification.permission})`);
-                return;
+
+            // 权限拦截逻辑：如果没有安卓原生接口，且网页 Notification 权限未授权，则拦截
+            if (!window.AndroidNative && "Notification" in window && Notification.permission !== 'granted') {
+                 console.log("[通知扫描] 无浏览器通知权限，且无原生接口");
+                 return;
             }
+
             if (!this.store.examsList || this.store.examsList.length === 0) {
-                console.log("[通知雷达] 📭 考试列表为空，跳过");
+                console.log("[通知扫描] 考试列表为空，跳过");
                 return;
             }
 
@@ -145,7 +147,7 @@ createApp({
             };
 
             let checkCount = 0;
-            let delayQueue = 0; // 排队延迟计数器
+            let delayQueue = 0;
 
             this.store.examsList.forEach(exam => {
                 const match = exam.time.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})/);
@@ -161,53 +163,83 @@ createApp({
                     const notifKey = `${exam.course_name}_${startTime}_${timing}`;
 
                     if (timeDiff <= limitMs && !notifiedLog[notifKey]) {
-                        console.log(`[通知雷达] 🎯 触发目标！${exam.course_name} (策略: ${timing})`);
+                        console.log(`[通知扫描] 触发目标: ${exam.course_name} (策略: ${timing})`);
 
-                        // 排队发射！每张卡片间隔 800 毫秒，防止被 OS 当作垃圾信息吞掉
                         setTimeout(() => {
                             this.sendSystemNotification(`考试提醒：${exam.course_name}`, {
-                                body: `距离考试不到 ${timing.replace('d','天').replace('h','小时')}！\n⏰ 时间：${exam.time}\n📍 考场：${exam.room || '待定'} | 座位：${exam.seat || '--'}`,
+                                body: `距离考试不到 ${timing.replace('d','天').replace('h','小时')}！\n时间：${exam.time}\n考场：${exam.room || '待定'} | 座位：${exam.seat || '--'}`,
                                 icon: './img/logo.png',
                                 vibrate: [200, 100, 200]
                             });
                         }, delayQueue * 800);
 
-                        delayQueue++; // 下一个通知再多等 800ms
+                        delayQueue++;
                         notifiedLog[notifKey] = true;
                         hasNewNotification = true;
                     }
                 });
             });
 
-            console.log(`[通知雷达] 🏁 扫描完毕，有效待考科目: ${checkCount}`);
+            console.log(`[通知扫描] 扫描完毕，有效待考科目: ${checkCount}`);
             if (hasNewNotification) {
                 localStorage.setItem('njust_exam_notified_log', JSON.stringify(notifiedLog));
             }
         },
 
-        // 适配 PWA 的高级系统通知分发器 (带强力兜底)
         sendSystemNotification(title, options) {
-            console.log("[系统通知] 🚀 准备调用浏览器 API 发送卡片:", title);
+            console.log("[系统推送] 准备分发通知:", title);
+
+            // 1. 优先尝试通过 Android JS Bridge 发送原生通知
+            if (window.AndroidNative && window.AndroidNative.showNotification) {
+                console.log("[系统推送] 调用底层 Android 原生通知");
+                window.AndroidNative.showNotification(title, options.body);
+                return;
+            }
+
+            // 2. 如果不支持原生 API 且没有桥接对象，执行应用内横幅降级
+            if (!("Notification" in window)) {
+                console.log("[系统推送] 环境受限，触发应用内强力横幅");
+                const toastDiv = document.createElement('div');
+                toastDiv.className = 'toast show';
+                toastDiv.style.backgroundColor = '#ff9500';
+                toastDiv.style.boxShadow = '0 10px 25px rgba(255, 149, 0, 0.4)';
+                toastDiv.style.padding = '15px';
+                toastDiv.innerHTML = `
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;"><i class="ri-alarm-warning-fill"></i> ${title}</div>
+                    <div style="font-size: 13px; line-height: 1.5; white-space: pre-wrap; text-align: left;">${options.body}</div>
+                `;
+                document.getElementById('toast-container').appendChild(toastDiv);
+
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+                setTimeout(() => {
+                    toastDiv.classList.remove('show');
+                    setTimeout(() => toastDiv.remove(), 300);
+                }, 8000);
+                return;
+            }
+
+            // 3. PWA 或 桌面浏览器兜底逻辑
             try {
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.getRegistration().then(reg => {
                         if (reg && reg.active) {
-                            console.log("[系统通知] ✅ 走 ServiceWorker 稳态发送");
+                            console.log("[系统推送] 走 ServiceWorker 发送");
                             reg.showNotification(title, options);
                         } else {
-                            console.log("[系统通知] ⚠️ 无激活的 SW，降级走原生 Notification");
+                            console.log("[系统推送] 无激活的 SW，降级走网页 Notification");
                             new Notification(title, options);
                         }
                     }).catch(err => {
-                        console.log("[系统通知] ❌ SW 捕获异常，强制兜底发送", err);
+                        console.log("[系统推送] SW 捕获异常，强制兜底发送", err);
                         new Notification(title, options);
                     });
                 } else {
-                    console.log("[系统通知] 📡 走传统原生 Notification 发送");
+                    console.log("[系统推送] 走传统原生 Notification 发送");
                     new Notification(title, options);
                 }
             } catch (e) {
-                console.error("[系统通知] 💥 发送彻底崩溃:", e);
+                console.error("[系统推送] 发送彻底异常:", e);
             }
         }
     },
