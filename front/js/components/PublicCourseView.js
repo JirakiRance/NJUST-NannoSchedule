@@ -58,8 +58,8 @@ export default {
                                     <i class="ri-calendar-todo-line"></i> {{ c.day_str }} | {{ c.slot_str }}
                                 </span>
                             </div>
-                            <div style="font-size: 13px; color: #555; line-height: 1.6;">
-                                <div><i class="ri-user-voice-line" style="color: #999; margin-right: 4px;"></i><strong>教师：</strong>{{ c.teacher }}</div>
+                            <div style="font-size: 13px; color: var(--text-main); line-height: 1.6;">
+                                <div><i class="ri-user-voice-line" style="color: var(--text-sub); margin-right: 4px;"></i><strong>教师：</strong>{{ c.teacher }}</div>
                                 <div><i class="ri-map-pin-line" style="color: #999; margin-right: 4px;"></i><strong>教室：</strong>{{ c.room || '待定' }}</div>
                                 <div><i class="ri-calendar-event-line" style="color: #999; margin-right: 4px;"></i><strong>周次：</strong>{{ c.weeks }}</div>
                                 <div style="font-size: 11px; color: #999; margin-top: 4px;">班级代码: {{ c.class_id }}</div>

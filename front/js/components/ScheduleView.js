@@ -27,7 +27,7 @@ export default {
                 <div class="week-nav" v-show="viewMode === 'week'" style="display: flex; height: 36px; padding: 0;">
                     <button class="icon-btn" style="height: 100%; display: flex; align-items: center; padding: 0 20px;" @click="changeWeek(-1)"><i class="ri-arrow-left-s-line"></i></button>
                     <div class="week-title" style="height: 100%; display: flex; align-items: center; justify-content: center; min-width: 80px; transition: color 0.2s;"
-                         :style="{ color: store.currentWeek === store.realWeek ? 'var(--primary-color)' : '#333' }"
+                         :style="{ color: store.currentWeek === store.realWeek ? 'var(--primary-color)' : 'var(--text-main)' }"
                          @click="showWeekSelector = true">
                         第 {{ store.currentWeek }} 周
                     </div>
@@ -45,8 +45,8 @@ export default {
                         <div class="time-slot" style="height: 38px;"></div>
                         <div class="time-slot" v-for="i in 15" :key="i">
                             <span v-if="i <= 13">{{ i }}</span>
-                            <span v-else-if="i === 14" style="font-size: 11px; color: #888;">网</span>
-                            <span v-else-if="i === 15" style="font-size: 11px; color: #888;">课</span>
+                            <span v-else-if="i === 14" style="font-size: 11px; color: var(--text-sub);">网</span>
+                            <span v-else-if="i === 15" style="font-size: 11px; color: var(--text-sub);">课</span>
                         </div>
                     </div>
                     <div class="grid-area">
@@ -109,13 +109,13 @@ export default {
                             <i class="ri-book-read-line" style="margin-right: 4px; vertical-align: text-bottom;"></i>
                             <span v-if="course.isCustom" style="color: #ff9500; font-size: 12px;">[自]</span> {{ course.name }}
                         </div>
-                        <div v-else style="font-weight: bold; font-size: 15px; color: #333; margin-bottom: 12px; text-align: center;">
+                        <div v-else style="font-weight: bold; font-size: 15px; color: var(--text-main); margin-bottom: 12px; text-align: center;">
                             <span v-if="course.isCustom" style="color: #ff9500; font-size: 12px;">[自]</span> {{ course.name }}
                         </div>
 
-                        <div class="modal-detail-item"><div><i class="ri-user-smile-line" style="margin-right: 4px; color:#999;"></i><strong>教师：</strong>{{ course.teacher || '未知' }}</div></div>
-                        <div class="modal-detail-item"><div><i class="ri-map-pin-2-line" style="margin-right: 4px; color:#999;"></i><strong>教室：</strong>{{ course.room || '待定' }}</div></div>
-                        <div class="modal-detail-item"><div><i class="ri-calendar-todo-line" style="margin-right: 4px; color:#999;"></i><strong>周次：</strong>{{ course.weeks }}</div></div>
+                        <div class="modal-detail-item"><div><i class="ri-user-smile-line" style="margin-right: 4px; var(--text-sub);"></i><strong>教师：</strong>{{ course.teacher || '未知' }}</div></div>
+                        <div class="modal-detail-item"><div><i class="ri-map-pin-2-line" style="margin-right: 4px; var(--text-sub);"></i><strong>教室：</strong>{{ course.room || '待定' }}</div></div>
+                        <div class="modal-detail-item"><div><i class="ri-calendar-todo-line" style="margin-right: 4px; var(--text-sub);"></i><strong>周次：</strong>{{ course.weeks }}</div></div>
 
                         <div class="modal-detail-item" v-if="course.isPending">
                             <div><i class="ri-information-line" style="margin-right: 4px; color:#999;"></i><strong>类型：</strong>网络课程 / 时间待定</div>
@@ -128,7 +128,7 @@ export default {
                                 </div>
                             </div>
                         </div>
-                        <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed #ddd; margin: 15px 0;">
+                        <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed var(--grid-border); margin: 15px 0;">
                     </div>
                     <button class="modal-close-btn" @click="closeDetails">我知道了</button>
                 </div>
@@ -149,7 +149,7 @@ export default {
                     <div style="display: flex; flex-direction: column; gap: 12px;">
                         <button class="btn" style="margin: 0;" @click="execChangeBg">更改背景</button>
                         <button class="btn btn-danger" style="margin: 0;" @click="execClearBg">清除背景</button>
-                        <button class="btn" style="margin: 0; background: #e5e5ea; color: #333;" @click="showBgMenu = false">取消</button>
+                        <button class="btn" style="margin: 0; background: var(--input-bg); color: var(--text-main);" @click="showBgMenu = false">取消</button>
                     </div>
                 </div>
             </div>
@@ -165,7 +165,7 @@ export default {
                     <div v-if="!isEditingCustom" class="custom-manager-scroll">
                         <p class="custom-manager-subtitle">当前学期: {{ store.currentTerm }}</p>
 
-                        <div v-if="currentTermCustomCourses.length === 0" style="text-align: center; padding: 20px; color: #999; font-size: 13px;">
+                        <div v-if="currentTermCustomCourses.length === 0" style="text-align: center; padding: 20px; color: var(--text-sub); font-size: 13px;">
                             暂无自定义课程
                         </div>
 
@@ -515,7 +515,7 @@ export default {
             this.showCustomManager = true;
         },
         createNewCustomCourse() {
-            this.customForm = { id: '', name: '', teacher: '', room: '', weeks: '1-16', day: 1, start: 1, duration: 2, term: this.store.currentTerm, isCustom: true };
+            this.customForm = { id: '', name: '', teacher: '', room: '', weeks: '', day: 1, start: 1, duration: 2, term: this.store.currentTerm, isCustom: true };
             this.isEditingCustom = true;
         },
         editCustomCourse(course) {

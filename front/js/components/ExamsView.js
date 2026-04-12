@@ -26,7 +26,7 @@ export default {
             <div v-if="!displayExams || displayExams.length === 0" class="empty-state">
                 <div class="empty-emoji"><i :class="showHistory ? 'ri-inbox-archive-line' : 'ri-cup-line'"></i></div>
                 <p>{{ showHistory ? '暂无历史考试记录' : '本学期暂无考试安排' }}</p>
-                <div style="font-size: 12px; color: #999; margin-top: 5px;">同步教务处后数据将持久化保存在本地</div>
+                <div style="font-size: 12px; color: var(--text-sub); margin-top: 5px;">同步教务处后数据将持久化保存在本地</div>
             </div>
 
             <div v-else class="exam-list-area">
@@ -139,17 +139,17 @@ export default {
         },
         getCardStyle(timeStr) {
             const code = this.getExamStatus(timeStr).code;
-            if (code === 0) return { opacity: '0.6', filter: 'grayscale(0.8)', background: '#f9f9f9' };
-            if (code === 1) return { border: '2px solid #ff3b30', background: '#fffcfc', boxShadow: '0 4px 12px rgba(255,0,0,0.05)' };
+            if (code === 0) return { opacity: '0.6', filter: 'grayscale(0.8)', background: 'var(--input-bg)' };
+            if (code === 1) return { border: '2px solid #ff3b30', background: 'var(--card-bg)', boxShadow: '0 4px 12px rgba(255,0,0,0.05)' };
             return { borderLeft: '4px solid #007aff' };
         },
         getTitleStyle(timeStr) {
-            return this.getExamStatus(timeStr).code === 0 ? { textDecoration: 'line-through', color: '#999' } : { fontWeight: 'bold' };
+            return this.getExamStatus(timeStr).code === 0 ? { textDecoration: 'line-through', color: 'var(--text-sub)' } : { fontWeight: 'bold', color: 'var(--text-main)' };
         },
         getStatusTagStyle(timeStr) {
             const code = this.getExamStatus(timeStr).code;
             const style = { fontSize: '11px', padding: '2px 8px', borderRadius: '10px' };
-            if (code === 0) return { ...style, background: '#eee', color: '#999' };
+            if (code === 0) return { ...style, background: 'var(--grid-border)', color: 'var(--text-sub)' };
             if (code === 1) return { ...style, background: '#ff3b30', color: '#fff' };
             return { ...style, background: '#e1f0ff', color: '#007aff' };
         },
