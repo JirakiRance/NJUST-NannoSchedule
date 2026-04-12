@@ -24,15 +24,36 @@ export default {
             </div>
 
             <div class="card">
-                <div class="card-title"><i class="ri-palette-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>个性化</div>
+                <div class="card-title"><i class="ri-notification-4-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>考试提醒设置</div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <span style="font-size: 14px; color: var(--text-main); font-weight: bold;">深浅色模式</span>
+                    <span style="font-size: 14px; color: var(--text-main); font-weight: bold;">开启考试提醒</span>
                     <div class="switch-capsule" style="margin: 0;">
-                        <div class="switch-item" :class="{active: store.themeMode === 'light'}" @click="changeThemeMode('light')"><i class="ri-sun-line" style="margin-right:2px;"></i>浅色</div>
-                        <div class="switch-item" :class="{active: store.themeMode === 'dark'}" @click="changeThemeMode('dark')"><i class="ri-moon-line" style="margin-right:2px;"></i>深色</div>
+                        <div class="switch-item" :class="{active: store.examReminder.enabled}" @click="toggleReminder(true)">开启</div>
+                        <div class="switch-item" :class="{active: !store.examReminder.enabled}" @click="toggleReminder(false)">关闭</div>
                     </div>
                 </div>
+
+                <div v-show="store.examReminder.enabled" style="animation: fade-in 0.3s ease-out;">
+                    <p class="setting-desc" style="margin-top: 0;">当考试即将来临时，系统将通过浏览器通知提醒您：</p>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                        <div v-for="opt in reminderOptions" :key="opt.val"
+                             class="period-checkbox"
+                             :class="{ active: store.examReminder.selectedTimings.includes(opt.val) }"
+                             @click="toggleTiming(opt.val)">
+                            {{ opt.label }}
+                        </div>
+                    </div>
+                    <p style="font-size: 11px; color: var(--text-sub); margin-top: 12px; line-height: 1.5;">
+                        <i class="ri-information-line" style="vertical-align: middle;"></i>
+                        由于网页端限制，请在考前几天偶尔打开本应用，或将其保留在手机后台，方可准时触发系统级弹窗提醒。
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="ri-palette-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>个性化</div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span style="font-size: 14px; color: var(--text-main); font-weight: bold;">课表显示模式</span>
@@ -43,12 +64,33 @@ export default {
                 </div>
                 <p style="font-size: 12px; color: var(--text-sub); margin: 0; border-bottom: 1px dashed var(--grid-border); padding-bottom: 15px; margin-bottom: 15px;">一屏固定适合快速扫视，自由滑动字号更宽松。</p>
 
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-size: 14px; color: var(--text-main); font-weight: bold;">深浅色模式</span>
+                    <div class="switch-capsule" style="margin: 0;">
+                        <div class="switch-item" :class="{active: store.themeMode === 'light'}" @click="changeThemeMode('light')"><i class="ri-sun-line" style="margin-right:2px;"></i>浅色</div>
+                        <div class="switch-item" :class="{active: store.themeMode === 'dark'}" @click="changeThemeMode('dark')"><i class="ri-moon-line" style="margin-right:2px;"></i>深色</div>
+                    </div>
+                </div>
+
+
                 <div style="display: flex; flex-direction: column;">
                     <span style="font-size: 14px; color: var(--text-main); font-weight: bold;">全局主题颜色</span>
                     <div class="theme-color-row">
-                        <div v-for="c in availableColors" :key="c.value" class="color-swatch" :style="{ backgroundColor: c.value }" :class="{ active: store.themeColor === c.value }" @click="changeTheme(c.value)">
-                            <i v-if="store.themeColor === c.value" class="ri-check-line"></i>
+                        <div v-for="c in availableColors" :key="c.value"
+                             class="color-swatch"
+                             :style="{ backgroundColor: c.value }"
+                             :class="{ active: store.themeColor.toLowerCase() === c.value.toLowerCase() }"
+                             @click="changeTheme(c.value)">
+                            <i v-if="store.themeColor.toLowerCase() === c.value.toLowerCase()" class="ri-check-line"></i>
                         </div>
+
+                        <label class="color-swatch"
+                               :class="{ active: isCustomColor }"
+                               style="background: conic-gradient(from 90deg, #ff3b30, #ff9500, #34c759, #5ac8fa, #007aff, #5856d6, #ff2d55, #ff3b30); position: relative; overflow: hidden;"
+                               title="自定义颜色">
+                            <i v-if="isCustomColor" class="ri-check-line" style="position: absolute; color: white; text-shadow: 0 1px 4px rgba(0,0,0,0.8); z-index: 2;"></i>
+                            <input type="color" v-model="customColorValue" @input="changeCustomTheme" style="opacity: 0; position: absolute; width: 200%; height: 200%; top: -50%; left: -50%; cursor: pointer;">
+                        </label>
                     </div>
                 </div>
 
@@ -81,26 +123,137 @@ export default {
 
             <div class="card">
                 <div class="card-title"><i class="ri-tools-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>系统维护</div>
-                <p class="setting-desc">遇到异常可拉取更新或清缓存，清除缓存会丢失当前课表数据。</p>
+                <p class="setting-desc" style="line-height: 1.5; margin-bottom: 15px;">
+                    清除缓存将丢失当前所有数据，更新网页版本仅对网页端访问有效，手机端更新请点击检查软件更新。
+                </p>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp"><i class="ri-cloud-windy-line" style="margin-right: 4px;"></i> 强制更新网页前端</button>
-                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData"><i class="ri-delete-bin-line" style="margin-right: 4px;"></i> 清除本地缓存</button>
-                    <button class="btn" style="background-color: #007aff; margin: 0; font-weight: bold;" @click="checkApkUpdate"><i class="ri-smartphone-line" style="margin-right: 4px;"></i> 检查原生 App 更新</button>
+                    <button class="btn btn-danger" style="margin: 0;" @click="clearLocalData">
+                        <i class="ri-delete-bin-line" style="margin-right: 4px;"></i> 清除教务缓存
+                    </button>
+                    <button class="btn" style="background-color: #ff9500; margin: 0;" @click="forceUpdateApp">
+                        <i class="ri-cloud-windy-line" style="margin-right: 4px;"></i> 更新网页版本
+                    </button>
+                    <button class="btn" style="background-color: #007aff; margin: 0; font-weight: bold;" @click="checkApkUpdate">
+                        <i class="ri-smartphone-line" style="margin-right: 4px;"></i> 检查软件更新 <span style="font-size:11px; opacity:0.8;">({{ currentAppVersion }})</span>
+                    </button>
                 </div>
             </div>
+
+            <div class="modal-overlay" v-if="showUpdateModal" @click.self="showUpdateModal = false">
+                <div class="modal-content" style="max-width: 300px; padding: 25px 20px; text-align: center;">
+                    <div v-if="isCheckingUpdate" style="padding: 20px 0;">
+                        <i class="ri-loader-4-line ri-spin" style="font-size: 36px; color: var(--primary-color);"></i>
+                        <div style="margin-top: 15px; font-size: 14px; color: var(--text-sub); font-weight: bold;">正在连接服务器...</div>
+                    </div>
+
+                    <div v-else>
+                        <div style="font-size: 48px; margin-bottom: 10px;" :style="{ color: updateData && updateData.hasNew ? '#34c759' : 'var(--text-sub)' }">
+                            <i :class="updateData && updateData.hasNew ? 'ri-rocket-2-fill' : 'ri-checkbox-circle-fill'"></i>
+                        </div>
+                        <div style="font-size: 18px; font-weight: bold; color: var(--text-main); margin-bottom: 10px;">
+                            {{ updateData && updateData.hasNew ? '发现新版本！' : '已是最新版本' }}
+                        </div>
+
+                        <div style="font-size: 13px; color: var(--text-sub); margin-bottom: 5px;">
+                            当前版本：{{ currentAppVersion }}
+                        </div>
+                        <div v-if="updateData && updateData.hasNew" style="font-size: 13px; color: #ff9500; font-weight: bold; margin-bottom: 15px;">
+                            最新版本：{{ updateData.version }}
+                        </div>
+
+                        <div v-if="updateData && updateData.hasNew" style="font-size: 12px; color: var(--text-main); background: var(--input-bg); padding: 12px; border-radius: 8px; text-align: left; margin-bottom: 20px; line-height: 1.6; border: 1px solid var(--grid-border);">
+                            <b>更新内容：</b><br>
+                            {{ updateData.content }}
+                        </div>
+                        <div v-else style="margin-bottom: 20px;"></div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn" style="background: var(--input-bg); color: var(--text-main); margin: 0; flex: 1;" @click="showUpdateModal = false">关闭</button>
+                            <button v-if="updateData && updateData.hasNew" class="btn btn-submit" style="margin: 0; flex: 1; background-color: #34c759;" @click="goToDownload">前往下载</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     `,
     data() {
         return {
-            store, settingWeek: store.realWeek,
+            store,
+            settingWeek: store.realWeek,
+            customColorValue: store.themeColor,
             availableColors: [
-                { name: '天空蓝', value: '#5b9bd5' }, { name: '樱花粉', value: '#ff6b81' },
-                { name: '青苹绿', value: '#34c759' }, { name: '活力橙', value: '#ff9500' }, { name: '梦幻紫', value: '#5856d6' }
-            ]
+                { name: '天空蓝', value: '#5b9bd5' },
+                { name: '哔哩粉', value: '#fb7299' },
+                { name: '青苹绿', value: '#34c759' },
+                { name: '活力橙', value: '#ff9500' }
+            ],
+
+            // 版本控制与弹窗状态
+            currentAppVersion: "v1.2.3",  // 每次发版在这里改！
+            showUpdateModal: false,
+            isCheckingUpdate: false,
+            updateData: null,
+
+            reminderOptions: [
+                { label: '前 7 天', val: '7d' },
+                { label: '前 3 天', val: '3d' },
+                { label: '前 1 天', val: '1d' },
+                { label: '前 12h', val: '12h' },
+                { label: '前 3h', val: '3h' },
+                { label: '前 1h', val: '1h' }
+]
         };
     },
-    watch: { 'store.scheduleViewType'(newVal) { localStorage.setItem("my_njust_view_type", newVal); } },
+    computed: {
+        isCustomColor() {
+            return !this.availableColors.some(c => c.value.toLowerCase() === this.store.themeColor.toLowerCase());
+        }
+    },
+    watch: {
+        'store.scheduleViewType'(newVal) { localStorage.setItem("my_njust_view_type", newVal); }
+    },
     methods: {
+
+        async toggleReminder(status) {
+            // 拦截生产环境网页端操作，但放行本地测试
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+
+            if (status && !isMobile && !isLocal) {
+                showToast("该功能仅在手机端 App 或 PWA 模式下可用", "error");
+                return;
+            }
+            if (status) {
+                // 请求权限
+                if (!("Notification" in window)) {
+                    showToast("您的浏览器不支持系统通知", "error");
+                    return;
+                }
+                const permission = await Notification.requestPermission();
+                if (permission === "granted") {
+                    this.store.examReminder.enabled = true;
+                    localStorage.setItem("exam_reminder_enabled", "true");
+                    showToast("提醒已开启", "success");
+                } else {
+                    showToast("请在浏览器设置中允许通知权限", "error");
+                }
+            } else {
+                this.store.examReminder.enabled = false;
+                localStorage.setItem("exam_reminder_enabled", "false");
+            }
+        },
+        toggleTiming(val) {
+            const list = this.store.examReminder.selectedTimings;
+            const idx = list.indexOf(val);
+            if (idx > -1) {
+                list.splice(idx, 1);
+            } else {
+                list.push(val);
+            }
+            localStorage.setItem("exam_reminder_timings", JSON.stringify(list));
+        },
+
         saveTerm() { localStorage.setItem("my_njust_term", store.currentTerm); showToast("学期已切换为 " + store.currentTerm, "success"); },
         calibrateWeek() {
             let now = new Date(); now.setHours(0,0,0,0); let day = now.getDay() || 7;
@@ -114,7 +267,10 @@ export default {
             localStorage.setItem("my_njust_theme_color", colorHex);
             document.documentElement.style.setProperty('--primary-color', colorHex);
         },
-        // ✨ 新增：切换深浅色模式的逻辑
+        changeCustomTheme(event) {
+            const hex = event.target.value;
+            this.changeTheme(hex);
+        },
         changeThemeMode(mode) {
             this.store.themeMode = mode;
             localStorage.setItem("my_njust_theme_mode", mode);
@@ -129,7 +285,7 @@ export default {
             if(confirm("确定要清空吗？（课表、成绩和自定义课程都会被清空）")) {
                 localStorage.removeItem("my_njust_data"); localStorage.removeItem("my_njust_custom_courses");
                 store.courseList = []; store.gradeList = []; store.levelExamsList = []; store.examsList = []; store.customCoursesList = [];
-                showToast("缓存已清空", "success");
+                showToast("教务缓存已清空", "success");
             }
         },
         async forceUpdateApp() {
@@ -140,7 +296,63 @@ export default {
                 showToast("缓存已清除，正在重新加载...", "success"); setTimeout(() => { window.location.reload(true); }, 1000);
             } catch (e) { showToast("清理失败", "error"); }
         },
-        async checkApkUpdate() { if (confirm("前往下载页面？")) window.location.href = "https://ns-release.jiraki.top/"; }
+
+        // 重构：热更新检查引擎
+        async checkApkUpdate() {
+            this.showUpdateModal = true;
+            this.isCheckingUpdate = true;
+            this.updateData = null;
+
+            try {
+                const timestamp = new Date().getTime();
+                // 强制跨域不缓存请求
+                const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
+                if (res.ok) {
+                    const data = await res.json();
+
+                    // 极客版版本对比 (将 v1.2.3 提取为纯数字点阵，再进行比较)
+                    const currentClean = this.currentAppVersion.replace(/[^\d.]/g, '');
+                    const remoteClean = data.version.replace(/[^\d.]/g, '');
+                    const hasNew = this.compareVersion(remoteClean, currentClean) > 0;
+
+                    // 模拟一下网络延迟，让转圈加载更有质感 (0.6秒)
+                    setTimeout(() => {
+                        this.updateData = { ...data, hasNew };
+                        this.isCheckingUpdate = false;
+                    }, 600);
+
+                } else {
+                    throw new Error("接口返回非 200");
+                }
+            } catch (e) {
+                setTimeout(() => {
+                    this.updateData = { hasNew: false, version: '未知', content: '连接服务器失败，请检查网络。' };
+                    this.isCheckingUpdate = false;
+                }, 600);
+            }
+        },
+
+        // 标准版本对比算法 (支持 1.2.10 对比 1.2.3)
+        compareVersion(v1, v2) {
+            const parts1 = v1.split('.').map(Number);
+            const parts2 = v2.split('.').map(Number);
+            for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+                const num1 = parts1[i] || 0;
+                const num2 = parts2[i] || 0;
+                if (num1 > num2) return 1;
+                if (num1 < num2) return -1;
+            }
+            return 0;
+        },
+
+        goToDownload() {
+            window.location.href = "https://ns-release.jiraki.top/";
+        }
     },
-    mounted() { this.settingWeek = this.store.realWeek; }
+    mounted() {
+        this.settingWeek = this.store.realWeek;
+        if (this.isCustomColor) {
+            this.customColorValue = this.store.themeColor;
+        }
+    }
 }

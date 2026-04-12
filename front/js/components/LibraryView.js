@@ -19,7 +19,7 @@ export default {
                             <div class="book-author">{{ book.author }} | {{ book.publisher }}</div>
                             <div class="book-stock"><span class="stock-badge available"><i class="ri-map-pin-line" style="vertical-align: text-bottom;"></i> 点击查看馆藏</span></div>
                         </div>
-                        <div style="display: flex; align-items: center; color: #ccc; font-size: 20px;"><i class="ri-arrow-right-s-line"></i></div>
+                        <div style="display: flex; align-items: center; color: var(--text-sub); font-size: 20px;"><i class="ri-arrow-right-s-line"></i></div>
                     </div>
                 </div>
                 <div class="empty-state" v-else-if="!isSearchingBooks">

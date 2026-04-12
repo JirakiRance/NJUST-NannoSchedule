@@ -414,3 +414,25 @@ input[type="radio"] {
     accent-color: var(--primary-color);
     cursor: pointer;
 }
+
+/* 考试提醒多选网格 */
+.reminder-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 三列 */
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* 考试提醒 */
+.reminder-grid .period-checkbox {
+    padding: 10px 5px;
+    font-size: 13px;
+    background: var(--input-bg);
+    border: 1px solid var(--grid-border);
+}
+
+.reminder-grid .period-checkbox.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}

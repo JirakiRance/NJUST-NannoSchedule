@@ -48,7 +48,7 @@ export default {
             <div class="card" @click="openSettings" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 18px 15px; margin-top: 20px;">
                 <div style="display: flex; align-items: center;">
                     <i class="ri-settings-4-line" style="margin-right: 8px; color: var(--text-sub); font-size: 20px;"></i>
-                    <span style="font-size: 15px; font-weight: bold; color: var(--text-main);">更多设置</span>
+                    <span style="font-size: 15px; font-weight: bold; color: var(--text-main);">设置</span>
                 </div>
                 <i class="ri-arrow-right-s-line" style="color: var(--text-sub); font-size: 20px;"></i>
             </div>

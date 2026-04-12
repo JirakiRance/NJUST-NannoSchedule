@@ -4,6 +4,7 @@ export default {
     template: `
         <div class="grades-container">
             <div v-if="store.gradeList.length > 0">
+
                 <div class="summary-card">
                     <div class="summary-title"><i class="ri-pie-chart-line" style="vertical-align: text-bottom; margin-right: 4px; color: var(--primary-color);"></i>实时成绩统计</div>
                     <table class="g-table">
@@ -22,41 +23,61 @@ export default {
                 </div>
 
                 <div class="semester-block" v-for="semester in semesters" :key="semester.name">
-                    <div class="semester-header"><i class="ri-calendar-event-line" style="margin-right: 6px; color: var(--text-sub);"></i>{{ semester.name }}</div>
-                    <table class="g-table">
-                        <thead>
-                            <tr>
-                                <th style="width:40px; cursor:pointer;" @click="toggleSemester(semester)">
-                                    <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
-                                        <div class="custom-checkbox" :class="{ checked: isAllSelected(semester) }"></div>
-                                        <span style="font-size:9px; font-weight:normal; color:#888;">全选</span>
-                                    </div>
-                                </th>
-                                <th style="text-align:left; padding-left:10px;">详情</th>
-                                <th style="width:40px">成绩</th>
-                                <th style="width:35px">学分</th>
-                                <th style="width:35px">绩点</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="course in semester.courses">
-                                <td @click="course.selected = !course.selected">
-                                    <div style="display:flex; justify-content:center;">
-                                        <div class="custom-checkbox" :class="{ checked: course.selected }"></div>
-                                    </div>
-                                </td>
-                                <td class="course-name-td">
-                                    <div class="course-info-row">
-                                        <div><div class="course-name-main">{{ course.name }}</div><div class="course-nature-sub">{{ course.nature }}</div></div>
-                                        <div :class="['attr-tag', (course.attr === '必修' || course.attr === '专选') ? 'tag-must' : 'tag-other']">{{ course.attr }}</div>
-                                    </div>
-                                </td>
-                                <td :class="{'text-red': course.numericScore < 60}">{{ course.score }}</td>
-                                <td>{{ course.credit }}</td>
-                                <td>{{ course.gpa }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+                    <div class="semester-header" @click="toggleCollapse(semester.name)" style="cursor: pointer; justify-content: space-between; user-select: none;">
+                        <div style="display: flex; align-items: center;">
+                            <i class="ri-calendar-event-line" style="margin-right: 6px; color: var(--text-sub);"></i>
+                            <span style="color: var(--text-main);">{{ semester.name }}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="font-size: 10px; color: var(--text-sub); background: var(--bg-color); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--grid-border);">
+                                学分: <span style="color: var(--text-main); font-weight: bold;">{{ semester.stats.credit }}</span> |
+                                均分: <span style="color: var(--text-main); font-weight: bold;">{{ semester.stats.avg }}</span> |
+                                绩点: <span style="color: var(--primary-color); font-weight: bold;">{{ semester.stats.gpa }}</span>
+                            </div>
+                            <i class="ri-arrow-up-s-line"
+                               :style="{ transform: collapsedStates[semester.name] ? 'rotate(180deg)' : 'rotate(0deg)', color: 'var(--text-sub)', fontSize: '18px', transition: 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)' }">
+                            </i>
+                        </div>
+                    </div>
+
+                    <div v-show="!collapsedStates[semester.name]">
+                        <table class="g-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px; cursor:pointer;" @click="toggleSemester(semester)">
+                                        <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+                                            <div class="custom-checkbox" :class="{ checked: isAllSelected(semester) }"></div>
+                                            <span style="font-size:9px; font-weight:normal; color:var(--text-sub);">全选</span>
+                                        </div>
+                                    </th>
+                                    <th style="text-align:left; padding-left:10px;">详情</th>
+                                    <th style="width:40px">成绩</th>
+                                    <th style="width:35px">学分</th>
+                                    <th style="width:35px">绩点</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="course in semester.courses">
+                                    <td @click="course.selected = !course.selected">
+                                        <div style="display:flex; justify-content:center;">
+                                            <div class="custom-checkbox" :class="{ checked: course.selected }"></div>
+                                        </div>
+                                    </td>
+                                    <td class="course-name-td">
+                                        <div class="course-info-row">
+                                            <div><div class="course-name-main">{{ course.name }}</div><div class="course-nature-sub">{{ course.nature }}</div></div>
+                                            <div :class="['attr-tag', (course.attr === '必修' || course.attr === '专选') ? 'tag-must' : 'tag-other']">{{ course.attr }}</div>
+                                        </div>
+                                    </td>
+                                    <td :class="{'text-red': course.numericScore < 60}">{{ course.score }}</td>
+                                    <td>{{ course.credit }}</td>
+                                    <td>{{ course.gpa }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
             </div>
             <div class="empty-state" v-else>
@@ -65,7 +86,13 @@ export default {
             </div>
         </div>
     `,
-    data() { return { store } },
+    data() {
+        return {
+            store,
+            // 用于记录每个学期的收纳状态 (键为学期名，值为 boolean)
+            collapsedStates: {}
+        }
+    },
     computed: {
         semesters() {
             const groups = {};
@@ -73,12 +100,15 @@ export default {
                 if (!groups[item.semester]) groups[item.semester] = { name: item.semester, courses: [] };
                 groups[item.semester].courses.push(item);
             });
-            return Object.values(groups).sort((a, b) => b.name.localeCompare(a.name));
+            return Object.values(groups).sort((a, b) => b.name.localeCompare(a.name)).map(sem => {
+                // 利用已有的 calcGpa，算出该学期下【已勾选】课程的小计！
+                sem.stats = this.calcGpa(sem.courses.filter(c => c.selected));
+                return sem;
+            });
         },
         overallStats() {
             const selectedCourses = this.store.gradeList.filter(g => g.selected);
 
-            // 1. 寻找最高四六级成绩
             let maxCET = 0;
             (this.store.levelExamsList || []).forEach(exam => {
                 if (exam.name.includes('四级') || exam.name.includes('六级') || exam.name.includes('CET')) {
@@ -87,21 +117,19 @@ export default {
                 }
             });
 
-            // 2. 如果考过，将其伪装成一门 8 学分的神课
             let cetCourse = null;
             if (maxCET > 0) {
-                const normScore = (maxCET / 710) * 100; // 满分 710 归一化
+                const normScore = (maxCET / 710) * 100;
                 cetCourse = {
                     credit: 8,
                     numericScore: normScore,
-                    gpa: this.getGpaFromScore(normScore) // 转为 4.0 绩点
+                    gpa: this.getGpaFromScore(normScore)
                 };
             }
 
             return {
                 all: this.calcGpa(this.store.gradeList),
                 selected: this.calcGpa(selectedCourses),
-                // 如果有四六级，混进去一起算，否则返回 null（不显示这一行）
                 selectedWithCET: cetCourse ? this.calcGpa([...selectedCourses, cetCourse]) : null
             };
         }
@@ -125,7 +153,11 @@ export default {
         }
     },
     methods: {
-        // 南理工绩点折算阶梯
+        // 切换指定学期的折叠状态
+        toggleCollapse(semesterName) {
+            this.collapsedStates[semesterName] = !this.collapsedStates[semesterName];
+        },
+
         getGpaFromScore(num) {
             if (num >= 90) return 4.0;
             if (num >= 85) return 3.7;

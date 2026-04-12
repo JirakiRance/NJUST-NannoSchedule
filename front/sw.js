@@ -24,11 +24,17 @@ const urlsToCache = [
 
 // 1. 安装时：把核心文件全部下载到手机的隐秘空间
 self.addEventListener('install', event => {
+  // 魔法指令 1：强制跳过等待期，立刻安装！
+  self.skipWaiting();
+
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('正在缓存核心骨架...');
-        return cache.addAll(urlsToCache);
+        console.log('正在尝试缓存核心骨架...');
+
+        return cache.addAll(urlsToCache).catch(err => {
+            console.log('⚠️ 部分静态资源缓存失败(404)，但不影响 SW 核心启动！', err);
+        });
       })
   );
 });
@@ -55,6 +61,7 @@ self.addEventListener('fetch', event => {
 
 // 3. 激活时：清理旧版本的垃圾缓存
 self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(

@@ -33,7 +33,7 @@
                     <div class="feature-card" @click="openSubPage('empty_rooms')"><div class="feature-icon"><i class="ri-door-open-line" style="color: #8e8e93;"></i></div><div class="feature-name">空闲教室</div></div>
                     <div class="feature-card" @click="openSubPage('public_course')"><div class="feature-icon"><i class="ri-radar-line" style="color: #ff2d55;"></i></div><div class="feature-name">蹭课雷达</div></div>
                     <div class="feature-card" @click="openSubPage('websites')"><div class="feature-icon"><i class="ri-global-line" style="color: #007aff;"></i></div><div class="feature-name">常用网站</div></div>
-                    <div class="feature-card" @click="openSubPage('school_calendar')"><div class="feature-icon"><i class="ri-calendar-event-line" style="color: #af52de;"></i></div><div class="feature-name">学校年历</div></div>
+                    <div class="feature-card" @click="openSubPage('school_guide')"><div class="feature-icon"><i class="ri-map-2-line" style="color: #af52de;"></i></div><div class="feature-name">校园导览</div></div>
                     <div class="feature-card" @click="openSubPage('contact')"><div class="feature-icon"><i class="ri-mail-send-line" style="color: #5ac8fa;"></i></div><div class="feature-name">关于作者</div></div>
                 </div>
             </div>
@@ -45,7 +45,7 @@
             <websites-view v-if="store.currentSubPage === 'websites'"></websites-view>
             <public-course-view v-if="store.currentSubPage === 'public_course'"></public-course-view>
             <empty-rooms-view v-if="store.currentSubPage === 'empty_rooms'"></empty-rooms-view>
-            <school-calendar-view v-if="store.currentSubPage === 'school_calendar'"></school-calendar-view>
+            <school-guide-view v-if="store.currentSubPage === 'school_guide'"></school-guide-view>
             <contact-view v-if="store.currentSubPage === 'contact'"></contact-view>
         </div>
 
@@ -75,7 +75,7 @@
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
+            navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('SW 注册成功'))
             .catch(err => console.log('SW 注册失败', err));
         });

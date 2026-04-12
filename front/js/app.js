@@ -8,7 +8,7 @@ import ProfileView from './components/ProfileView.js';
 import WebsitesView from './components/WebsitesView.js';
 import PublicCourseView from './components/PublicCourseView.js';
 import EmptyRoomsView from './components/EmptyRoomsView.js';
-import SchoolCalendarView from './components/SchoolCalendarView.js';
+import SchoolGuideView from './components/SchoolGuideView.js';
 import ContactView from './components/ContactView.js';
 import SettingsView from './components/SettingsView.js';
 
@@ -26,12 +26,15 @@ createApp({
         WebsitesView,
         PublicCourseView,
         EmptyRoomsView,
-        SchoolCalendarView,
+        SchoolGuideView,
         ContactView,
         SettingsView
     },
     data() {
-        return { store };
+        return {
+            store,
+            notificationTimer: null
+         };
     },
     computed: {
         pageTitle() {
@@ -54,12 +57,26 @@ createApp({
                     'websites': '常用网站',
                     'public_course': '蹭课查询',
                     'empty_rooms': '空闲教室',
-                    'school_calendar': '学校年历',
+                    'school_guide': '校园导览',
                     'contact': '联系开发者'
                 };
                 return titleMap[this.store.currentSubPage] || '应用中心';
             }
             return 'NannoSchedule';
+        }
+    },
+
+    watch: {
+        // 1. 监听考试列表：不论是点击【同步】还是【注入测试数据】，只要数据变了，立刻触发检查！
+        'store.examsList': {
+            deep: true,
+            handler() {
+                if (this.isEligibleEnv()) this.checkExamNotifications();
+            }
+        },
+        // 2. 监听提醒开关：用户在设置里刚刚点开，立刻触发检查！
+        'store.examReminder.enabled'(newVal) {
+            if (newVal && this.isEligibleEnv()) this.checkExamNotifications();
         }
     },
 
@@ -87,9 +104,113 @@ createApp({
                 this.store.currentSubPage = '';
                 this.store.currentTab = tabName;
             }
+        },
+
+        // 增加手机端检测逻辑
+        isEligibleEnv() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isLocal = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+            return isMobile || isLocal;
+        },
+
+        // 检查并触发考试提醒
+        // 检查并触发考试提醒
+        checkExamNotifications() {
+            console.log("[通知雷达] 📡 开始扫描考试时间...");
+            if (!this.isEligibleEnv()) {
+                console.log("[通知雷达] 🚫 检测为生产网页端，已跳过");
+                return;
+            }
+
+            if (!this.store.examReminder.enabled) {
+                console.log("[通知雷达] 🚫 用户未在设置中开启考试提醒");
+                return;
+            }
+            if (Notification.permission !== 'granted') {
+                console.log(`[通知雷达] 🚫 无浏览器通知权限 (当前状态: ${Notification.permission})`);
+                return;
+            }
+            if (!this.store.examsList || this.store.examsList.length === 0) {
+                console.log("[通知雷达] 📭 考试列表为空，跳过");
+                return;
+            }
+
+            const now = new Date().getTime();
+            const notifiedLog = JSON.parse(localStorage.getItem('njust_exam_notified_log') || '{}');
+            let hasNewNotification = false;
+
+            const timeLimits = {
+                '7d': 7 * 24 * 60 * 60 * 1000, '3d': 3 * 24 * 60 * 60 * 1000, '1d': 1 * 24 * 60 * 60 * 1000,
+                '12h': 12 * 60 * 60 * 1000, '3h': 3 * 60 * 60 * 1000, '1h': 1 * 60 * 60 * 1000
+            };
+
+            let checkCount = 0;
+            let delayQueue = 0; // 排队延迟计数器
+
+            this.store.examsList.forEach(exam => {
+                const match = exam.time.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})/);
+                if (!match) return;
+                const startTime = new Date(match[1].replace(/-/g, '/') + ' ' + match[2] + ':00').getTime();
+                const timeDiff = startTime - now;
+
+                if (timeDiff <= 0) return;
+                checkCount++;
+
+                this.store.examReminder.selectedTimings.forEach(timing => {
+                    const limitMs = timeLimits[timing];
+                    const notifKey = `${exam.course_name}_${startTime}_${timing}`;
+
+                    if (timeDiff <= limitMs && !notifiedLog[notifKey]) {
+                        console.log(`[通知雷达] 🎯 触发目标！${exam.course_name} (策略: ${timing})`);
+
+                        // 排队发射！每张卡片间隔 800 毫秒，防止被 OS 当作垃圾信息吞掉
+                        setTimeout(() => {
+                            this.sendSystemNotification(`考试提醒：${exam.course_name}`, {
+                                body: `距离考试不到 ${timing.replace('d','天').replace('h','小时')}！\n⏰ 时间：${exam.time}\n📍 考场：${exam.room || '待定'} | 座位：${exam.seat || '--'}`,
+                                icon: './img/logo.png',
+                                vibrate: [200, 100, 200]
+                            });
+                        }, delayQueue * 800);
+
+                        delayQueue++; // 下一个通知再多等 800ms
+                        notifiedLog[notifKey] = true;
+                        hasNewNotification = true;
+                    }
+                });
+            });
+
+            console.log(`[通知雷达] 🏁 扫描完毕，有效待考科目: ${checkCount}`);
+            if (hasNewNotification) {
+                localStorage.setItem('njust_exam_notified_log', JSON.stringify(notifiedLog));
+            }
+        },
+
+        // 适配 PWA 的高级系统通知分发器 (带强力兜底)
+        sendSystemNotification(title, options) {
+            console.log("[系统通知] 🚀 准备调用浏览器 API 发送卡片:", title);
+            try {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistration().then(reg => {
+                        if (reg && reg.active) {
+                            console.log("[系统通知] ✅ 走 ServiceWorker 稳态发送");
+                            reg.showNotification(title, options);
+                        } else {
+                            console.log("[系统通知] ⚠️ 无激活的 SW，降级走原生 Notification");
+                            new Notification(title, options);
+                        }
+                    }).catch(err => {
+                        console.log("[系统通知] ❌ SW 捕获异常，强制兜底发送", err);
+                        new Notification(title, options);
+                    });
+                } else {
+                    console.log("[系统通知] 📡 走传统原生 Notification 发送");
+                    new Notification(title, options);
+                }
+            } catch (e) {
+                console.error("[系统通知] 💥 发送彻底崩溃:", e);
+            }
         }
     },
-
     mounted() {
         // 监听系统的历史回退事件
         window.addEventListener('popstate', this.handleSystemBack);
@@ -101,7 +222,19 @@ createApp({
                 store.courseList = parsed.courses || [];
                 store.gradeList = parsed.grades || [];
                 store.levelExamsList = parsed.level_exams || [];
+                store.examsList = parsed.exams || [];
             } else { store.currentTab = "profile"; }
         } catch (e) { store.currentTab = "profile"; }
+
+        // 只有在手机端才启动守护进程
+        if (this.isEligibleEnv()) {
+            console.log("手机端环境，启动考试提醒守护进程...");
+            this.checkExamNotifications();
+            this.notificationTimer = setInterval(this.checkExamNotifications, 60000);
+        }
+    },
+    unmounted() {
+        // 防止内存泄漏
+        if (this.notificationTimer) clearInterval(this.notificationTimer);
     }
 }).mount("#app");

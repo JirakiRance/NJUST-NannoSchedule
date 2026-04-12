@@ -47,5 +47,12 @@ export const store = reactive({
     // 三个精细化不透明度状态
     highlightOpacity: Number(localStorage.getItem("my_njust_highlight_opacity") ?? 0.2),
     cardOpacity: Number(localStorage.getItem("my_njust_card_opacity") ?? 0.95),
-    bgOpacity: Number(localStorage.getItem("my_njust_bg_opacity") ?? 1.0)
+    bgOpacity: Number(localStorage.getItem("my_njust_bg_opacity") ?? 1.0),
+
+    // 考试提醒设置
+    examReminder: {
+        enabled: JSON.parse(localStorage.getItem("exam_reminder_enabled") || "false"),
+        // 默认选择：3天, 12h, 1h
+        selectedTimings: JSON.parse(localStorage.getItem("exam_reminder_timings") || '["3d", "12h", "1h"]')
+    },
 });
