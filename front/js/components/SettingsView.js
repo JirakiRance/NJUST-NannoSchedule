@@ -53,6 +53,52 @@ export default {
             </div>
 
             <div class="card">
+                <div class="card-title">
+                    <i class="ri-radar-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>嗅探监控
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 14px; color: var(--text-main); font-weight: bold;">启用后台嗅探</span>
+                    <div class="switch-capsule" style="margin: 0;">
+                        <div class="switch-item" :class="{active: store.sniffer.enabled}" @click="toggleSniffer(true)">开启</div>
+                        <div class="switch-item" :class="{active: !store.sniffer.enabled}" @click="toggleSniffer(false)">关闭</div>
+                    </div>
+                </div>
+
+                <div v-show="store.sniffer.enabled" style="margin-top: 15px; animation: fade-in 0.3s ease-out; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--grid-border);">
+
+                    <div>
+                        <span style="font-size: 13px; color: var(--text-main); font-weight: bold;">检查新数据频率</span>
+                        <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                            <div v-for="opt in dataIntervalOptions" :key="opt.val"
+                                 class="period-checkbox"
+                                 style="padding: 6px 10px; font-size: 12px;"
+                                 :class="{ active: store.sniffer.dataInterval === opt.val }"
+                                 @click="setDataInterval(opt.val)">
+                                {{ opt.label }}
+                            </div>
+                        </div>
+                        <p style="font-size: 11px; color: var(--text-sub); margin-top: 8px; line-height: 1.4;">
+                            <i class="ri-search-eye-line" style="vertical-align: middle;"></i> 嗅探兽会在后台定期帮您静默查看是否有新的考试安排或学期变动。
+                        </p>
+                    </div>
+
+                    <div style="margin-top: 15px; border-top: 1px dashed var(--grid-border); padding-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-main); margin-bottom: 5px; font-weight: bold;">
+                            <span>保活心跳频率</span>
+                            <span style="color: var(--primary-color);">{{ store.sniffer.interval }} 分钟/次</span>
+                        </div>
+                        <input type="range" class="custom-range" min="1" max="240" step="1" v-model.number="store.sniffer.interval" @change="saveSnifferInterval">
+                        <p style="font-size: 11px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
+                            <i class="ri-alert-line" style="color:#ff9500; vertical-align: middle;"></i> <b>什么是保活心跳？</b><br>
+                            防踢机制。这是嗅探兽伪装成用户点击网页的频率，实测可无感挂机数天。建议保持默认的 60~120 分钟。
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card">
                 <div class="card-title"><i class="ri-palette-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>个性化</div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -190,7 +236,7 @@ export default {
             ],
 
             // 版本控制与弹窗状态
-            currentAppVersion: "v1.2.3",  // 每次发版在这里改！
+            currentAppVersion: "v1.3.0.1",
             showUpdateModal: false,
             isCheckingUpdate: false,
             updateData: null,
@@ -202,7 +248,14 @@ export default {
                 { label: '前 12h', val: '12h' },
                 { label: '前 3h', val: '3h' },
                 { label: '前 1h', val: '1h' }
-]
+            ],
+            dataIntervalOptions: [
+                //{ label: '30秒 (测试)', val: '30s' },
+                { label: '1天', val: '1d' },
+                { label: '3天', val: '3d' },
+                { label: '7天', val: '7d' },
+                { label: '14天', val: '14d' }
+            ],
         };
     },
     computed: {
@@ -214,6 +267,25 @@ export default {
         'store.scheduleViewType'(newVal) { localStorage.setItem("my_njust_view_type", newVal); }
     },
     methods: {
+
+        setDataInterval(val) {
+            this.store.sniffer.dataInterval = val;
+            localStorage.setItem("my_njust_sniffer_data_interval", val);
+        },
+
+        saveSnifferInterval() {
+            localStorage.setItem("my_njust_sniffer_interval", this.store.sniffer.interval);
+        },
+
+        toggleSniffer(status) {
+            this.store.sniffer.enabled = status;
+            localStorage.setItem("my_njust_sniffer_enabled", status ? "true" : "false");
+            if(status) {
+                showToast("嗅探模式已开启，请重新登录一次激活", "success");
+            } else {
+                showToast("嗅探模式已关闭", "success");
+            }
+        },
 
         async toggleReminder(status) {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);

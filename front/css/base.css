@@ -436,3 +436,27 @@ input[type="radio"] {
     color: #fff;
     border-color: var(--primary-color);
 }
+
+/* 修复深浅色模式下的学期下拉框和周次输入框 */
+.term-select,
+.week-input {
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    border: 1px solid var(--grid-border);
+    outline: none;
+    padding: 6px 10px;          /* 撑开上下左右的空间，让底色块更明显 */
+    border-radius: 6px;         /* 增加一点现代感的圆角 */
+    font-size: 14px;
+    color-scheme: light dark;   /* 强制浏览器原生的下拉弹窗也跟随深浅色 */
+}
+
+.term-select:focus,
+.week-input:focus {
+    border-color: var(--primary-color);
+}
+
+/* （可选）让输入框获取焦点时边框变色，交互更好 */
+.term-select:focus,
+.week-input:focus {
+    border-color: var(--primary-color);
+}

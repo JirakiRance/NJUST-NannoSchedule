@@ -6,6 +6,14 @@ class LoginRequest(BaseModel):
     password: str
     captcha: str
     term: str
+    keep_alive: bool = False
+
+class KeepAliveRequest(BaseModel):
+    session_id: str
+
+class SniffDataRequest(BaseModel):
+    session_id: str
+    term: str
 
 class BookSearchRequest(BaseModel):
     keyword: str

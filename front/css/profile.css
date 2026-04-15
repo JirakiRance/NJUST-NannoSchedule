@@ -347,20 +347,25 @@
 .term-select {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--grid-border);
     border-radius: 6px;
     font-size: 14px;
-    background: #f9f9f9;
+    background: var(--input-bg);
+    color: var(--text-main);
     outline: none;
+    color-scheme: light dark;
 }
 
 .week-input {
     width: 55px;
     padding: 8px 4px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--grid-border);
     border-radius: 6px;
     text-align: center;
+    background: var(--input-bg);
+    color: var(--text-main);
     outline: none;
+    color-scheme: light dark;
 }
 
 .btn-calibrate {
@@ -448,7 +453,7 @@
 .custom-range::-webkit-slider-runnable-track {
     width: 100%;
     height: 6px;
-    background: var(--grid-border);
+    background: rgba(150, 150, 150, 0.3);
     border-radius: 4px;
 }
 

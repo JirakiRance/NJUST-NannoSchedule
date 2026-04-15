@@ -1,41 +1,21 @@
 import { store } from '../store.js';
 import { API_BASE, showToast } from '../utils.js';
+import LoginCard from './LoginCard.js';
 
 export default {
+    components: { LoginCard },
     template: `
         <div class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
 
-            <div v-if="!roomSessionValid" class="card" style="margin-top: 15px;">
-                <div class="empty-room-header">
-                    <div class="empty-room-icon"><i class="ri-cup-line" style="color: #8d6e63;"></i></div>
-                    <div class="empty-room-title">寻找安静的角落</div>
-                    <div class="empty-room-desc">查询空教室需要保持教务处连接</div>
-                </div>
-                <div class="input-group"><input type="text" v-model="loginForm.username" placeholder="请输入学号"></div>
-                <div class="input-group" style="position: relative;">
-                    <input :type="showPassword ? 'text' : 'password'" v-model="loginForm.password" placeholder="请输入密码" style="padding-right: 60px;">
-                    <span @click="showPassword = !showPassword" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--primary-color); cursor: pointer; font-weight: bold; user-select: none;">
-                        {{ showPassword ? '隐藏' : '显示' }}
-                    </span>
-                </div>
-
-                <div class="captcha-box" style="margin-bottom: 8px;">
-                    <input type="text" v-model="loginForm.captcha" placeholder="验证码" @keyup.enter="roomLogin">
-                    <img v-if="captchaImg && !isFetchingCaptcha" :src="captchaImg" @click="fetchCaptcha">
-                    <div v-else class="captcha-placeholder" @click="fetchCaptcha">
-                        <span v-if="isFetchingCaptcha" style="animation: breathing 1.5s infinite;">加载中...</span>
-                        <span v-else>点击获取</span>
+            <login-card v-if="!roomSessionValid" mode="pure" @login-success="onLoginSuccess">
+                <template #header>
+                    <div class="empty-room-header">
+                        <div class="empty-room-icon"><i class="ri-cup-line" style="color: #8d6e63;"></i></div>
+                        <div class="empty-room-title">寻找安静的角落</div>
+                        <div class="empty-room-desc">查询空教室需要保持教务处连接</div>
                     </div>
-                </div>
-                <div style="font-size: 11px; color: #ff9500; margin-bottom: 15px; text-align: right;">
-                    <i class="ri-information-line" style="vertical-align: middle;"></i> 教务处响应较慢，验证码可能需等待 5-10 秒
-                </div>
-
-                <button class="btn" @click="roomLogin" :disabled="isRoomLoggingIn || isFetchingCaptcha">
-                    <i v-if="isRoomLoggingIn" class="ri-loader-4-line ri-spin" style="margin-right: 5px;"></i>
-                    {{ isRoomLoggingIn ? '建立连接中...' : '连接并查询' }}
-                </button>
-            </div>
+                </template>
+            </login-card>
 
             <div v-else style="display: flex; flex-direction: column; height: 100%;">
                 <div class="empty-room-filter-dashboard">
@@ -93,9 +73,11 @@ export default {
     `,
     data() {
         return {
-            store, roomSessionValid: false, isRoomLoggingIn: false, isFetchingCaptcha: false, showPassword: false,
-            captchaImg: "", loginForm: { username: "", password: "", captcha: "", session_id: "" },
-            isSearchingRooms: false, allEmptyRooms: [],
+            store,
+            roomSessionValid: false,
+            sessionId: "", // 存放登录成功后传来的 ID
+            isSearchingRooms: false,
+            allEmptyRooms: [],
             periodOptions: [
                 { name: "一(1-3)", value: "01-03" }, { name: "二(4-5)", value: "04-05" },
                 { name: "三(6-7)", value: "06-07" }, { name: "四(8-10)", value: "08-10" },
@@ -105,50 +87,21 @@ export default {
         }
     },
     methods: {
-        // 接管时段点击逻辑
+        onLoginSuccess(id) {
+            this.sessionId = id;
+            this.roomSessionValid = true;
+        },
         togglePeriod(val) {
             const idx = this.roomQuery.periods.indexOf(val);
             if (idx !== -1) {
-                // 如果已选中，则取消选中
                 this.roomQuery.periods.splice(idx, 1);
             } else {
-                // 如果未选中，先判断是不是已经选了 4 个了
                 if (this.roomQuery.periods.length >= 4) {
                     showToast("为考研学子留片天地，最多只允许同时选择 4 个时段", "error");
-                    return; // 物理阻断，无法继续添加
+                    return;
                 }
                 this.roomQuery.periods.push(val);
             }
-        },
-
-        async fetchCaptcha() {
-            if (this.isFetchingCaptcha) return;
-            this.isFetchingCaptcha = true;
-            this.captchaImg = "";
-            try {
-                const res = await fetch(`${API_BASE}/captcha`);
-                const data = await res.json();
-                this.captchaImg = data.captcha_image; this.loginForm.session_id = data.session_id;
-            } catch (e) { showToast("无法获取验证码"); } finally { this.isFetchingCaptcha = false; }
-        },
-        async roomLogin() {
-            if(!this.loginForm.username || !this.loginForm.password || !this.loginForm.captcha) return showToast("请填写完整");
-            this.isRoomLoggingIn = true;
-            const requestPayload = {
-                ...this.loginForm,
-                term: store.currentTerm
-            };
-            try {
-                const res = await fetch(`${API_BASE}/pure_login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestPayload) });
-                const result = await res.json();
-                if (res.ok) {
-                    this.roomSessionValid = true; showToast("连接教务处成功", "success");
-                } else {
-                    const errorMsg = typeof result.detail === 'string' ? result.detail : "参数缺失或验证失败";
-                    showToast(errorMsg, "error");
-                    this.fetchCaptcha();
-                }
-            } catch (e) { showToast("网络异常"); } finally { this.isRoomLoggingIn = false; }
         },
         async searchEmptyRooms() {
             if (this.roomQuery.periods.length === 0) return showToast("请至少勾选一个大节", "error");
@@ -168,7 +121,7 @@ export default {
                     const res = await fetch(`${API_BASE}/empty_rooms`, {
                         method: "POST", headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            session_id: this.loginForm.session_id,
+                            session_id: this.sessionId, // 使用拿到的 ID
                             term: store.currentTerm,
                             week: targetWeek.toString(),
                             day: targetDay.toString(),
@@ -188,7 +141,6 @@ export default {
                     } else {
                         if (res.status === 400 || res.status === 401) {
                             this.roomSessionValid = false;
-                            this.fetchCaptcha();
                             showToast("连接断开，请重新验证", "error");
                         } else {
                             showToast(result.detail || "查询失败");
@@ -206,6 +158,5 @@ export default {
                 this.isSearchingRooms = false;
             }
         }
-    },
-    mounted() { this.fetchCaptcha(); }
+    }
 }

@@ -55,4 +55,24 @@ export const store = reactive({
         // 默认选择：3天, 12h, 1h
         selectedTimings: JSON.parse(localStorage.getItem("exam_reminder_timings") || '["3d", "12h", "1h"]')
     },
+
+   // 嗅探兽系统状态
+    sniffer: {
+        enabled: JSON.parse(localStorage.getItem("my_njust_sniffer_enabled") || "false"),
+        interval: Number(localStorage.getItem("my_njust_sniffer_interval") || 60), // 底层保活心跳 (分钟)
+        dataInterval: localStorage.getItem("my_njust_sniffer_data_interval") || "7d", // 业务数据检查频率
+        status: 'sleeping', // sleeping, breathing, dead
+        sessionId: localStorage.getItem("my_njust_sniffer_session") || "",
+        activeNode: localStorage.getItem("my_njust_sniffer_node") || "",
+        lastBeat: '',
+        // sniffer未读情报数组，持久化存储
+        intelligence: JSON.parse(localStorage.getItem("my_njust_sniffer_intelligence") || "[]")
+    },
+
+    userAccount: {
+        // 默认开启记住密码（只要不是显式存了 "false"，就认为是 true）
+        remember: localStorage.getItem("my_njust_remember") !== "false",
+        username: localStorage.getItem("my_njust_username") || "",
+        password: localStorage.getItem("my_njust_password") || ""
+    }
 });

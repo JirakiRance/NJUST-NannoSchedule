@@ -11,6 +11,7 @@ import EmptyRoomsView from './components/EmptyRoomsView.js';
 import SchoolGuideView from './components/SchoolGuideView.js';
 import ContactView from './components/ContactView.js';
 import SettingsView from './components/SettingsView.js';
+import LoginCard from './components/LoginCard.js';
 
 const { createApp } = Vue;
 
@@ -28,7 +29,8 @@ createApp({
         EmptyRoomsView,
         SchoolGuideView,
         ContactView,
-        SettingsView
+        SettingsView,
+        LoginCard
     },
     data() {
         return {
