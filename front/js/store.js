@@ -1,25 +1,24 @@
 const { reactive } = Vue;
 
-// 计算出当前真实周次
+// 开学日期没有任何缓存时，坚决使用当天 new Date()
 const savedStartDate = localStorage.getItem("my_njust_start_date") || new Date().toISOString().split('T')[0];
 let start = new Date(savedStartDate); start.setHours(0, 0, 0, 0);
 let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
 let initWeek = Math.max(1, Math.min(weekCount, 25));
+
 const defaultTerms = ["2026-2027-2", "2026-2027-1", "2025-2026-2", "2025-2026-1", "2024-2025-2", "2024-2025-1"];
-//const savedTerms = JSON.parse(localStorage.getItem("my_njust_term_options") || "null");
-// 彻底拦截 "null" 字符串导致的崩溃
 let savedTerms = [];
 try {
     const raw = localStorage.getItem("my_njust_term_options");
-    if (raw && raw !== "null" && raw !== "undefined") {
-        savedTerms = JSON.parse(raw);
+    if (raw && raw !== "null" && raw !== "undefined" && raw !== '["获取中..."]') {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) savedTerms = parsed;
     }
-} catch (e) {
-    savedTerms = [];
-}
-const savedTermStr = localStorage.getItem("my_njust_term");
-const finalTerm = (savedTermStr && savedTermStr !== "null") ? savedTermStr : "获取中...";
+} catch (e) {}
 
+const savedTermStr = localStorage.getItem("my_njust_term");
+// 如果没有缓存，直接传空字符串 ""。教务处接收到空字符串，会自动返回当前最新学期的课表
+const finalTerm = (savedTermStr && savedTermStr !== "null" && savedTermStr !== "获取中...") ? savedTermStr : "";
 // 读取本地持久化的自定义课表
 const savedCustomCourses = JSON.parse(localStorage.getItem("my_njust_custom_courses") || "[]");
 

@@ -171,6 +171,27 @@ export default {
 
                         showToast("同步成功！", "success");
                         store.currentTab = 'schedule';
+
+                        // 同步完成后，拉取 notice.json 强行矫正时间轴和学期名
+                        try {
+                            const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${new Date().getTime()}`);
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.term_update) {
+                                    const r = data.term_update;
+                                    store.currentTerm = r.term;
+                                    store.termStartDate = r.start_date;
+                                    localStorage.setItem("my_njust_term", r.term);
+                                    localStorage.setItem("my_njust_start_date", r.start_date);
+
+                                    let s = new Date(r.start_date); s.setHours(0,0,0,0);
+                                    let wc = Math.floor((new Date() - s) / (1000 * 60 * 60 * 24 * 7)) + 1;
+                                    store.realWeek = Math.max(1, Math.min(wc, 25));
+                                    store.currentWeek = store.realWeek;
+                                }
+                            }
+                        } catch(e) { console.log("拉取 notice 失败", e); }
+
                     } else {
                         showToast("连接教务处成功", "success");
                     }
