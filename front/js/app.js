@@ -243,9 +243,71 @@ createApp({
             } catch (e) {
                 console.error("[系统推送] 发送彻底异常:", e);
             }
-        }
+        },
+
+        // 全局初始化配置
+        async initAppConfig() {
+            try {
+                const timestamp = new Date().getTime();
+                const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
+                if (!res.ok) return;
+
+                const data = await res.json();
+
+                // 1. 处理全局公告栏 (存入全局 store 以便 ProfileView 读取)
+                if (data.show) {
+                     this.store.globalNotice = data;
+                }
+
+                // 2. 处理学期基准自动更新
+                if (data.term_update) {
+                    const remoteConfig = data.term_update;
+                    const localConfigVersion = localStorage.getItem("my_njust_term_config_version");
+                    const hasLocalTerm = localStorage.getItem("my_njust_term"); // 判断是不是全新用户
+
+                    // 如果版本号不同，或者是第一次打开软件，则强制覆盖
+                    if (localConfigVersion !== remoteConfig.version_id || !hasLocalTerm) {
+                        this.store.currentTerm = remoteConfig.term;
+                        this.store.termStartDate = remoteConfig.start_date;
+                        localStorage.setItem("my_njust_term", remoteConfig.term);
+                        localStorage.setItem("my_njust_start_date", remoteConfig.start_date);
+                        localStorage.setItem("my_njust_term_config_version", remoteConfig.version_id);
+
+                        // 清除"获取中..."的占位符并更新列表
+                        const newOptions = this.store.termOptions.filter(t => t !== "获取中...");
+                        if (!newOptions.includes(remoteConfig.term)) {
+                            newOptions.unshift(remoteConfig.term);
+                        }
+                        this.store.termOptions = newOptions;
+                        localStorage.setItem("my_njust_term_options", JSON.stringify(newOptions));
+
+                        // 重新计算周次
+                        let start = new Date(remoteConfig.start_date);
+                        start.setHours(0, 0, 0, 0);
+                        let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
+                        this.store.realWeek = Math.max(1, Math.min(weekCount, 25));
+                        this.store.currentWeek = this.store.realWeek;
+
+                        // 只有老用户（本地有版本号但不同）更新学期时才弹窗，首次打开新用户不弹窗打扰
+                        if (localConfigVersion) {
+                            setTimeout(() => {
+                                // 这里使用原生的 alert 或者简单的 console，因为主组件可能没有引用 showToast
+                                console.log(`已自动为您校准至 ${remoteConfig.term} 学期`);
+                            }, 800);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log("初始化配置失败，使用本地缓存");
+            }
+        },
+
     },
     mounted() {
+
+        // 应用启动时立刻拉取云端配置
+        this.initAppConfig();
+
         // 监听系统的历史回退事件
         window.addEventListener('popstate', this.handleSystemBack);
         // 读取本地缓存

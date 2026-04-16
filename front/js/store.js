@@ -1,12 +1,24 @@
 const { reactive } = Vue;
 
 // 计算出当前真实周次
-const savedStartDate = localStorage.getItem("my_njust_start_date") || "2026-03-02";
+const savedStartDate = localStorage.getItem("my_njust_start_date") || new Date().toISOString().split('T')[0];
 let start = new Date(savedStartDate); start.setHours(0, 0, 0, 0);
 let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
 let initWeek = Math.max(1, Math.min(weekCount, 25));
-const savedTerms = JSON.parse(localStorage.getItem("my_njust_term_options") || "null");
 const defaultTerms = ["2026-2027-2", "2026-2027-1", "2025-2026-2", "2025-2026-1", "2024-2025-2", "2024-2025-1"];
+//const savedTerms = JSON.parse(localStorage.getItem("my_njust_term_options") || "null");
+// 彻底拦截 "null" 字符串导致的崩溃
+let savedTerms = [];
+try {
+    const raw = localStorage.getItem("my_njust_term_options");
+    if (raw && raw !== "null" && raw !== "undefined") {
+        savedTerms = JSON.parse(raw);
+    }
+} catch (e) {
+    savedTerms = [];
+}
+const savedTermStr = localStorage.getItem("my_njust_term");
+const finalTerm = (savedTermStr && savedTermStr !== "null") ? savedTermStr : "获取中...";
 
 // 读取本地持久化的自定义课表
 const savedCustomCourses = JSON.parse(localStorage.getItem("my_njust_custom_courses") || "[]");
@@ -22,9 +34,10 @@ document.documentElement.setAttribute('data-theme', savedThemeMode);
 export const store = reactive({
     currentTab: "schedule",
     currentSubPage: "",
-    currentTerm: localStorage.getItem("my_njust_term") || "2025-2026-2",
-
-    termOptions: savedTerms || defaultTerms,
+    globalNotice: null,
+    // 如果没有，先给个占位符，避免在渲染时报错
+    currentTerm: finalTerm,
+    termOptions: savedTerms.length > 0 ? savedTerms : ["获取中..."],
 
     // 数据缓存
     courseList: [],
