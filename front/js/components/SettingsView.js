@@ -1,5 +1,5 @@
 import { store } from '../store.js';
-import { showToast } from '../utils.js';
+import { API_BASE,showToast } from '../utils.js';
 
 export default {
     template: `
@@ -277,13 +277,33 @@ export default {
             localStorage.setItem("my_njust_sniffer_interval", this.store.sniffer.interval);
         },
 
-        toggleSniffer(status) {
+        async toggleSniffer(status) {
             this.store.sniffer.enabled = status;
             localStorage.setItem("my_njust_sniffer_enabled", status ? "true" : "false");
-            if(status) {
+
+            if (status) {
                 showToast("嗅探模式已开启，请重新登录一次激活", "success");
             } else {
-                showToast("嗅探模式已关闭", "success");
+                // 如果关闭前存在 session，则通知后端彻底粉碎硬盘存档
+                if (this.store.sniffer.sessionId) {
+                    try {
+                        // 异步发送销毁指令（Fire and forget）
+                        fetch(`${API_BASE}/destroy_session`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ session_id: this.store.sniffer.sessionId })
+                        });
+                    } catch(e) {
+                        console.error("销毁请求发送失败");
+                    }
+
+                    // 前端清空凭据，退回初始待机状态
+                    this.store.sniffer.sessionId = "";
+                    this.store.sniffer.status = "sleeping";
+                    localStorage.removeItem("my_njust_sniffer_session");
+                }
+
+                showToast("嗅探模式已关闭，通行凭证已彻底销毁", "success");
             }
         },
 

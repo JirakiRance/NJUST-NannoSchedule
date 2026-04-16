@@ -178,7 +178,7 @@ export default {
             showToast("情报已阅", "success");
         },
 
-        async triggerHeartbeat(isManual = false) {
+       async triggerHeartbeat(isManual = false) {
             if(!store.sniffer.sessionId) return;
             this.addLog(isManual ? ">> [手动] 发起防踢心跳..." : ">> [自动] 发起防踢心跳...");
 
@@ -188,18 +188,25 @@ export default {
                     body: JSON.stringify({ session_id: store.sniffer.sessionId })
                 });
 
+                // 【核心改动】：明确接收到 401 状态码，才说明教务处把我们踢了
+                if (res.status === 401) {
+                    this.addLog("!! Session 已在教务处端过期清理。");
+                    this.killAllDaemons('dead'); // 彻底挂起并标记为红色离线
+                    return;
+                }
+
+                if (!res.ok) throw new Error("网络异常");
+
                 const data = await res.json();
-                if (res.ok && data.status === "alive") {
+                if (data.status === "alive") {
                     this.store.sniffer.status = 'breathing';
-                    this.store.sniffer.lastBeat = this.getPreciseTime();
-                    this.addLog(`<< 心跳成功，节点确认`);
-                } else {
-                    throw new Error("Session Invalid");
+                    this.store.sniffer.lastBeat = new Date().toLocaleTimeString('en-GB');
+                    this.addLog(`<< 心跳成功`);
                 }
             } catch (e) {
-                this.store.sniffer.status = 'dead';
-                this.addLog("!! 心跳超时或被拒绝，Session 死亡。");
-                this.killAllDaemons();
+                // 如果是断网（比如切后台断连），只做提示，不杀进程！定时器会继续跑，等网络恢复就活了！
+                this.store.sniffer.status = 'sleeping'; // 临时变为灰色休眠状态
+                this.addLog(`!! 网络连接异常 (稍后自动重试)`);
             }
         },
 
@@ -301,17 +308,23 @@ export default {
             this.dataSniffTimer = setInterval(() => this.triggerDataSniff(), intervalMs);
         },
 
-        killAllDaemons() {
-            this.addLog("[系统] 任务已卸载，全部定时器挂起。");
-            this.store.sniffer.status = 'sleeping';
+        killAllDaemons(targetStatus = 'sleeping') {
+            this.addLog("[系统] 任务已挂起。");
+            this.store.sniffer.status = targetStatus;
             if (this.heartbeatTimer) { clearInterval(this.heartbeatTimer); this.heartbeatTimer = null; }
             if (this.dataSniffTimer) { clearInterval(this.dataSniffTimer); this.dataSniffTimer = null; }
         }
     },
     mounted() {
         if (store.sniffer.enabled && store.sniffer.sessionId) {
-            this.addLog("[系统] 初始化成功，唤醒进程...");
+            this.addLog("[系统] 唤醒嗅探兽...");
             this.mountAllDaemons();
         }
+    },
+
+    unmounted() {
+        // 用户切走页面时，清空旧定时器，防止重进页面时产生双倍心跳
+        if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+        if (this.dataSniffTimer) clearInterval(this.dataSniffTimer);
     }
 }

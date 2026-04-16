@@ -91,7 +91,7 @@ export default {
         }
     },
     methods: {
-        async fetchCaptcha() {
+        async fetchCaptcha(isAuto = false) {
             if (this.isFetchingCaptcha) return;
             this.isFetchingCaptcha = true; this.captchaImg = "";
             try {
@@ -99,7 +99,10 @@ export default {
                 const data = await res.json();
                 this.captchaImg = data.captcha_image;
                 this.sessionId = data.session_id;
-            } catch (e) { showToast("无法获取验证码，请重试"); } finally { this.isFetchingCaptcha = false; }
+            } catch (e) {
+                // 只有用户手动点击刷新时，失败才弹窗提示
+                if (!isAuto) showToast("无法获取验证码，请检查网络");
+            } finally { this.isFetchingCaptcha = false; }
         },
         async submitLogin() {
             if(!this.loginForm.username || !this.loginForm.password || !this.captcha) {
@@ -158,6 +161,14 @@ export default {
                         store.sniffer.sessionId = this.sessionId;
                         localStorage.setItem("my_njust_sniffer_session", this.sessionId);
 
+                        if (store.sniffer.enabled) {
+                            store.sniffer.sessionId = this.sessionId;
+                            localStorage.setItem("my_njust_sniffer_session", this.sessionId);
+                        } else {
+                            store.sniffer.sessionId = "";
+                            localStorage.removeItem("my_njust_sniffer_session");
+                        }
+
                         showToast("同步成功！", "success");
                         store.currentTab = 'schedule';
                     } else {
@@ -175,7 +186,7 @@ export default {
         }
     },
     mounted() {
-        this.fetchCaptcha();
+        this.fetchCaptcha(true);
         // 卡片初始化时，如果允许记住，再把全局状态拉取到局部框里
         if (this.store.userAccount.remember) {
             this.loginForm.username = this.store.userAccount.username;
