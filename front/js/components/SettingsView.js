@@ -86,12 +86,12 @@ export default {
                     <div style="margin-top: 15px; border-top: 1px dashed var(--grid-border); padding-top: 15px;">
                         <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-main); margin-bottom: 5px; font-weight: bold;">
                             <span>保活心跳频率</span>
-                            <span style="color: var(--primary-color);">{{ store.sniffer.interval }} 分钟/次</span>
+                            <span style="color: var(--primary-color);">{{ store.sniffer.interval }} 小时/次</span>
                         </div>
-                        <input type="range" class="custom-range" min="1" max="240" step="1" v-model.number="store.sniffer.interval" @change="saveSnifferInterval">
+                        <input type="range" class="custom-range" min="1" max="24" step="1" v-model.number="store.sniffer.interval" @change="saveSnifferInterval">
                         <p style="font-size: 11px; color: var(--text-sub); margin-top: 8px; line-height: 1.5;">
-                            <i class="ri-alert-line" style="color:#ff9500; vertical-align: middle;"></i> <b>什么是保活心跳？</b><br>
-                            防踢机制。这是嗅探兽伪装成用户点击网页的频率，实测可无感挂机数天。建议保持默认的 60~120 分钟。
+                            <i class="ri-shield-check-line" style="color:#34c759; vertical-align: middle;"></i> <b>防踢机制：</b><br>
+                            实测教务处系统容忍度较高，连续存活 10+ 小时不掉线。建议保持默认的 10 小时/次。
                         </p>
                     </div>
 
@@ -236,7 +236,7 @@ export default {
             ],
 
             // 版本控制与弹窗状态
-            currentAppVersion: "v1.3.0.1",
+            currentAppVersion: "获取中...",
             showUpdateModal: false,
             isCheckingUpdate: false,
             updateData: null,
@@ -458,5 +458,16 @@ export default {
         if (this.isCustomColor) {
             this.customColorValue = this.store.themeColor;
         }
+
+        // 动态获取本地静态的版本配置文件（加时间戳防止浏览器缓存）
+        fetch('./version.json?t=' + new Date().getTime())
+            .then(res => res.json())
+            .then(data => {
+                this.currentAppVersion = "v" + data.versionName;
+            })
+            .catch(e => {
+                console.log("未找到版本配置文件，使用默认版本号");
+                this.currentAppVersion = "v1.3.0.2"; // 兜底
+            });
     }
 }

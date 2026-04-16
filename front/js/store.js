@@ -71,7 +71,7 @@ export const store = reactive({
    // 嗅探兽系统状态
     sniffer: {
         enabled: JSON.parse(localStorage.getItem("my_njust_sniffer_enabled") || "false"),
-        interval: Number(localStorage.getItem("my_njust_sniffer_interval") || 60), // 底层保活心跳 (分钟)
+        interval: Number(localStorage.getItem("my_njust_sniffer_interval") || 10), // 底层保活心跳 (小时)
         dataInterval: localStorage.getItem("my_njust_sniffer_data_interval") || "7d", // 业务数据检查频率
         status: 'sleeping', // sleeping, breathing, dead
         sessionId: localStorage.getItem("my_njust_sniffer_session") || "",

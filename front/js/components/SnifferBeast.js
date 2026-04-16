@@ -35,7 +35,7 @@ export default {
 
             <div class="sniffer-info">
                 Session: {{ store.sniffer.sessionId ? store.sniffer.sessionId.substring(0,8) + '...' : '尚未绑定' }}
-                <span class="right">心跳:{{ store.sniffer.interval }}m | 嗅探:{{ store.sniffer.dataInterval }}</span>
+                <span class="right">心跳:{{ store.sniffer.interval }}h | 嗅探:{{ store.sniffer.dataInterval }}</span>
             </div>
             <div class="sniffer-info" style="margin-bottom: 10px;">
                 最后活跃: <span class="light">{{ store.sniffer.lastBeat || '未启动' }}</span>
@@ -287,7 +287,7 @@ export default {
 
         mountHeartbeat() {
             if(this.heartbeatTimer) clearInterval(this.heartbeatTimer);
-            const intervalMs = this.store.sniffer.interval * 60 * 1000;
+            const intervalMs = this.store.sniffer.interval * 60 * 1000 * 60;
             setTimeout(() => this.triggerHeartbeat(), 2000);
             this.heartbeatTimer = setInterval(() => this.triggerHeartbeat(), intervalMs);
         },
