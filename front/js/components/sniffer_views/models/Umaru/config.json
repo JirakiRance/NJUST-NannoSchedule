@@ -1,0 +1,22 @@
+{
+    "name": "Umaru",
+    "version": 4,
+    "isCustom": true,
+    "availableMotions": [
+        "CAT_motion",
+        "CAT_motion_lock"
+    ],
+    "url": "./js/components/sniffer_views/models/Umaru/models/urume-chan/cat.model3.json",
+    "layout": {
+        "scale": 0.43,
+        "x": -43,
+        "y": 50
+    },
+    "motions": {
+        "alive": "CAT_motion",
+        "alert": "CAT_motion_lock",
+        "dead": "CAT_motion_lock",
+        "interact": "CAT_motion",
+        "sleeping": "CAT_motion"
+    }
+}

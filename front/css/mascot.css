@@ -72,3 +72,48 @@
     pointer-events: auto;
     white-space: nowrap;
 }
+
+/* 对话气泡容器 */
+.l2d-speech-bubble {
+    position: absolute;
+    bottom: 210px; /* 位于模型头顶附近 */
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    width: 140px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--primary-color);
+    border-radius: 15px;
+    padding: 10px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    z-index: 10005;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: auto;
+    opacity: 0;
+}
+
+/* 气泡显示状态 */
+.l2d-speech-bubble.active {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+}
+
+/* 气泡的小尾巴 */
+.l2d-speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    margin-left: -8px;
+    border-width: 10px 8px 0;
+    border-style: solid;
+    border-color: var(--primary-color) transparent transparent;
+}
+
+.l2d-bubble-text {
+    color: #333;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 1.4;
+    text-align: center;
+    word-break: break-all;
+}

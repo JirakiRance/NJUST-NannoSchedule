@@ -1,4 +1,22 @@
 [
-    { "id": "haru", "name": "Haru" },
-    { "id": "shizuku", "name": "Shizuku" }
+    {
+        "id": "haru",
+        "name": "Haru",
+        "isCustom": false
+    },
+    {
+        "id": "shizuku",
+        "name": "Shizuku",
+        "isCustom": false
+    },
+    {
+        "id": "koharu",
+        "name": "koharu",
+        "isCustom": false
+    },
+    {
+        "id": "Umaru",
+        "name": "Umaru",
+        "isCustom": true
+    }
 ]

@@ -1,7 +1,9 @@
 import { store } from '../store.js';
 import { API_BASE,showToast } from '../utils.js';
+import ModelLabModal from './ModelLabModal.js';
 
 export default {
+    components: { ModelLabModal },
     template: `
         <div style="padding: 15px; padding-bottom: 80px; animation: fade-in 0.2s ease-out;">
 
@@ -74,12 +76,37 @@ export default {
                             <div class="switch-item" style="font-size: 12px; padding: 4px 10px;" :class="{active: store.sniffer.visualMode === 'live2d'}" @click="changeVisualMode('live2d')">Live2D</div>
                         </div>
                     </div>
-                    <div v-show="store.sniffer.visualMode === 'live2d'" style="margin-bottom: 15px; border-bottom: 1px dashed var(--grid-border); padding-bottom: 15px; animation: fade-in 0.3s ease-out;">
-                         <span style="font-size: 13px; color: var(--text-main); font-weight: bold; display: block; margin-bottom: 8px;">选择看板娘模型</span>
-                         <select v-model="store.sniffer.modelId" @change="saveModelId" class="term-select" style="width: 100%;">
-                             <option v-for="m in availableModels" :key="m.id" :value="m.id">{{ m.name }}</option>
-                             <option value="custom" disabled>+ 自定义模型</option>
-                         </select>
+                    <div v-show="store.sniffer.visualMode === 'live2d'" style="margin-bottom: 20px; border-bottom: 1px dashed var(--grid-border); padding-bottom: 15px; animation: fade-in 0.3s ease-out;">
+                         <div style="font-size: 13px; color: var(--text-main); font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                             <span>看板娘模型管理器</span>
+                             <button class="btn" style="width: auto; padding: 4px 10px; margin: 0; background: var(--primary-color); color: #fff; font-size: 11px;" @click="openModelLab(null)">
+                                 <i class="ri-add-line"></i> 导入 ZIP
+                             </button>
+                         </div>
+
+                         <div style="background: var(--input-bg); border-radius: 8px; border: 1px solid var(--grid-border); overflow: hidden;">
+                             <div v-for="m in availableModels" :key="m.id"
+                                  style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--grid-border); cursor: pointer; transition: background 0.2s;"
+                                  :style="store.sniffer.modelId === m.id ? 'background: rgba(52, 199, 89, 0.1);' : ''"
+                                  @click="selectModel(m.id)">
+
+                                 <div style="display: flex; align-items: center; gap: 8px;">
+                                     <i :class="store.sniffer.modelId === m.id ? 'ri-radio-button-fill' : 'ri-checkbox-blank-circle-line'"
+                                        :style="{ color: store.sniffer.modelId === m.id ? 'var(--primary-color)' : 'var(--text-sub)', fontSize: '16px' }"></i>
+                                     <span style="font-size: 13px; color: var(--text-main); font-weight: 500;">{{ m.name }}</span>
+                                     <span v-if="m.isCustom" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #ff9500; color: #fff;">自定义</span>
+                                     <span v-else style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #34c759; color: #fff;">内置</span>
+                                 </div>
+
+                                 <div v-if="m.isCustom" style="display: flex; gap: 10px;">
+                                     <i class="ri-equalizer-line" style="color: var(--text-sub); font-size: 16px;" title="修改参数" @click.stop="openModelLab(m.id)"></i>
+                                     <i class="ri-delete-bin-line" style="color: #ff3b30; font-size: 16px;" title="删除" @click.stop="deleteModel(m.id)"></i>
+                                 </div>
+                             </div>
+                             <div v-if="availableModels.length === 0" style="padding: 15px; text-align: center; font-size: 12px; color: var(--text-sub);">
+                                 暂无可用模型，请导入或检查配置文件
+                             </div>
+                         </div>
                     </div>
 
                     <div>
@@ -235,7 +262,7 @@ export default {
                     </div>
                 </div>
             </div>
-
+            <model-lab-modal v-if="showModelLab" :edit-id="editingModelId" @close="showModelLab = false" @saved="onLabSaved" @deleted="refreshModelList"></model-lab-modal>
         </div>
     `,
     data() {
@@ -244,6 +271,7 @@ export default {
             settingWeek: store.realWeek,
             customColorValue: store.themeColor,
             availableModels: [],
+            showModelLab: false,
             availableColors: [
                 { name: '天空蓝', value: '#5b9bd5' },
                 { name: '哔哩粉', value: '#fb7299' },
@@ -283,6 +311,84 @@ export default {
         'store.scheduleViewType'(newVal) { localStorage.setItem("my_njust_view_type", newVal); }
     },
     methods: {
+
+        async deleteModel(id) {
+            // 严防死守：禁止删除内置模型
+            if (id === 'haru' || id === 'shizuku') {
+                showToast("内置模型不可删除", "error");
+                return;
+            }
+
+            if (!confirm(`确定要彻底删除模型 [${id}] 吗？\n此操作将物理删除本地文件夹且不可恢复！`)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/delete_live2d`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ modelId: id })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    showToast("模型已物理移除", "success");
+                    // 如果删掉的是当前选中的，切回 shizuku
+                    if (this.store.sniffer.modelId === id) {
+                        this.store.sniffer.modelId = 'shizuku';
+                        this.saveModelId();
+                    }
+                    await this.refreshModelList();
+                } else {
+                    showToast("删除失败：" + result.message, "error");
+                }
+            } catch (e) {
+                showToast("网络异常，删除失败", "error");
+            }
+        },
+
+
+        selectModel(id) {
+            this.store.sniffer.modelId = id;
+            this.saveModelId();
+        },
+        openModelLab(editId = null) {
+            // null 表示新建导入，传 id 表示编辑现有模型
+            this.editingModelId = editId;
+            this.showModelLab = true;
+        },
+        async deleteModel(id) {
+            if (!confirm("确定要彻底删除此自定义模型吗？文件将从本地移除。")) return;
+            try {
+                await fetch(`${API_BASE}/delete_live2d`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ modelId: id })
+                });
+                showToast("模型已删除", "success");
+                // 如果删除了当前正在使用的模型，自动切回内置的 haru
+                if (this.store.sniffer.modelId === id) {
+                    this.selectModel('haru');
+                }
+                this.refreshModelList();
+            } catch (e) {
+                showToast("删除失败", "error");
+            }
+        },
+
+        // 重新拉取模型列表 (当保存或删除自定义模型后)
+        async refreshModelList() {
+            try {
+                const res = await fetch('./js/components/sniffer_views/models/index.json?t=' + new Date().getTime());
+                this.availableModels = await res.json();
+            } catch (e) {
+                console.error("刷新花名册失败", e);
+            }
+        },
+        // 实验室点保存后的回调：刷新列表并选中新模型
+        async onLabSaved(newModelId) {
+            await this.refreshModelList();
+            this.store.sniffer.modelId = newModelId;
+            this.saveModelId();
+        },
 
         saveModelId() {
             localStorage.setItem("my_njust_sniffer_model", this.store.sniffer.modelId);

@@ -6,9 +6,11 @@ export default {
     props: ['mascotState', 'mascotStatusText'],
     template: `
         <div style="position: fixed; bottom: 60px; left: 10px; width: 180px; text-align: center; z-index: 10000; pointer-events: none;">
-            <span style="font-size: 11px; font-weight: bold; color: var(--primary-color); background: rgba(20, 20, 25, 0.85); padding: 4px 12px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); pointer-events: auto;">
-                {{ mascotStatusText }}
-            </span>
+            <div class="l2d-speech-bubble" :class="{ active: isCanvasVisible && !!mascotStatusText }">
+                <div class="l2d-bubble-text">{{ mascotStatusText }}</div>
+            </div>
+
+            <span v-show="false" style="...">{{ mascotStatusText }}</span>
         </div>
     `,
     data() {
