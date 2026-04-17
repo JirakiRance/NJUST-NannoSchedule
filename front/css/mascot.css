@@ -54,7 +54,6 @@
     pointer-events: auto; /* 【关键】只让模型本身可以被点击 */
     outline: none;
     border: none;
-
 }
 
 .live2d-status-badge {

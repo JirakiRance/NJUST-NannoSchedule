@@ -58,9 +58,20 @@ export class GlobalLive2DEngine {
         }
     }
 
+    show() {
+        if (this.canvas) {
+            this.canvas.style.visibility = 'visible';
+            this.canvas.style.opacity = '1';
+            this.canvas.style.pointerEvents = 'auto'; // 允许点击
+        }
+    }
+
     hide() {
-        if (this.canvas) this.canvas.style.display = 'none';
-        this.destroy();
+        if (this.canvas) {
+            this.canvas.style.visibility = 'hidden';
+            this.canvas.style.opacity = '0';
+            this.canvas.style.pointerEvents = 'none'; // 防止隐身时挡住后面的按钮
+        }
     }
 
     destroy() {

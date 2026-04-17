@@ -17,7 +17,21 @@ export default {
             motionMap: {}
         };
     },
+    computed: {
+        isCanvasVisible() {
+            return this.store.currentTab === 'profile' && this.store.currentSubPage === '';
+        }
+    },
     watch: {
+
+        isCanvasVisible(newVal) {
+            if (newVal) {
+                l2dEngine.show();
+            } else {
+                l2dEngine.hide();
+            }
+        },
+
         mascotState() {
             if (this.motionMap) {
                 const motion = this.motionMap[this.mascotState] || this.motionMap['alive'];
@@ -36,8 +50,7 @@ export default {
         }
     },
     unmounted() {
-        // 当组件卸载（比如关闭了嗅探监控），隐藏全局画布
-        l2dEngine.hide();
+        l2dEngine.destroy();
     },
     methods: {
         async bootEngine(modelId) {
@@ -52,6 +65,13 @@ export default {
                 l2dEngine.load(config, (hits) => {
                     this.$emit('interact', hits);
                 });
+
+                if (this.isCanvasVisible) {
+                    l2dEngine.show();
+                } else {
+                    l2dEngine.hide();
+                }
+
             } catch (e) {
                 console.error("[桥接层] 引导失败:", e);
             }

@@ -1,8 +1,8 @@
 {
     "name": "Haru",
     "version": 4,
-    "url": "./js/components/sniffer_views/models/haru_local/haru_greeter_t03.model3.json",
-    "layout": { "scale": 0.08, "x": 60, "y": 30 },
+    "url": "./js/components/sniffer_views/models/haru/haru_greeter_t03.model3.json",
+    "layout": { "scale": 0.08, "x": -10, "y": 30 },
     "motions": {
       "alert": "TapBody",
       "dead": "TapBody",

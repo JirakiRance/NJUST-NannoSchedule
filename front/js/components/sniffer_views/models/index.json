@@ -1,4 +1,4 @@
 [
-    { "id": "haru_local", "name": "Haru" },
-    { "id": "shizuku_local", "name": "Shizuku" }
+    { "id": "haru", "name": "Haru" },
+    { "id": "shizuku", "name": "Shizuku" }
 ]
