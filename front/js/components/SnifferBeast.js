@@ -1,65 +1,76 @@
+// components/SnifferBeast.js
 import { store } from '../store.js';
 import { API_BASE, showToast } from '../utils.js';
+import EmojiView from './sniffer_views/EmojiView.js';
+import Live2DView from './sniffer_views/Live2DView.js';
 
 export default {
+    components: { EmojiView, Live2DView },
     template: `
-        <div v-if="store.sniffer.enabled" class="card sniffer-console">
+        <div v-if="store.sniffer.enabled">
 
-            <div class="sniffer-header">
-                <span class="sniffer-title">
-                    <i class="ri-radar-line" :class="{'ri-spin': store.sniffer.status === 'breathing'}"></i> 嗅探监控
-                </span>
-                <span class="sniffer-status" :class="'status-' + store.sniffer.status">[{{ statusText }}]</span>
-            </div>
+            <Live2DView
+                v-if="store.sniffer.visualMode === 'live2d'"
+                ref="live2dView"
+                :mascotState="mascotState"
+                :mascotStatusText="mascotStatusText"
+                @interact="handleMascotInteraction"
+            />
 
-            <div class="mascot-container">
-                <div class="mascot-face" :class="'mascot-' + mascotState">
-                    {{ mascotFace }}
+            <div class="card sniffer-console" style="margin-top: 20px;">
+                <div class="sniffer-header">
+                    <span class="sniffer-title">
+                        <i class="ri-radar-line" :class="{'ri-spin': store.sniffer.status === 'breathing'}"></i> 嗅探终端
+                    </span>
+                    <span class="sniffer-status" :class="'status-' + store.sniffer.status">[{{ statusText }}]</span>
                 </div>
-                <div class="mascot-text">{{ mascotStatusText }}</div>
-            </div>
 
-            <div v-if="store.sniffer.intelligence.length > 0" class="intelligence-box">
-                <div class="intelligence-title">
-                    <i class="ri-alarm-warning-line"></i> 截获新情报 ({{ store.sniffer.intelligence.length }}条)
-                </div>
-                <ul class="intelligence-list">
-                    <li v-for="(msg, index) in store.sniffer.intelligence" :key="index">{{ msg }}</li>
-                </ul>
-                <div style="text-align: right; margin-top: 10px;">
-                    <button @click="clearIntelligence" class="btn" style="background: #ff2d55; color: #fff; font-size: 11px; padding: 4px 12px; min-height: unset; width: auto; margin: 0;">
-                        确认
-                    </button>
-                </div>
-            </div>
+                <EmojiView
+                    v-if="store.sniffer.visualMode === 'emoji'"
+                    :mascotState="mascotState"
+                    :mascotStatusText="mascotStatusText"
+                    @interact="handleMascotInteraction"
+                />
 
-            <div class="sniffer-info">
-                Session: {{ store.sniffer.sessionId ? store.sniffer.sessionId.substring(0,8) + '...' : '尚未绑定' }}
-                <span class="right">心跳:{{ store.sniffer.interval }}h | 嗅探:{{ store.sniffer.dataInterval }}</span>
-            </div>
-            <div class="sniffer-info" style="margin-bottom: 10px;">
-                最后活跃: <span class="light">{{ store.sniffer.lastBeat || '未启动' }}</span>
-            </div>
-
-            <div class="log-toggle">
-                <span @click="showLogs = !showLogs">
-                    {{ showLogs ? '收起运行日志' : '展开运行日志' }} <i :class="showLogs ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
-                </span>
-            </div>
-
-            <div v-show="showLogs" style="animation: fade-in 0.2s ease-out;">
-                <div class="log-box" @wheel.stop @touchmove.stop ref="logBox">
-                    <div v-for="(log, i) in snifferLog" :key="i" class="log-item">
-                        <span class="log-arrow">></span> {{ log }}
+                <div v-if="store.sniffer.intelligence.length > 0" class="intelligence-box">
+                    <div class="intelligence-title">
+                        <i class="ri-alarm-warning-line"></i> 截获新情报 ({{ store.sniffer.intelligence.length }}条)
                     </div>
-                    <div v-if="snifferLog.length === 0" class="log-empty">暂无日志输出</div>
+                    <ul class="intelligence-list">
+                        <li v-for="(msg, index) in store.sniffer.intelligence" :key="index">{{ msg }}</li>
+                    </ul>
+                    <div style="text-align: right; margin-top: 10px;">
+                        <button @click="clearIntelligence" class="btn" style="background: #ff2d55; color: #fff; font-size: 11px; padding: 4px 12px; min-height: unset; width: auto; margin: 0;">确认</button>
+                    </div>
                 </div>
 
-                <div class="sniffer-actions">
-                    <button v-show="false" @click="simulateDeath"  class="btn" style="background: rgba(255, 45, 85, 0.2); color: #ff2d55;">模拟宕机</button>
-                    <button @click="clearLogs" class="btn" style="background: var(--input-bg); color: var(--text-sub);">清空日志</button>
-                    <button @click="triggerDataSniff(true)" class="btn" style="background: #5ac8fa; color: #000;">测嗅探</button>
-                    <button @click="triggerHeartbeat(true)" class="btn" style="background: #34c759; color: #000;">测心跳</button>
+                <div class="sniffer-info">
+                    Session: {{ store.sniffer.sessionId ? store.sniffer.sessionId.substring(0,8) + '...' : '尚未绑定' }}
+                    <span class="right">心跳:{{ store.sniffer.interval }}h | 嗅探:{{ store.sniffer.dataInterval }}</span>
+                </div>
+                <div class="sniffer-info" style="margin-bottom: 10px;">
+                    最后活跃: <span class="light">{{ store.sniffer.lastBeat || '未启动' }}</span>
+                </div>
+
+                <div class="log-toggle">
+                    <span @click="showLogs = !showLogs">
+                        {{ showLogs ? '收起运行日志' : '展开运行日志' }} <i :class="showLogs ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
+                    </span>
+                </div>
+
+                <div v-show="showLogs" style="animation: fade-in 0.2s ease-out;">
+                    <div class="log-box" @wheel.stop @touchmove.stop ref="logBox">
+                        <div v-for="(log, i) in snifferLog" :key="i" class="log-item">
+                            <span class="log-arrow">></span> {{ log }}
+                        </div>
+                        <div v-if="snifferLog.length === 0" class="log-empty">暂无日志输出</div>
+                    </div>
+                    <div class="sniffer-actions">
+                        <button @click="clearLogs" class="btn" style="background: var(--input-bg); color: var(--text-sub);">清空</button>
+                        <button @click="simulateDeath()" class="btn" style="background: #5ac8fa; color: #000;">测宕机</button>
+                        <button @click="triggerDataSniff(true)" class="btn" style="background: #5ac8fa; color: #000;">测嗅探</button>
+                        <button @click="triggerHeartbeat(true)" class="btn" style="background: #34c759; color: #000;">测心跳</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,28 +85,17 @@ export default {
         };
     },
     computed: {
-        // --- 状态实体映射逻辑 ---
+        // 核心状态计算：通过属性下发给子组件，保证了逻辑的一致性
         mascotState() {
             if (this.store.sniffer.intelligence.length > 0) return 'alert';
             if (this.store.sniffer.status === 'dead') return 'dead';
             if (this.store.sniffer.status === 'breathing') return 'alive';
             return 'sleeping';
         },
-        mascotFace() {
-            const faces = {
-                'alert': '🚨(✧Д✧)🚨',
-                'dead': '😵(x_x)😵',
-                'alive': '🐾(•̀ᴗ•́)و🐾',
-                'sleeping': '💤(-_-)zzz'
-            };
-            return faces[this.mascotState];
-        },
         mascotStatusText() {
             const texts = { 'alert': '发现高价值情报！', 'dead': '连接断开，尝试重新登录', 'alive': '环境安全，侦察中...', 'sleeping': '休眠待机状态' };
             return texts[this.mascotState];
         },
-        // -------------------------------
-
         statusText() {
             if(this.store.sniffer.status === 'breathing') return '在线';
             if(this.store.sniffer.status === 'dead') return '掉线';
@@ -210,7 +210,7 @@ export default {
             }
         },
 
-        async triggerDataSniff(isManual = false) {
+       async triggerDataSniff(isManual = false) {
             if(!store.sniffer.sessionId) return;
             this.addLog(isManual ? ">> [手动] 对比教务处数据..." : ">> [自动] 对比教务处数据...");
 
@@ -277,7 +277,7 @@ export default {
                 console.error("嗅探错误:", e);
                 this.addLog(`!! 嗅探网络阻断: ${e.message || 'Error'}`);
             }
-        },
+       },
 
         mountAllDaemons() {
             this.store.sniffer.status = 'breathing';
@@ -313,7 +313,25 @@ export default {
             this.store.sniffer.status = targetStatus;
             if (this.heartbeatTimer) { clearInterval(this.heartbeatTimer); this.heartbeatTimer = null; }
             if (this.dataSniffTimer) { clearInterval(this.dataSniffTimer); this.dataSniffTimer = null; }
+        },
+
+        handleMascotInteraction(hitAreas = []) {
+            this.addLog(`>> 捕获到用户互动 (部位: ${hitAreas.length ? hitAreas.join(',') : '身体'})`);
+
+            // 业务联动策略
+            if (this.store.sniffer.status === 'sleeping' || this.store.sniffer.status === 'dead') {
+                this.triggerHeartbeat(true); // 戳死掉的兽：唤醒
+            } else if (this.store.sniffer.intelligence.length > 0) {
+                this.clearIntelligence();    // 戳带情报的兽：已阅
+            } else {
+                // 如果是 Live2D 且闲着没事干，指挥它播一个惊吓动作
+                if (this.store.sniffer.visualMode === 'live2d' && this.$refs.live2dView) {
+                    this.$refs.live2dView.triggerTapMotion();
+                }
+            }
         }
+
+
     },
     mounted() {
         if (store.sniffer.enabled && store.sniffer.sessionId) {

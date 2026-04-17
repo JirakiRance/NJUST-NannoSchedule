@@ -77,8 +77,9 @@ export const store = reactive({
         sessionId: localStorage.getItem("my_njust_sniffer_session") || "",
         activeNode: localStorage.getItem("my_njust_sniffer_node") || "",
         lastBeat: '',
-        // sniffer未读情报数组，持久化存储
-        intelligence: JSON.parse(localStorage.getItem("my_njust_sniffer_intelligence") || "[]")
+        intelligence: JSON.parse(localStorage.getItem("my_njust_sniffer_intelligence") || "[]"), // sniffer未读情报数组，持久化存储
+        visualMode: localStorage.getItem("my_njust_sniffer_mode") || 'emoji',
+        modelId: localStorage.getItem("my_njust_sniffer_model") || 'haru_online'
     },
 
     userAccount: {

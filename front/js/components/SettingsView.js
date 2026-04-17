@@ -67,6 +67,21 @@ export default {
 
                 <div v-show="store.sniffer.enabled" style="margin-top: 15px; animation: fade-in 0.3s ease-out; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--grid-border);">
 
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed var(--grid-border); padding-bottom: 15px;">
+                        <span style="font-size: 13px; color: var(--text-main); font-weight: bold;">嗅探兽外观</span>
+                        <div class="switch-capsule" style="margin: 0;">
+                            <div class="switch-item" style="font-size: 12px; padding: 4px 10px;" :class="{active: store.sniffer.visualMode === 'emoji'}" @click="changeVisualMode('emoji')">emoji</div>
+                            <div class="switch-item" style="font-size: 12px; padding: 4px 10px;" :class="{active: store.sniffer.visualMode === 'live2d'}" @click="changeVisualMode('live2d')">Live2D</div>
+                        </div>
+                    </div>
+                    <div v-show="store.sniffer.visualMode === 'live2d'" style="margin-bottom: 15px; border-bottom: 1px dashed var(--grid-border); padding-bottom: 15px; animation: fade-in 0.3s ease-out;">
+                         <span style="font-size: 13px; color: var(--text-main); font-weight: bold; display: block; margin-bottom: 8px;">选择看板娘模型</span>
+                         <select v-model="store.sniffer.modelId" @change="saveModelId" class="term-select" style="width: 100%;">
+                             <option v-for="m in availableModels" :key="m.id" :value="m.id">{{ m.name }}</option>
+                             <option value="custom" disabled>+ 自定义模型</option>
+                         </select>
+                    </div>
+
                     <div>
                         <span style="font-size: 13px; color: var(--text-main); font-weight: bold;">检查新数据频率</span>
                         <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
@@ -228,6 +243,7 @@ export default {
             store,
             settingWeek: store.realWeek,
             customColorValue: store.themeColor,
+            availableModels: [],
             availableColors: [
                 { name: '天空蓝', value: '#5b9bd5' },
                 { name: '哔哩粉', value: '#fb7299' },
@@ -267,6 +283,16 @@ export default {
         'store.scheduleViewType'(newVal) { localStorage.setItem("my_njust_view_type", newVal); }
     },
     methods: {
+
+        saveModelId() {
+            localStorage.setItem("my_njust_sniffer_model", this.store.sniffer.modelId);
+            showToast("模型已切换，请等待加载", "success");
+        },
+
+        changeVisualMode(mode) {
+            this.store.sniffer.visualMode = mode;
+            localStorage.setItem("my_njust_sniffer_mode", mode);
+        },
 
         setDataInterval(val) {
             this.store.sniffer.dataInterval = val;
@@ -468,6 +494,21 @@ export default {
             .catch(e => {
                 console.log("未找到版本配置文件，使用默认版本号");
                 this.currentAppVersion = "v1.3.0.2"; // 兜底
+            });
+        // 动态获取模型花名册
+        fetch('./js/components/sniffer_views/models/index.json?t=' + new Date().getTime())
+            .then(res => res.json())
+            .then(data => {
+                this.availableModels = data;
+                // 如果当前选中的模型不在列表里，重置为列表第一个
+                if (!data.some(m => m.id === this.store.sniffer.modelId) && data.length > 0) {
+                    this.store.sniffer.modelId = data[0].id;
+                    this.saveModelId();
+                }
+            })
+            .catch(e => {
+                console.error("无法读取模型花名册 index.json", e);
+                this.availableModels = [{ id: this.store.sniffer.modelId, name: "本地配置读取失败" }];
             });
     }
 }

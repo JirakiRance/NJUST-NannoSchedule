@@ -1,0 +1,18 @@
+{
+    "name": "Shizuku (Cubism 2)",
+    "type": "url",
+    "version": 2,
+    "url": "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/shizuku/shizuku.model.json",
+    "layout": {
+        "scale": 0.22,
+        "x": 0,
+        "y": 10
+    },
+    "motions": {
+        "alert": "tap_body",
+        "dead": "flick_head",
+        "alive": "idle",
+        "sleeping": "idle",
+        "interact": "tap_body"
+    }
+}

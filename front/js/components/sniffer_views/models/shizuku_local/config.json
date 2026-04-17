@@ -1,0 +1,13 @@
+{
+    "name": "Shizuku",
+    "version": 2,
+    "url": "./js/components/sniffer_views/models/shizuku_local/shizuku.model.json",
+    "layout": { "scale": 0.22, "x": 0, "y": 10 },
+    "motions": {
+      "alert": "tap_body",
+      "dead": "flick_head",
+      "alive": "idle",
+      "sleeping": "idle",
+      "interact": "tap_body"
+    }
+}

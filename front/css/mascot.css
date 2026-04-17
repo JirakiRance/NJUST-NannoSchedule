@@ -1,0 +1,75 @@
+/* front/css/mascot.css */
+
+/* =========================================================
+   1. Emoji 模式：乖乖回到终端内部
+========================================================= */
+.emoji-habitat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    margin: 10px 0;
+    cursor: pointer;
+    background: transparent;
+}
+
+.emoji-face {
+    font-size: 42px;
+    line-height: 1;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 12px currentColor;
+}
+
+.emoji-status {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-sub);
+    margin-top: 12px;
+}
+
+/* =========================================================
+   2. Live2D 模式：屏幕左下角绝对悬浮 (防滚动、防挤压)
+========================================================= */
+.live2d-fixed-overlay {
+    position: fixed;
+    bottom: 80px; /* 完美避开底部的 60px 金刚键 Tabbar */
+    left: 10px;   /* 靠左对齐 */
+    width: 180px;
+    height: 240px;
+    z-index: 9999;
+    pointer-events: none; /* 【关键】让包裹层透明，不阻挡用户点击底部的网页元素 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.live2d-fixed-canvas {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 180px !important;
+    height: 240px !important;
+    pointer-events: auto; /* 【关键】只让模型本身可以被点击 */
+    outline: none;
+    border: none;
+
+}
+
+.live2d-status-badge {
+    position: absolute;
+    bottom: -15px;
+    z-index: 10000;
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--primary-color);
+    background: rgba(20, 20, 25, 0.85);
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    pointer-events: auto;
+    white-space: nowrap;
+}

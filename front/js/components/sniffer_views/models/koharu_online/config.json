@@ -1,0 +1,20 @@
+{
+    "name": "Koharu (小春 V3)",
+    "type": "url",
+    "version": 3,
+    "url": "https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/koharu/koharu.model3.json",
+    "layout": {
+        "width": 180,
+        "height": 240,
+        "scale": 0.1,
+        "x": 0,
+        "y": 0
+    },
+    "motions": {
+        "alert": "TapBody",
+        "dead": "TapBody",
+        "alive": "Idle",
+        "sleeping": "Idle",
+        "interact": "TapBody"
+    }
+}
