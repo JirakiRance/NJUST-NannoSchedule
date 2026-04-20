@@ -79,7 +79,8 @@ export const store = reactive({
         lastBeat: '',
         intelligence: JSON.parse(localStorage.getItem("my_njust_sniffer_intelligence") || "[]"), // sniffer未读情报数组，持久化存储
         visualMode: localStorage.getItem("my_njust_sniffer_mode") || 'emoji',
-        modelId: localStorage.getItem("my_njust_sniffer_model") || 'pig'
+        modelId: localStorage.getItem("my_njust_sniffer_model") || 'pig',
+        lastSniffTime: localStorage.getItem("my_njust_sniffer_last_sniff") || "",
     },
 
     userAccount: {

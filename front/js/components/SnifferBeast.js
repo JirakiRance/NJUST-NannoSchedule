@@ -44,12 +44,17 @@ export default {
                     </div>
                 </div>
 
-                <div class="sniffer-info">
-                    Session: {{ store.sniffer.sessionId ? store.sniffer.sessionId.substring(0,8) + '...' : '尚未绑定' }}
+                <div class="sniffer-info" style="position: relative;">
                     <span class="right">心跳:{{ store.sniffer.interval }}h | 嗅探:{{ store.sniffer.dataInterval }}</span>
+                    <div style="word-break: break-all; margin-right: 110px;">
+                        Session: <span class="light">{{ store.sniffer.sessionId || '尚未绑定' }}</span>
+                    </div>
+                </div>
+                <div class="sniffer-info">
+                    最近活跃: <span class="light">{{ store.sniffer.lastBeat || '未启动' }}</span>
                 </div>
                 <div class="sniffer-info" style="margin-bottom: 10px;">
-                    最后活跃: <span class="light">{{ store.sniffer.lastBeat || '未启动' }}</span>
+                    上次嗅探: <span class="light">{{ lastSniffDisplay }}</span>
                 </div>
 
                 <div class="log-toggle">
@@ -85,6 +90,23 @@ export default {
         };
     },
     computed: {
+
+        // 格式化上次嗅探的时间戳进行显示
+        lastSniffDisplay() {
+            const ts = this.store.sniffer.lastSniffTime;
+            if (!ts) return '尚未嗅探';
+
+            const d = new Date(Number(ts));
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const date = String(d.getDate()).padStart(2, '0');
+            const h = String(d.getHours()).padStart(2, '0');
+            const min = String(d.getMinutes()).padStart(2, '0');
+            const s = String(d.getSeconds()).padStart(2, '0');
+
+            return `${y}-${m}-${date} ${h}:${min}:${s}`;
+        },
+
         // 核心状态计算：通过属性下发给子组件，保证了逻辑的一致性
         mascotState() {
             if (this.store.sniffer.intelligence.length > 0) return 'alert';
@@ -200,7 +222,7 @@ export default {
                 const data = await res.json();
                 if (data.status === "alive") {
                     this.store.sniffer.status = 'breathing';
-                    this.store.sniffer.lastBeat = new Date().toLocaleTimeString('en-GB');
+                    this.store.sniffer.lastBeat = this.getPreciseTime();
                     this.addLog(`<< 心跳成功`);
                 }
             } catch (e) {
@@ -261,13 +283,18 @@ export default {
                     const representExamName = remoteExams[remoteExams.length - 1]?.course_name || "未知科目";
 
                     isChanged = true;
-                    const msg = `🚨 发现 ${newExamCount} 门新考试安排 (如: ${representExamName})`;
+                    const msg = ` 发现 ${newExamCount} 门新考试安排 (如: ${representExamName})`;
                     this.addIntelligence(msg);
                     this.addLog(`<< 嗅探完毕: 发现新考试`);
 
                     showToast("发现新考试安排，已同步！", "success");
                     if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
                 }
+
+                // 嗅探完成后更新时间戳
+                const nowTs = new Date().getTime();
+                this.store.sniffer.lastSniffTime = nowTs;
+                localStorage.setItem("my_njust_sniffer_last_sniff", nowTs);
 
                 if (!isChanged) {
                     this.addLog("<< 嗅探完毕: 数据无变动");
@@ -293,7 +320,10 @@ export default {
         },
 
         mountDataSniffer() {
-            if(this.dataSniffTimer) clearInterval(this.dataSniffTimer);
+            if(this.dataSniffTimer) {
+                clearTimeout(this.dataSniffTimer);
+                clearInterval(this.dataSniffTimer);
+            }
 
             const timeMap = {
                 '30s': 30 * 1000,
@@ -303,9 +333,28 @@ export default {
                 '14d': 14 * 24 * 60 * 60 * 1000
             };
             const intervalMs = timeMap[this.store.sniffer.dataInterval] || timeMap['7d'];
+            const lastSniff = this.store.sniffer.lastSniffTime;
+            const now = new Date().getTime();
 
-            this.addLog(`[系统] 嗅探定时器启动 (${this.store.sniffer.dataInterval}一次)`);
-            this.dataSniffTimer = setInterval(() => this.triggerDataSniff(), intervalMs);
+            // 计算逻辑：
+            // 如果从来没嗅探过，或者距离上次嗅探的时间已经超过了设定的间隔，则立即执行一次
+            if (!lastSniff || (now - lastSniff >= intervalMs)) {
+                this.addLog(`[系统] 距离上次嗅探已久，立即执行任务`);
+                this.triggerDataSniff();
+                // 随后进入正常循环
+                this.dataSniffTimer = setInterval(() => this.triggerDataSniff(), intervalMs);
+            } else {
+                // 计算还需要等待多久
+                const remainingMs = intervalMs - (now - lastSniff);
+                const hoursLeft = (remainingMs / (1000 * 60 * 60)).toFixed(1);
+                this.addLog(`[系统] 嗅探任务已排队，${hoursLeft}h 后执行`);
+
+                // 使用 setTimeout 在剩余时间到达后执行第一次，随后转为 setInterval
+                this.dataSniffTimer = setTimeout(() => {
+                    this.triggerDataSniff();
+                    this.dataSniffTimer = setInterval(() => this.triggerDataSniff(), intervalMs);
+                }, remainingMs);
+            }
         },
 
         killAllDaemons(targetStatus = 'sleeping') {

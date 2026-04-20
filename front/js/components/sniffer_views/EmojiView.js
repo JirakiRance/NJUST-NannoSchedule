@@ -3,7 +3,9 @@ export default {
     props: ['mascotState', 'mascotStatusText'],
     template: `
         <div class="emoji-habitat" @click="handleTap">
-            <div class="emoji-face" :style="{ color: faceColor }">
+            <div class="emoji-face"
+                 :class="'mascot-' + mascotState"
+                 :style="{ color: faceColor }">
                 {{ mascotFace }}
             </div>
             <div class="emoji-status">{{ mascotStatusText }}</div>

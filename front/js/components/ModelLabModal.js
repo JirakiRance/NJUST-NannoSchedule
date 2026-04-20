@@ -9,7 +9,7 @@ export default {
         <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 15000; overflow-y: auto; padding-bottom: 100px; animation: fade-in 0.2s ease-out;">
 
             <div style="position: sticky; top: 0; z-index: 10; background: var(--bg-color); display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--grid-border);">
-                <span style="font-weight: bold; font-size: 16px; color: var(--text-main);"><i class="ri-magic-line" style="color: var(--primary-color);"></i> 看板娘实验室</span>
+                <span style="font-weight: bold; font-size: 16px; color: var(--text-main);"><i class="ri-magic-line" style="color: var(--primary-color);"></i> 模型控制台</span>
                 <i class="ri-close-line" style="font-size: 24px; color: var(--text-sub); cursor: pointer;" @click="closeLab"></i>
             </div>
 

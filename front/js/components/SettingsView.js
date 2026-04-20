@@ -78,7 +78,7 @@ export default {
                     </div>
                     <div v-show="store.sniffer.visualMode === 'live2d'" style="margin-bottom: 20px; border-bottom: 1px dashed var(--grid-border); padding-bottom: 15px; animation: fade-in 0.3s ease-out;">
                          <div style="font-size: 13px; color: var(--text-main); font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                             <span>看板娘模型管理器</span>
+                             <span>模型管理器</span>
                              <button class="btn" style="width: auto; padding: 4px 10px; margin: 0; background: var(--primary-color); color: #fff; font-size: 11px;" @click="openModelLab(null)">
                                  <i class="ri-add-line"></i> 导入 ZIP
                              </button>
