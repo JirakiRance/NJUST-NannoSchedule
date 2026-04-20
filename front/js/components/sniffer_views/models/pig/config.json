@@ -1,0 +1,26 @@
+{
+    "name": "pig",
+    "version": 3,
+    "url": "./js/components/sniffer_views/models/pig/pig.model3.json",
+    "layout": { "scale": 0.2, "x": 10, "y": 10 },
+
+    "motions": {
+        "alive": "Idle",
+        "alert": "Alert",
+        "dead": "Dead",
+        "sleeping": "Sleep"
+    },
+
+    "resetParams": ["ParamJumpAll", "ParamScan", "ParamAntenna", "ParamTail"],
+
+    "stateParams": {
+        "alive": { "ParamDisplayMode": 0 },
+        "alert": { "ParamDisplayMode": 0 },
+        "sleeping": { "ParamDisplayMode": 1 },
+        "dead": { "ParamDisplayMode": 2 }
+    },
+    "interactMotions": {
+        "alive": "Tap",
+        "sleeping": "Wakeup"
+    }
+}

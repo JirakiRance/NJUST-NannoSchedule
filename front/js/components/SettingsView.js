@@ -314,7 +314,7 @@ export default {
 
         async deleteModel(id) {
             // 严防死守：禁止删除内置模型
-            if (id === 'haru' || id === 'shizuku') {
+            if (id === 'pig') {
                 showToast("内置模型不可删除", "error");
                 return;
             }
@@ -331,9 +331,9 @@ export default {
                 const result = await res.json();
                 if (result.success) {
                     showToast("模型已物理移除", "success");
-                    // 如果删掉的是当前选中的，切回 shizuku
+                    // 如果删掉的是当前选中的，切回 pig
                     if (this.store.sniffer.modelId === id) {
-                        this.store.sniffer.modelId = 'shizuku';
+                        this.store.sniffer.modelId = 'pig';
                         this.saveModelId();
                     }
                     await this.refreshModelList();
@@ -364,9 +364,9 @@ export default {
                     body: JSON.stringify({ modelId: id })
                 });
                 showToast("模型已删除", "success");
-                // 如果删除了当前正在使用的模型，自动切回内置的 haru
+                // 如果删除了当前正在使用的模型，自动切回内置的 pig
                 if (this.store.sniffer.modelId === id) {
-                    this.selectModel('haru');
+                    this.selectModel('pig');
                 }
                 this.refreshModelList();
             } catch (e) {

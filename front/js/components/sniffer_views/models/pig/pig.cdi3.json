@@ -1,0 +1,105 @@
+{
+	"Version": 3,
+	"Parameters": [
+		{
+			"Id": "ParamAngleX",
+			"GroupId": "",
+			"Name": "角度 X"
+		},
+		{
+			"Id": "ParamAngleY",
+			"GroupId": "",
+			"Name": "角度 Y"
+		},
+		{
+			"Id": "ParamAngleZ",
+			"GroupId": "",
+			"Name": "角度 Z"
+		},
+		{
+			"Id": "ParamEyeLSmile",
+			"GroupId": "",
+			"Name": "左眼 微笑"
+		},
+		{
+			"Id": "ParamEyeROpen",
+			"GroupId": "",
+			"Name": "右眼 开闭"
+		},
+		{
+			"Id": "ParamTail",
+			"GroupId": "",
+			"Name": "尾巴摇摆"
+		},
+		{
+			"Id": "ParamEyeLOpen",
+			"GroupId": "",
+			"Name": "左眼 开闭"
+		},
+		{
+			"Id": "ParamEyeRSmile",
+			"GroupId": "",
+			"Name": "右眼 微笑"
+		},
+		{
+			"Id": "ParamBodyAngleX",
+			"GroupId": "",
+			"Name": "身体旋转 X"
+		},
+		{
+			"Id": "ParamBodyAngleY",
+			"GroupId": "",
+			"Name": "身体旋转 Y"
+		},
+		{
+			"Id": "ParamBodyAngleZ",
+			"GroupId": "",
+			"Name": "身体旋转 Z"
+		},
+		{
+			"Id": "ParamBreath",
+			"GroupId": "",
+			"Name": "呼吸"
+		},
+		{
+			"Id": "ParamDeadSwing",
+			"GroupId": "",
+			"Name": "死猪摇晃"
+		},
+		{
+			"Id": "ParamAntenna",
+			"GroupId": "",
+			"Name": "天线摇晃"
+		},
+		{
+			"Id": "ParamScan",
+			"GroupId": "",
+			"Name": "护目镜扫描"
+		},
+		{
+			"Id": "ParamJumpAll",
+			"GroupId": "",
+			"Name": "全身跳动"
+		},
+		{
+			"Id": "ParamDisplayMode",
+			"GroupId": "",
+			"Name": "显示状态"
+		}
+	],
+	"ParameterGroups": [],
+	"Parts": [
+		{
+			"Id": "Part2",
+			"Name": "dead.png"
+		},
+		{
+			"Id": "Part",
+			"Name": "sleep.png"
+		},
+		{
+			"Id": "Part3",
+			"Name": "Normal"
+		}
+	]
+}

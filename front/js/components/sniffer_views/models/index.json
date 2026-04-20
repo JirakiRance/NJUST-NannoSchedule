@@ -1,22 +1,7 @@
 [
     {
-        "id": "haru",
-        "name": "Haru",
+        "id": "pig",
+        "name": "pig",
         "isCustom": false
-    },
-    {
-        "id": "shizuku",
-        "name": "Shizuku",
-        "isCustom": false
-    },
-    {
-        "id": "koharu",
-        "name": "koharu",
-        "isCustom": false
-    },
-    {
-        "id": "Umaru",
-        "name": "Umaru",
-        "isCustom": true
     }
 ]

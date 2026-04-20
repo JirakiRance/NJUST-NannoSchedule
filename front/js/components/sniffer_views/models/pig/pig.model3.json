@@ -1,0 +1,43 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "pig.moc3",
+		"Textures": [
+			"pig.1024/texture_00.png"
+		],
+		"Physics": "pig.physics3.json",
+		"DisplayInfo": "pig.cdi3.json",
+		"Motions": {
+			"Idle": [
+				{"File": "State_Online.motion3.json"}
+			],
+			"Tap": [
+				{"File": "Action_NormalClick.motion3.json"}
+			],
+			"Wakeup": [
+				{"File": "Action_Wakeup.motion3.json"}
+			],
+			"Alert": [
+				{"File": "State_Alert.motion3.json"}
+			],
+			"Sleep": [
+				{"File": "State_Sleep.motion3.json"}
+			],
+			"Dead": [
+				{"File": "State_Dead.motion3.json"}
+			]
+		}
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		}
+	]
+}

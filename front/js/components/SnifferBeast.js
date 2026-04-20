@@ -67,7 +67,7 @@ export default {
                     </div>
                     <div class="sniffer-actions">
                         <button @click="clearLogs" class="btn" style="background: var(--input-bg); color: var(--text-sub);">清空</button>
-                        <button @click="simulateDeath()" class="btn" style="background: #5ac8fa; color: #000;">测宕机</button>
+                        <button @click="simulateDeath()" v-show=false class="btn" style="background: #5ac8fa; color: #000;">测宕机</button>
                         <button @click="triggerDataSniff(true)" class="btn" style="background: #5ac8fa; color: #000;">测嗅探</button>
                         <button @click="triggerHeartbeat(true)" class="btn" style="background: #34c759; color: #000;">测心跳</button>
                     </div>

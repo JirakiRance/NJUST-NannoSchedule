@@ -34,10 +34,9 @@ export default {
             }
         },
 
-        mascotState() {
-            if (this.motionMap) {
-                const motion = this.motionMap[this.mascotState] || this.motionMap['alive'];
-                l2dEngine.play(motion);
+        mascotState(newState) {
+            if (this.isCanvasVisible) {
+                l2dEngine.setState(newState);
             }
         },
         'store.sniffer.modelId'(newId, oldId) {
@@ -61,10 +60,14 @@ export default {
                 if (!res.ok) throw new Error("Config 404");
                 const config = await res.json();
 
+                // 把配置挂载到组件实例上，方便后续调用
+                this.modelConfig = config;
                 this.motionMap = config.motions || {};
 
                 // 调用全局引擎加载模型
                 l2dEngine.load(config, (hits) => {
+                    // 当引擎报告模型被点击时，触发 Vue 这边的统一交互处理
+                    this.handleModelClick();
                     this.$emit('interact', hits);
                 });
 
@@ -78,9 +81,38 @@ export default {
                 console.error("[桥接层] 引导失败:", e);
             }
         },
+        async handleModelClick() {
+            if (!this.modelConfig || !this.modelConfig.interactMotions) return;
+            if (!this.isCanvasVisible) return;
+
+            // 获取当前所处状态（mascotState 由外部 SnifferBeast 根据是否有情报等逻辑传入）
+            const currentState = this.mascotState;
+
+            // 查表：当前状态下是否有对应的交互动作？
+            const actionMotion = this.modelConfig.interactMotions[currentState];
+
+            // 如果没配动作（例如 Dead 状态），那就什么都不做
+            if (!actionMotion) return;
+
+            // 1. 命令引擎播放一次性动作，并等待播放完毕
+            await l2dEngine.playAction(actionMotion);
+
+            // 2. 特殊业务逻辑劫持：
+            // 如果是猪猪（或其他模型）特有的 Wakeup 动作，播完后需要判断是否唤醒成功
+            if (actionMotion === 'Wakeup') {
+                this.evaluateWakeupLogic();
+            }
+        },
+        evaluateWakeupLogic() {
+            if (this.store.sniffer.status !== 'breathing') {
+                l2dEngine.setState(this.mascotState);
+            } else {
+                l2dEngine.setState('alive');
+            }
+        },
         triggerTapMotion() {
-            if (this.motionMap) {
-                l2dEngine.play(this.motionMap['interact']);
+            if (this.motionMap && this.isCanvasVisible) {
+                l2dEngine.playAction(this.motionMap['interact']);
             }
         }
     }
