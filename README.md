@@ -1,6 +1,5 @@
 # NJUST NannoSchedule (南理工 NS 课表)
 
-![Version](https://img.shields.io/badge/Version-v1.2.1-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Web-brightgreen.svg)
 ![TechStack](https://img.shields.io/badge/Tech-Vue.js%20%7C%20Android%20WebView-orange.svg)
