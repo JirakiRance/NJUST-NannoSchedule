@@ -15,6 +15,7 @@
 <div id="toast-container"></div>
 
 <div id="app">
+    <global-notice></global-notice>
     <div class="header" style="position: relative;">
         <div v-if="(store.currentTab === 'other' || store.currentTab === 'profile') && store.currentSubPage" class="back-btn" @click="closeSubPage()">
              <i class="ri-arrow-left-s-line" style="vertical-align: middle; margin-right: 2px;"></i>返回

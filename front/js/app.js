@@ -12,6 +12,7 @@ import SchoolGuideView from './components/SchoolGuideView.js';
 import ContactView from './components/ContactView.js';
 import SettingsView from './components/SettingsView.js';
 import LoginCard from './components/LoginCard.js';
+import GlobalNotice from './components/GlobalNotice.js';
 
 const { createApp } = Vue;
 
@@ -30,7 +31,8 @@ createApp({
         SchoolGuideView,
         ContactView,
         SettingsView,
-        LoginCard
+        LoginCard,
+        GlobalNotice
     },
     data() {
         return {
@@ -247,19 +249,42 @@ createApp({
 
         // 全局初始化配置
         async initAppConfig() {
+            const DEBUG_GLOBAL_NOTICE = false;
             try {
-                const timestamp = new Date().getTime();
-                const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
-                if (!res.ok) return;
+                let data;
+                if (DEBUG_GLOBAL_NOTICE) {
+                    data = {
+                        show: true,
+                        id: "notice_debug_001",
+                        version: "v9.9.9.Debug",
+                        date: new Date().toISOString().split('T')[0],
+                        notice_content: "【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。【开屏通知】我是一条全局悬浮通知！\n你可以勾选底部的不再显示，测试隔离逻辑。",
+                        update_content: "1. 实现了全局浮动通知\n2. 实现了文案解耦",
+                        show_update_btn: true,
+                        term_update: {
+                            version_id: "2025-2026-2-v-debug",
+                            term: "2025-2026-2",
+                            start_date: "2026-03-02"
+                        }
+                    };
+                    localStorage.removeItem('dismissed_notice_ids');
+                } else {
+                    const timestamp = new Date().getTime();
+                    const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
+                    if (!res.ok) return;
+                    data = await res.json();
+                }
 
-                const data = await res.json();
-
-                // 1. 处理全局公告栏 (存入全局 store 以便 ProfileView 读取)
+                // 1. 处理全局公告栏 (ID 拦截逻辑)
                 if (data.show) {
-                     // 拦截逻辑：检查用户是否已经“已读”过这个版本的通知
-                     const dismissedVersion = localStorage.getItem('dismissed_notice_version');
-                     if (data.version !== dismissedVersion) {
+                     const dismissedIdsStr = localStorage.getItem('dismissed_notice_ids') || "[]";
+                     const dismissedIds = JSON.parse(dismissedIdsStr);
+
+                     if (!dismissedIds.includes(data.id)) {
                          this.store.globalNotice = data;
+                     } else {
+                         // 用户勾选了不再显示，静默存入 store 备用（SettingsView 检查更新还需要用），但不上屏
+                         this.store.globalNotice = { ...data, show: false };
                      }
                 }
 

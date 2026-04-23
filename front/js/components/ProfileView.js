@@ -9,8 +9,6 @@ export default {
     template: `
         <div class="profile-container" style="padding-bottom: 80px;">
 
-            <global-notice></global-notice>
-
             <login-card></login-card>
 
             <div class="card" @click="openSettings" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 18px 15px; margin-top: 20px;">

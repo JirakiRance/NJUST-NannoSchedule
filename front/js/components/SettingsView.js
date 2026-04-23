@@ -251,7 +251,7 @@ export default {
 
                         <div v-if="updateData && updateData.hasNew" style="font-size: 12px; color: var(--text-main); background: var(--input-bg); padding: 12px; border-radius: 8px; text-align: left; margin-bottom: 20px; line-height: 1.6; border: 1px solid var(--grid-border);">
                             <b>更新内容：</b><br>
-                            {{ updateData.content }}
+                            {{ updateData.update_content || updateData.content }}
                         </div>
                         <div v-else style="margin-bottom: 20px;"></div>
 
@@ -539,30 +539,45 @@ export default {
             this.isCheckingUpdate = true;
             this.updateData = null;
 
+            // 调试开关：保持与 app.js 一致
+            const DEBUG_GLOBAL_NOTICE = false;
+
             try {
-                const timestamp = new Date().getTime();
-                // 强制跨域不缓存请求
-                const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
-                if (res.ok) {
-                    const data = await res.json();
+                let data;
 
-                    // 极客版版本对比 (将 v1.2.3 提取为纯数字点阵，再进行比较)
-                    const currentClean = this.currentAppVersion.replace(/[^\d.]/g, '');
-                    const remoteClean = data.version.replace(/[^\d.]/g, '');
-                    const hasNew = this.compareVersion(remoteClean, currentClean) > 0;
-
-                    // 模拟一下网络延迟，让转圈加载更有质感 (0.6秒)
-                    setTimeout(() => {
-                        this.updateData = { ...data, hasNew };
-                        this.isCheckingUpdate = false;
-                    }, 600);
-
+                if (DEBUG_GLOBAL_NOTICE) {
+                    // 调试模式：拦截网络，直接使用本地伪造数据
+                    data = {
+                        version: "v9.9.9.Debug",
+                        update_content: "【本地调试】\n1. 新增全局浮动通知模块；\n2. 修复嗅探时间重置 Bug；\n3. 更新文本与开屏通知彻底隔离！",
+                        // 为了防止有些老逻辑依赖 content，顺手加上
+                        content: "兼容老字段的冗余文本"
+                    };
+                    console.log("[DEBUG] Settings: 已拦截更新检查，使用本地模拟数据");
                 } else {
-                    throw new Error("接口返回非 200");
+                    const timestamp = new Date().getTime();
+                    // 强制跨域不缓存请求
+                    const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
+                    if (!res.ok) {
+                        throw new Error("接口返回非 200");
+                    }
+                    data = await res.json();
                 }
+
+                // 极客版版本对比 (将 v1.2.3 提取为纯数字点阵，再进行比较)
+                const currentClean = this.currentAppVersion.replace(/[^\d.]/g, '');
+                const remoteClean = data.version.replace(/[^\d.]/g, '');
+                const hasNew = this.compareVersion(remoteClean, currentClean) > 0;
+
+                // 模拟一下网络延迟，让转圈加载更有质感 (0.6秒)
+                setTimeout(() => {
+                    this.updateData = { ...data, hasNew };
+                    this.isCheckingUpdate = false;
+                }, 600);
+
             } catch (e) {
                 setTimeout(() => {
-                    this.updateData = { hasNew: false, version: '未知', content: '连接服务器失败，请检查网络。' };
+                    this.updateData = { hasNew: false, version: '未知', update_content: '连接服务器失败，请检查网络。' };
                     this.isCheckingUpdate = false;
                 }, 600);
             }
