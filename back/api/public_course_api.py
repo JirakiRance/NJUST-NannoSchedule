@@ -12,7 +12,7 @@ def search_public_courses(req: PublicCourseRequest):
     if req.session_id not in session_store:
         raise HTTPException(status_code=400, detail="会话过期，请重新连接")
 
-    user_session = session_store[req.session_id]
+    user_session = session_store[req.session_id].get("session")
     url = "http://202.119.81.112:9080/njlgdx/kbcx/kbxx_kc_ifr"
 
     payload = {

@@ -58,7 +58,7 @@ export default {
                         <div class="glass-btn">
                             <i class="ri-download-2-line" style="color: white; font-size: 20px;"></i>
                         </div>
-                        <span class="glass-btn-text">保存高清原图</span>
+                        <span class="glass-btn-text">保存</span>
                     </div>
                 </div>
             </div>

@@ -256,7 +256,11 @@ createApp({
 
                 // 1. 处理全局公告栏 (存入全局 store 以便 ProfileView 读取)
                 if (data.show) {
-                     this.store.globalNotice = data;
+                     // 拦截逻辑：检查用户是否已经“已读”过这个版本的通知
+                     const dismissedVersion = localStorage.getItem('dismissed_notice_version');
+                     if (data.version !== dismissedVersion) {
+                         this.store.globalNotice = data;
+                     }
                 }
 
                 // 2. 处理学期基准自动更新
@@ -265,35 +269,41 @@ createApp({
                     const localConfigVersion = localStorage.getItem("my_njust_term_config_version");
                     const hasLocalTerm = localStorage.getItem("my_njust_term"); // 判断是不是全新用户
 
-                    // 如果版本号不同，或者是第一次打开软件，则强制覆盖
-                    if (localConfigVersion !== remoteConfig.version_id || !hasLocalTerm) {
-                        this.store.currentTerm = remoteConfig.term;
-                        this.store.termStartDate = remoteConfig.start_date;
-                        localStorage.setItem("my_njust_term", remoteConfig.term);
-                        localStorage.setItem("my_njust_start_date", remoteConfig.start_date);
+                    // 【核心修改：以本地为准的防冲突防降级机制】
+                    // 如果本地当前学期在字面上已经大于远端推送的学期，说明远端严重滞后
+                    if (hasLocalTerm && this.store.currentTerm > remoteConfig.term) {
+                        // 忽略远端旧数据，并把这版落后的版本号标记为已读，防止后续无意义的比对
                         localStorage.setItem("my_njust_term_config_version", remoteConfig.version_id);
+                    } else {
+                        // 正常逻辑：远端比本地新，或者处于同个学期但远端发布了热修复（如校准了开学日期）
+                        // 如果版本号不同，或者是第一次打开软件，则强制覆盖
+                        if (localConfigVersion !== remoteConfig.version_id || !hasLocalTerm) {
+                            this.store.currentTerm = remoteConfig.term;
+                            this.store.termStartDate = remoteConfig.start_date;
+                            localStorage.setItem("my_njust_term", remoteConfig.term);
+                            localStorage.setItem("my_njust_start_date", remoteConfig.start_date);
+                            localStorage.setItem("my_njust_term_config_version", remoteConfig.version_id);
 
-                        // 清除"获取中..."的占位符并更新列表
-                        const newOptions = this.store.termOptions.filter(t => t !== "获取中...");
-                        if (!newOptions.includes(remoteConfig.term)) {
-                            newOptions.unshift(remoteConfig.term);
-                        }
-                        this.store.termOptions = newOptions;
-                        localStorage.setItem("my_njust_term_options", JSON.stringify(newOptions));
+                            // 清除"获取中..."的占位符并更新列表
+                            const newOptions = this.store.termOptions.filter(t => t !== "获取中...");
+                            if (!newOptions.includes(remoteConfig.term)) {
+                                newOptions.unshift(remoteConfig.term);
+                            }
+                            this.store.termOptions = newOptions;
+                            localStorage.setItem("my_njust_term_options", JSON.stringify(newOptions));
 
-                        // 重新计算周次
-                        let start = new Date(remoteConfig.start_date);
-                        start.setHours(0, 0, 0, 0);
-                        let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
-                        this.store.realWeek = Math.max(1, Math.min(weekCount, 25));
-                        this.store.currentWeek = this.store.realWeek;
+                            // 重新计算周次
+                            let start = new Date(remoteConfig.start_date);
+                            start.setHours(0, 0, 0, 0);
+                            let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
+                            this.store.realWeek = Math.max(1, Math.min(weekCount, 25));
+                            this.store.currentWeek = this.store.realWeek;
 
-                        // 只有老用户（本地有版本号但不同）更新学期时才弹窗，首次打开新用户不弹窗打扰
-                        if (localConfigVersion) {
-                            setTimeout(() => {
-                                // 这里使用原生的 alert 或者简单的 console，因为主组件可能没有引用 showToast
-                                console.log(`已自动为您校准至 ${remoteConfig.term} 学期`);
-                            }, 800);
+                            if (localConfigVersion) {
+                                setTimeout(() => {
+                                    console.log(`已自动为您校准至 ${remoteConfig.term} 学期`);
+                                }, 800);
+                            }
                         }
                     }
                 }

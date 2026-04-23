@@ -12,7 +12,7 @@ def get_empty_rooms(req: EmptyRoomRequest):
     if req.session_id not in session_store:
         raise HTTPException(status_code=400, detail="会话过期，请重新连接")
 
-    user_session = session_store[req.session_id]
+    user_session = session_store[req.session_id].get("session")
     query_url = "http://202.119.81.112:9080/njlgdx/kbcx/kbxx_classroom_ifr"
 
     # 新接口的真实教学楼 ID 映射

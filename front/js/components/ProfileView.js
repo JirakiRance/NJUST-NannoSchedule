@@ -1,24 +1,15 @@
+// front/js/components/ProfileView.js
 import { store } from '../store.js';
 import LoginCard from './LoginCard.js';
 import SnifferBeast from './SnifferBeast.js';
-import { showToast } from '../utils.js';
+import GlobalNotice from './GlobalNotice.js';
 
 export default {
-    components: { LoginCard, SnifferBeast },
+    components: { LoginCard, SnifferBeast, GlobalNotice },
     template: `
         <div class="profile-container" style="padding-bottom: 80px;">
-            <div v-if="store.globalNotice && store.globalNotice.show" class="card notice-card">
-                <div class="notice-header">
-                    <span class="notice-title"><i class="ri-notification-3-line" style="vertical-align: text-bottom; margin-right: 4px;"></i>最新公告 ({{ store.globalNotice.version }})</span>
-                    <span class="notice-date">{{ store.globalNotice.date }}</span>
-                </div>
-                <div class="notice-content">
-                    {{ store.globalNotice.content }}
-                </div>
-                <div class="notice-actions">
-                    <button class="btn btn-update" @click="checkApkUpdate">前往更新</button>
-                </div>
-            </div>
+
+            <global-notice></global-notice>
 
             <login-card></login-card>
 
@@ -40,10 +31,6 @@ export default {
         };
     },
     methods: {
-        async checkApkUpdate() {
-            if (confirm("即将前往下载页面查看并获取最新版 App，是否继续？")) window.location.href = "https://ns-release.jiraki.top/";
-        },
-
         openSettings() {
             store.currentSubPage = 'settings';
             window.history.pushState({ target: 'subPage' }, '', '#subPage');
