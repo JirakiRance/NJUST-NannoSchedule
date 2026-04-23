@@ -48,6 +48,11 @@ export default {
                             <input type="range" class="custom-range" min="-150" max="150" step="1" v-model.number="config.layout.y" @input="syncLayout">
                             <span style="width: 35px; text-align: right; font-size: 12px; font-family: monospace;">{{ config.layout.y }}</span>
                         </div>
+                        <div style="display: flex; align-items: center; margin-top: 15px;">
+                            <span style="width: 40px; font-size: 12px; color: var(--text-sub); font-weight: bold;">气泡 Y</span>
+                            <input type="range" class="custom-range" min="100" max="400" step="5" v-model.number="config.layout.bubbleY" @input="syncPreviewBubble">
+                            <span style="width: 35px; text-align: right; font-size: 12px; font-family: monospace;">{{ config.layout.bubbleY || 190 }}</span>
+                        </div>
                     </div>
 
                     <div style="font-size: 14px; font-weight: bold; border-bottom: 1px solid var(--grid-border); padding-bottom: 10px; margin-bottom: 15px;">
@@ -65,8 +70,12 @@ export default {
                 </div>
             </div>
 
-            <div v-show="config && !isLoading" style="position: fixed; bottom: 80px; left: 10px; width: 180px; height: 240px; z-index: 15001; pointer-events: none; border: 2px dashed rgba(52, 199, 89, 0.6); border-radius: 8px; background: rgba(0,0,0,0.1);">
-                <div style="position: absolute; top: -20px; left: 0; font-size: 10px; color: #34c759; font-weight: bold;">180x240 物理边界 (全局引擎已提权)</div>
+            <div v-if="config && !isLoading" style="position: fixed; bottom: 60px; left: 10px; width: 180px; height: 240px; z-index: 15001; pointer-events: none; border: 2px dashed rgba(52, 199, 89, 0.6); border-radius: 8px; background: rgba(0,0,0,0.1);">
+                <div style="position: absolute; top: -20px; left: 0; font-size: 10px; color: #34c759; font-weight: bold;">180x240 物理边界 </div>
+
+                <div class="l2d-speech-bubble active" :style="{ bottom: (config?.layout?.bubbleY || 190) + 'px' }" style="pointer-events: none; z-index: 15002;">
+                    <div class="l2d-bubble-text">气泡高度预览</div>
+                </div>
             </div>
         </div>
     `,
@@ -93,6 +102,9 @@ export default {
                 const res = await fetch(`./js/components/sniffer_views/models/${this.editId}/config.json`);
                 if (!res.ok) throw new Error();
                 this.config = await res.json();
+                if (this.config.layout && this.config.layout.bubbleY === undefined) {
+                    this.config.layout.bubbleY = 190;
+                }
                 this.bootLabEngine();
             } catch (e) {
                 showToast("无法读取该模型的配置", "error");
@@ -103,6 +115,11 @@ export default {
         }
     },
     methods: {
+
+        syncPreviewBubble() {
+            // 这个方法留空，只是为了触发事件，实际位置由 Live2DView 的样式绑定接管
+        },
+
         async handleUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -151,7 +168,7 @@ export default {
         },
 
         syncLayout() {
-            if (l2dEngine.model && this.config) {
+            if (l2dEngine.model && this.config && this.config.layout) {
                 l2dEngine.model.scale.set(this.config.layout.scale);
                 l2dEngine.model.x = this.config.layout.x;
                 l2dEngine.model.y = this.config.layout.y;
@@ -159,7 +176,7 @@ export default {
         },
 
         playPreviewMotion(motionName) {
-            if (motionName) l2dEngine.play(motionName);
+            if (motionName && this.config) l2dEngine.play(motionName);
         },
 
         async saveConfig() {

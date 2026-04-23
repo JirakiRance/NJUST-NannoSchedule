@@ -29,6 +29,7 @@ export default {
                 { name: "综合教务管理系统", url: "http://202.119.81.113:8080/" },
                 { name: "教务处", url: "http://jwc.njust.edu.cn/" },
                 { name: "智慧理工服务门户", url: "http://ehall.njust.edu.cn/new/index.html" },
+                { name: "竞赛通知", url: "https://xspace.njust.edu.cn"},
                 { name: "图书馆", url: "http://lib.njust.edu.cn/" },
                 { name: "四六级报名", url: "http://cet-bm.neea.edu.cn/" },
                 { name: "四六级准考证", url: "http://cet-bm.neea.edu.cn/Home/QueryTestTicket" },

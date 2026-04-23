@@ -33,7 +33,7 @@
 ========================================================= */
 .live2d-fixed-overlay {
     position: fixed;
-    bottom: 80px; /* 完美避开底部的 60px 金刚键 Tabbar */
+    bottom: 60px; /* 完美避开底部的 60px 金刚键 Tabbar */
     left: 10px;   /* 靠左对齐 */
     width: 180px;
     height: 240px;
@@ -76,7 +76,7 @@
 /* 对话气泡容器 */
 .l2d-speech-bubble {
     position: absolute;
-    bottom: 210px; /* 位于模型头顶附近 */
+    /* bottom: 190px; 位于模型头顶附近 */
     left: 50%;
     transform: translateX(-50%) scale(0);
     width: 140px;

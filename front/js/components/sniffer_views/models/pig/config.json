@@ -2,7 +2,7 @@
     "name": "pig",
     "version": 3,
     "url": "./js/components/sniffer_views/models/pig/pig.model3.json",
-    "layout": { "scale": 0.2, "x": 10, "y": 10 },
+    "layout": { "scale": 0.2, "x": 10, "y": 70 },
 
     "motions": {
         "alive": "Idle",

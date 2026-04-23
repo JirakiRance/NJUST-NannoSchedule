@@ -6,7 +6,9 @@ export default {
     props: ['mascotState', 'mascotStatusText'],
     template: `
         <div style="position: fixed; bottom: 60px; left: 10px; width: 180px; text-align: center; z-index: 10000; pointer-events: none;">
-            <div class="l2d-speech-bubble" :class="{ active: isCanvasVisible && !!mascotStatusText }">
+            <div class="l2d-speech-bubble"
+                 :class="{ active: isCanvasVisible && !!mascotStatusText }"
+                 :style="{ bottom: bubbleBottom + 'px' }">
                 <div class="l2d-bubble-text">{{ mascotStatusText }}</div>
             </div>
 
@@ -16,12 +18,20 @@ export default {
     data() {
         return {
             store,
-            motionMap: {}
+            motionMap: {},
+            modelConfig: null
         };
     },
     computed: {
         isCanvasVisible() {
             return this.store.currentTab === 'profile' && this.store.currentSubPage === '';
+        },
+        // 计算属性：读取配置里的 bubbleY，如果没有则默认 190
+        bubbleBottom() {
+            if (this.modelConfig && this.modelConfig.layout && typeof this.modelConfig.layout.bubbleY !== 'undefined') {
+                return this.modelConfig.layout.bubbleY;
+            }
+            return 190;
         }
     },
     watch: {
@@ -82,6 +92,7 @@ export default {
             }
         },
         async handleModelClick() {
+            if (!this.modelConfig) return;
             if (!this.modelConfig || !this.modelConfig.interactMotions) return;
             if (!this.isCanvasVisible) return;
 

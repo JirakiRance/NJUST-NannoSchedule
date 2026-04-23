@@ -272,6 +272,7 @@ export default {
             customColorValue: store.themeColor,
             availableModels: [],
             showModelLab: false,
+            editingModelId: null,
             availableColors: [
                 { name: '天空蓝', value: '#5b9bd5' },
                 { name: '哔哩粉', value: '#fb7299' },
