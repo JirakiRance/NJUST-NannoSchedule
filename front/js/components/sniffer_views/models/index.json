@@ -3,10 +3,5 @@
         "id": "pig",
         "name": "pig",
         "isCustom": false
-    },
-    {
-        "id": "Umaru",
-        "name": "Umaru",
-        "isCustom": true
     }
 ]
