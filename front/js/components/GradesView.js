@@ -145,6 +145,7 @@ export default {
                                 course.attr = '专选';
                                 course.selected = true;
                             }
+                            if (course.name && course.name.includes('通用英语')) course.selected = false;
                             course._normalized = true;
                         }
                     });

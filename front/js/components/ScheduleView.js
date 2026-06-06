@@ -95,12 +95,13 @@ export default {
                                  v-for="(exam, index) in visibleExams" :key="'exam-'+index"
                                  @click="openExamModal(exam)"
                                  :style="getExamCardStyle(exam)">
-                                <div class="exam-floating-tag">
-                                    座位: {{ exam.seat || '--' }}
+                                <div class="course-info-top">
+                                    <div class="course-time" v-if="exam._render.timeRangeStr">{{ exam._render.timeRangeStr.split(' - ')[0] }}</div>
+                                    <div class="course-room" v-if="exam.room">{{ exam.room }}</div>
                                 </div>
-                                <div class="exam-floating-name">{{ exam.course_name }}</div>
-                                <div class="exam-floating-time">{{ exam._render.timeRangeStr }}</div>
-                                <div class="exam-floating-room" v-if="exam.room"><i class="ri-map-pin-line"></i> {{ exam.room }}</div>
+                                <div class="course-name" :style="{ fontSize: store.scheduleViewType === 'scroll' ? '12px' : '9px', WebkitLineClamp: store.scheduleViewType === 'scroll' ? 6 : 3 }">{{ exam.course_name }}</div>
+                                <div class="course-time" style="margin-top: 2px;" v-if="exam.seat">No. {{ exam.seat }}</div>
+                                <div style="position: absolute; bottom: 0; right: 0; background: rgba(0,0,0,0.15); color: #fff; font-size: 8px; padding: 2px 4px; border-bottom-left-radius: 6px; font-weight: normal;">考试</div>
                             </div>
 
                         </div>
@@ -240,7 +241,7 @@ export default {
                             <div class="custom-form-col">
                                 <label class="custom-form-label">连上节数</label>
                                 <select v-model.number="customForm.duration" class="custom-select">
-                                    <option v-for="l in 5" :key="l" :value="l">{{ l }}节</option>
+                                    <option v-for="l in 13" :key="l" :value="l">{{ l }}节</option>
                                 </select>
                             </div>
                         </div>
@@ -465,41 +466,50 @@ export default {
             const examEnd = new Date(exam._render.dateStr.replace(/-/g, '/') + ' ' + exam._render.timeRangeStr.split('-')[1].trim() + ':00');
             const examStart = new Date(exam._render.dateStr.replace(/-/g, '/') + ' ' + exam._render.timeRangeStr.split('-')[0].trim() + ':00');
 
-            // 颜色全面加深！
-            let borderColor = '#e68a00'; // 更深、更抓眼的橙色
-            let bgColor = 'rgba(255, 149, 0, 0.45)'; // 透明度从 0.15 暴增到 0.45，背景更实
-            let shadow = '0 0 15px rgba(255, 149, 0, 0.6)';
-            let textColor = '#b36b00'; // 字体更深，保证在深背景下看得清
+//            // 颜色全面加深！
+//            let borderColor = '#e68a00'; // 更深、更抓眼的橙色
+//            let bgColor = 'rgba(255, 149, 0, 0.45)'; // 透明度从 0.15 暴增到 0.45，背景更实
+//            let shadow = '0 0 15px rgba(255, 149, 0, 0.6)';
+//            let textColor = '#b36b00'; // 字体更深，保证在深背景下看得清
+//
+//            if (now > examEnd) {
+//                // 已结束的灰色也加深一点
+//                borderColor = 'rgba(120, 120, 120, 0.8)';
+//                bgColor = 'rgba(150, 150, 150, 0.35)';
+//                shadow = 'none';
+//                textColor = '#444';
+//            } else if (now >= examStart && now <= examEnd) {
+//                // 正在考试的红色直接拉满警报感
+//                borderColor = '#ff2d55';
+//                bgColor = 'rgba(255, 45, 85, 0.45)';
+//                shadow = '0 0 20px rgba(255, 45, 85, 0.7)';
+//                textColor = '#a3001e';
+//            }
+            // 默认：按课程名 hash 取色
+            const colorIndex = this.getStringHash(exam.course_name) % this.colors.length;
+            let baseHex = this.colors[colorIndex];
+            let r = parseInt(baseHex.slice(1, 3), 16);
+            let g = parseInt(baseHex.slice(3, 5), 16);
+            let b = parseInt(baseHex.slice(5, 7), 16);
+            let bgColor = `rgba(${r}, ${g}, ${b}, ${this.store.cardOpacity})`;
 
             if (now > examEnd) {
-                // 已结束的灰色也加深一点
-                borderColor = 'rgba(120, 120, 120, 0.8)';
-                bgColor = 'rgba(150, 150, 150, 0.35)';
-                shadow = 'none';
-                textColor = '#444';
+                bgColor = `rgba(150, 150, 150, 0.35)`;
             } else if (now >= examStart && now <= examEnd) {
-                // 正在考试的红色直接拉满警报感
-                borderColor = '#ff2d55';
-                bgColor = 'rgba(255, 45, 85, 0.45)';
-                shadow = '0 0 20px rgba(255, 45, 85, 0.7)';
-                textColor = '#a3001e';
+                bgColor = `rgba(255, 45, 85, 0.45)`;
             }
 
             return {
                 position: 'absolute',
-                left: `calc(${leftPct}% + 1px)`, width: `calc(${100/7}% - 2px)`,
-                top: `${topY}px`, height: `${bottomY - topY}px`,
-                border: `2px dashed ${borderColor}`, // 2px 粗虚线
+                left: `calc(${leftPct}% + 1px)`,
+                width: `calc(${100/7}% - 2px)`,
+                top: `${topY}px`,
+                height: `${bottomY - topY}px`,
                 backgroundColor: bgColor,
-                boxShadow: shadow,
-                color: textColor,
                 zIndex: 10,
-                borderRadius: '8px',
-                backdropFilter: 'blur(4px)', // 增强毛玻璃效果
-                display: 'flex', flexDirection: 'column',
-                justifyContent: 'center', alignItems: 'center',
-                boxSizing: 'border-box', textAlign: 'center',
-                cursor: 'pointer', overflow: 'hidden'
+                boxSizing: 'border-box',
+                cursor: 'pointer',
+                overflow: 'hidden'
             };
         },
 
