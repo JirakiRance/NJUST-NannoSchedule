@@ -54,7 +54,7 @@ export default {
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" v-show="false">
                 <div class="card-title">
                     <i class="ri-radar-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>嗅探监控
                 </div>
@@ -137,6 +137,41 @@ export default {
                         </p>
                     </div>
 
+                </div>
+            </div>
+
+
+                <div class="card">
+                <div class="card-title"><i class="ri-refresh-line" style="vertical-align: text-bottom; margin-right: 6px; color: var(--primary-color);"></i>后台自动同步</div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-size: 14px; color: var(--text-main); font-weight: bold;">启用自动同步</span>
+                    <div class="switch-capsule" style="margin: 0;">
+                        <div class="switch-item" :class="{active: store.autoSync.enabled}" @click="toggleAutoSync(true)">开启</div>
+                        <div class="switch-item" :class="{active: !store.autoSync.enabled}" @click="toggleAutoSync(false)">关闭</div>
+                    </div>
+                </div>
+
+                <div v-show="store.autoSync.enabled" style="animation: fade-in 0.3s ease-out; margin-bottom: 15px;">
+                    <span style="font-size: 13px; color: var(--text-main); font-weight: bold;">同步频率：</span>
+                    <select v-model="store.autoSync.interval" @change="saveAutoSync" class="custom-select" style="margin-left: 10px; width: 120px; font-size: 12px; padding: 4px;">
+                        <option value="6">每 6 小时</option>
+                        <option value="24">每天</option>
+                        <option value="72">每 3 天</option>
+                        <option value="168">每 7 天</option>
+                    </select>
+                </div>
+
+                <div style="padding-top: 15px; border-top: 1px dashed var(--grid-border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 13px; color: var(--text-main); font-weight: bold;">教务处连接状态</span>
+                        <span v-if="sessionStatus === 'checking'" style="color: var(--text-sub); font-size: 12px;"><i class="ri-loader-4-line ri-spin"></i> 检测中...</span>
+                        <span v-else-if="sessionStatus === 'active'" style="color: #34c759; font-size: 12px; font-weight: bold;"><i class="ri-link"></i> 连接有效</span>
+                        <span v-else style="color: #ff3b30; font-size: 12px; font-weight: bold;"><i class="ri-link-unlink-m"></i> 已断开</span>
+                    </div>
+                    <p v-if="sessionStatus === 'expired'" style="font-size: 11px; color: var(--text-sub); margin-top: 8px;">
+                        自动同步已失效，请前往<span style="color: var(--primary-color); cursor: pointer; font-weight:bold;" @click="store.currentTab='profile'; store.currentSubPage=''">个人中心</span>重新登录验证。
+                    </p>
                 </div>
             </div>
 
@@ -301,6 +336,7 @@ export default {
                 { label: '7天', val: '7d' },
                 { label: '14天', val: '14d' }
             ],
+            sessionStatus: 'checking'
         };
     },
     computed: {
@@ -312,6 +348,45 @@ export default {
         'store.scheduleViewType'(newVal) { localStorage.setItem("my_njust_view_type", newVal); }
     },
     methods: {
+
+        toggleAutoSync(status) {
+            this.store.autoSync.enabled = status;
+            localStorage.setItem("my_njust_auto_sync_enabled", status ? "true" : "false");
+            if (status) showToast("已开启后台自动更新", "success");
+        },
+        saveAutoSync() {
+            localStorage.setItem("my_njust_auto_sync_interval", this.store.autoSync.interval);
+        },
+        async checkSessionStatus() {
+            this.sessionStatus = 'checking';
+            // 兼容抓取当前遗留的 session_id
+            const sessionId = this.store.sniffer.sessionId || localStorage.getItem("my_njust_session_id");
+
+            console.log("【前端状态检测】当前取到的 Session ID 是:", sessionId);
+
+            if (!sessionId) {
+                console.log("【前端状态检测】 失败: Session ID 为空！(说明登录时没有把ID存入 localStorage)");
+                this.sessionStatus = 'expired';
+                return;
+            }
+            try {
+                console.log("【前端状态检测】正在向后端发送探测请求...");
+                const res = await fetch(`${API_BASE}/keep_alive`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId })
+                });
+                if (res.ok) {
+                    console.log("【前端状态检测】 成功: 教务处返回 200 OK");
+                    this.sessionStatus = 'active';
+                } else {
+                    console.log("【前端状态检测】 失败: 教务处拒绝，返回状态码", res.status);
+                    this.sessionStatus = 'expired';
+                }
+            } catch(e) {
+                console.error("【前端状态检测】 失败: 网络请求异常", e);
+                this.sessionStatus = 'expired';
+            }
+        },
 
         async deleteModel(id) {
             // 严防死守：禁止删除内置模型
@@ -632,5 +707,6 @@ export default {
                 console.error("无法读取模型花名册 index.json", e);
                 this.availableModels = [{ id: this.store.sniffer.modelId, name: "本地配置读取失败" }];
             });
+        this.checkSessionStatus();
     }
 }

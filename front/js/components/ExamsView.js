@@ -16,7 +16,7 @@ export default {
                 </div>
 
                 <div class="exam-header-actions" style="position: static;">
-                    <span v-show="true" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 4px;">
+                    <span v-show="false" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 4px;">
                         [测试数据]
                     </span>
                 </div>

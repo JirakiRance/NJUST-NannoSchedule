@@ -1,4 +1,5 @@
 import { store } from './store.js';
+import { API_BASE } from './utils.js';
 import ScheduleView from './components/ScheduleView.js';
 import GradesView from './components/GradesView.js';
 import LevelExamsView from './components/LevelExamsView.js';
@@ -85,6 +86,43 @@ createApp({
     },
 
     methods: {
+
+        async executeAutoSync() {
+            // 尝试获取本地存留的 session ID
+            const sessionId = this.store.sniffer.sessionId || localStorage.getItem("my_njust_session_id");
+            if (!sessionId) return;
+
+            console.log("[自动同步] 开始执行后台静默同步...");
+            try {
+                const res = await fetch('${API_BASE}/auto_sync', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: sessionId, term: this.store.currentTerm })
+                });
+
+                if (res.ok) {
+                    const result = await res.json();
+                    // 1. 刷新内存
+                    this.store.courseList = result.data.courses;
+                    this.store.gradeList = result.data.grades;
+                    this.store.examsList = result.data.exams;
+
+                    // 2. 覆盖存盘
+                    const saved = JSON.parse(localStorage.getItem("my_njust_data") || "{}");
+                    saved.courses = result.data.courses;
+                    saved.grades = result.data.grades;
+                    saved.exams = result.data.exams;
+                    localStorage.setItem("my_njust_data", JSON.stringify(saved));
+
+                    console.log("[自动同步] 数据三大件更新成功！");
+                } else {
+                    console.log("[自动同步] Session 已被教务处销毁，等待用户下次登录恢复");
+                }
+            } catch(e) {
+                console.error("[自动同步] 网络异常跳过", e);
+            }
+        },
+
         openSubPage(pageName) {
             this.store.currentSubPage = pageName;
             window.history.pushState({ target: 'subPage' }, '', '#subPage');
@@ -359,9 +397,25 @@ createApp({
 
         // 只有在手机端才启动守护进程
         if (this.isEligibleEnv()) {
-            console.log("手机端环境，启动考试提醒守护进程...");
+            console.log("手机端环境，启动后台守护进程...");
+
+            // 1. 考试提醒
             this.checkExamNotifications();
             this.notificationTimer = setInterval(this.checkExamNotifications, 60000);
+
+            // 2. 数据静默自动同步 (每 5 分钟检查一次是否到了设定的拉取时间)
+            setInterval(() => {
+                if (this.store.autoSync && this.store.autoSync.enabled) {
+                    const lastSync = Number(localStorage.getItem('my_njust_last_auto_sync') || '0');
+                    const intervalMs = Number(this.store.autoSync.interval) * 60 * 60 * 1000;
+
+                    if (Date.now() - lastSync > intervalMs) {
+                        this.executeAutoSync().then(() => {
+                            localStorage.setItem('my_njust_last_auto_sync', String(Date.now()));
+                        });
+                    }
+                }
+            }, 5 * 60 * 1000);
         }
     },
     unmounted() {

@@ -84,8 +84,9 @@ def sync_all(req: LoginRequest):
         session_store[req.session_id]["active_node"] = active_node
 
         # 3. 只有前端明确要求驻留后台，才固化到硬盘里
-        if req.keep_alive:
-            save_session_to_disk(req.session_id, user_session, active_node)
+        # if req.keep_alive:
+        #     save_session_to_disk(req.session_id, user_session, active_node)
+        save_session_to_disk(req.session_id, user_session, active_node)
 
         # ====== 抓取数据 ======
         schedule_resp = user_session.post(SCHEDULE_URL, data={'xnxq01id': req.term, 'zc': ''}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
@@ -105,8 +106,8 @@ def sync_all(req: LoginRequest):
         level_exam_resp.encoding = 'utf-8'
         level_exams = parse_level_exams(level_exam_resp.text)
 
-        if not req.keep_alive:
-            del session_store[req.session_id]
+        # if not req.keep_alive:
+        #     del session_store[req.session_id]
 
         return {"msg": "成功", "data": {"courses": courses, "grades": grades, "exams": exams, "level_exams": level_exams, "term_options": term_options}}
     except Exception as e:
@@ -141,41 +142,51 @@ def pure_login(req: LoginRequest):
         raise HTTPException(status_code=500, detail=f"内部错误: {str(e)}")
 
 
-# ======== 下面是嗅探心跳接口 ========
+# ======== 状态检测/心跳探测接口 ========
 @router.post("/keep_alive")
 def keep_alive(req: KeepAliveRequest):
-    # 尝试从内存获取
+    print(f"\n[状态检测] 收到探测请求，Session ID: {req.session_id}")
+
     store_data = session_store.get(req.session_id)
     user_session = store_data.get("session") if store_data else None
     active_node = store_data.get("active_node") if store_data else None
 
     # 内存没了，去硬盘捞
     if not user_session:
+        print("[状态检测] 内存无数据，尝试从硬盘读取...")
         user_session, active_node = load_session_from_disk(req.session_id)
         if user_session:
-            # 捞回来之后，放回内存
             session_store[req.session_id] = {"session": user_session, "active_node": active_node}
-            print(f"DEBUG: Session {req.session_id} 已从硬盘成功复活")
+            print("[状态检测] 硬盘读取成功，复活 Session")
 
     if not user_session:
+        print("[状态检测]  探测失败：内存和硬盘均无此 Session")
         raise HTTPException(status_code=401, detail="Session 已过期或被清理")
 
-    # 如果此时还是没有 active_node，给个安全的兜底
     if not active_node:
-        active_node = "http://202.119.81.113:8080"
-    img_index = random.randint(1, 12)
-    img_url = f"{active_node}/njlgdx/framework/images/tp{img_index}.png"
+        active_node = "http://202.119.81.112:9080"  # 修复兜底 IP
+
+    # 探测教务处框架主页（比请求图片更稳，如果不在线会被强制302重定向）
+    probe_url = f"{active_node}/njlgdx/framework/main.jsp"
+    print(f"[状态检测] 开始对目标节点发送探针: {probe_url}")
 
     try:
-        resp = user_session.get(img_url, headers=HEADERS, timeout=10, proxies=NO_PROXY, allow_redirects=True)
-        if 'image' in resp.headers.get('Content-Type', '').lower():
+        # allow_redirects=False 是精髓，阻止它自动跳转到登录页
+        resp = user_session.get(probe_url, headers=HEADERS, timeout=10, proxies=NO_PROXY, allow_redirects=False)
+        print(f"[状态检测] 探针返回 HTTP 状态码: {resp.status_code}")
+
+        if resp.status_code == 200:
+            print("[状态检测]  探测通过，Cookie 在教务处依然有效！")
             return {"status": "alive", "node": active_node}
         else:
-            del session_store[req.session_id]  # 发现死亡，清理内存
+            print(f"[状态检测]  遭到教务处拦截 (大概率是302重定向)，判定为已掉线！")
+            if req.session_id in session_store:
+                del session_store[req.session_id]
             raise HTTPException(status_code=401, detail="被系统踢出下线")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="请求节点图片失败")
 
+    except Exception as e:
+        print(f"[状态检测]  探针发射网络异常: {e}")
+        raise HTTPException(status_code=500, detail="请求节点失败")
 # ======== 数据嗅探接口 ========
 @router.post("/sniff_data")
 def sniff_data(req: SniffDataRequest):
@@ -240,3 +251,38 @@ def destroy_session(req: KeepAliveRequest):
             print(f"DEBUG: 删除 Session 存档失败: {e}")
 
     return {"msg": "会话已彻底销毁"}
+
+
+# ======== 后台静默自动同步接口 ========
+@router.post("/auto_sync")
+def auto_sync(req: SniffDataRequest):
+    store_data = session_store.get(req.session_id)
+    user_session = store_data.get("session") if store_data else None
+    active_node = store_data.get("active_node") if store_data else None
+
+    # 从硬盘捞取僵尸 Session
+    if not user_session:
+        user_session, active_node = load_session_from_disk(req.session_id)
+        if user_session:
+            session_store[req.session_id] = {"session": user_session, "active_node": active_node}
+
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Session 已过期")
+
+    try:
+        # 一次性静默拉取三大件数据
+        schedule_resp = user_session.post(SCHEDULE_URL, data={'xnxq01id': req.term, 'zc': ''}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        schedule_resp.encoding = 'utf-8'
+        courses = parse_schedule(schedule_resp.text)
+
+        grade_resp = user_session.post(GRADES_LIST_URL, data={'kksj': '', 'kcxz': '', 'kcmc': '', 'xsfs': 'max', 'pageSize': '1000', 'pageNum': '1'}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        grade_resp.encoding = 'utf-8'
+        grades = parse_grades(grade_resp.text)
+
+        exam_resp = user_session.post(EXAMS_LIST_URL, data={'xnxqid': req.term}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        exam_resp.encoding = 'utf-8'
+        exams = parse_exams(exam_resp.text)
+
+        return {"msg": "成功", "data": {"courses": courses, "grades": grades, "exams": exams}}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="静默同步失败")

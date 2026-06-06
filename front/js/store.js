@@ -83,6 +83,11 @@ export const store = reactive({
         lastSniffTime: localStorage.getItem("my_njust_sniffer_last_sniff") || "",
     },
 
+    autoSync: {
+        enabled: JSON.parse(localStorage.getItem("my_njust_auto_sync_enabled") || "false"),
+        interval: localStorage.getItem("my_njust_auto_sync_interval") || "72" // 默认72小时
+    },
+
     userAccount: {
         // 默认开启记住密码（只要不是显式存了 "false"，就认为是 true）
         remember: localStorage.getItem("my_njust_remember") !== "false",

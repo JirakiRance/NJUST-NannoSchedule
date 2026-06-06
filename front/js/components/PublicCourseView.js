@@ -11,7 +11,7 @@ export default {
                 <template #header>
                     <div style="text-align: center; margin-bottom: 20px;">
                         <div class="empty-emoji"><i class="ri-radar-line" style="color: #ff2d55;"></i></div>
-                        <div class="list-card-title">全校课程雷达</div>
+                        <div class="list-card-title">全校课程查询</div>
                         <div class="setting-desc" style="margin-top: 5px;">查询蹭课需要保持教务处连接</div>
                     </div>
                 </template>
@@ -61,6 +61,15 @@ export default {
             searchKeyword: "",
             isSearching: false,
             courseList: []
+        }
+    },
+    mounted() {
+        // 启动时自动从 localStorage 捞取 Session ID
+        const savedSession = localStorage.getItem("my_njust_session_id");
+        if (savedSession) {
+            this.sessionId = savedSession;
+            this.roomSessionValid = true;
+            console.log("检测到本地有效 Session，已自动免登录加载");
         }
     },
     methods: {

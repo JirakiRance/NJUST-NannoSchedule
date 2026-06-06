@@ -86,6 +86,15 @@ export default {
             roomQuery: { dateOffset: 0, periods: ["01-03"], building: "all" }
         }
     },
+    mounted() {
+        // 启动时自动从 localStorage 捞取 Session ID
+        const savedSession = localStorage.getItem("my_njust_session_id");
+        if (savedSession) {
+            this.sessionId = savedSession;
+            this.roomSessionValid = true;
+            console.log("检测到本地有效 Session，已自动免登录加载");
+        }
+    },
     methods: {
         onLoginSuccess(id) {
             this.sessionId = id;

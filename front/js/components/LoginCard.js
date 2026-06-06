@@ -134,6 +134,13 @@ export default {
                         localStorage.setItem("my_njust_password", this.loginForm.password);
                     }
 
+
+
+                    this.sessionId = this.sessionId; // 确保 sessionId 变量是最新的
+                    localStorage.setItem("my_njust_session_id", this.sessionId);
+                    localStorage.setItem("my_njust_sniffer_session", this.sessionId); // 兼容旧缓存
+                    store.sniffer.sessionId = this.sessionId; // 同步给全局内存
+
                     if (this.mode === 'sync') {
                         store.courseList = result.data.courses;
                         store.gradeList = result.data.grades;
@@ -158,16 +165,16 @@ export default {
                         }
                         localStorage.setItem("my_njust_data", JSON.stringify(result.data));
 
-                        store.sniffer.sessionId = this.sessionId;
-                        localStorage.setItem("my_njust_sniffer_session", this.sessionId);
-
-                        if (store.sniffer.enabled) {
-                            store.sniffer.sessionId = this.sessionId;
-                            localStorage.setItem("my_njust_sniffer_session", this.sessionId);
-                        } else {
-                            store.sniffer.sessionId = "";
-                            localStorage.removeItem("my_njust_sniffer_session");
-                        }
+//                        store.sniffer.sessionId = this.sessionId;
+//                        localStorage.setItem("my_njust_sniffer_session", this.sessionId);
+//
+//                        if (store.sniffer.enabled) {
+//                            store.sniffer.sessionId = this.sessionId;
+//                            localStorage.setItem("my_njust_sniffer_session", this.sessionId);
+//                        } else {
+//                            store.sniffer.sessionId = "";
+//                            localStorage.removeItem("my_njust_sniffer_session");
+//                        }
 
                         showToast("同步成功！", "success");
                         store.currentTab = 'schedule';
