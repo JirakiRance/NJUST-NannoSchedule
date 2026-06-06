@@ -6,7 +6,6 @@ import traceback
 
 router = APIRouter()
 
-
 @router.post("/empty_rooms")
 def get_empty_rooms(req: EmptyRoomRequest):
     if req.session_id not in session_store:
@@ -15,10 +14,10 @@ def get_empty_rooms(req: EmptyRoomRequest):
     user_session = session_store[req.session_id].get("session")
     query_url = "http://202.119.81.112:9080/njlgdx/kbcx/kbxx_classroom_ifr"
 
-    # 新接口的真实教学楼 ID 映射
+    # 教学楼 ID 映射
     building_map = {
-        "I": ["1"], "II": ["2"], "IV": ["6"], "YF": ["3"],  # 3通常是III教学楼/逸夫楼
-        "other": ["5", "10", "9"],  # 东区平房, 专业教室, 艺文馆
+        "I": ["1"], "II": ["2"], "IV": ["6"], "YF": ["3"],
+        "other": ["5", "10", "9"],
         "all": ["1", "2", "3", "6", "5", "10", "9"]
     }
     target_buildings = building_map.get(req.building, ["1", "2", "3", "6"])
@@ -26,17 +25,19 @@ def get_empty_rooms(req: EmptyRoomRequest):
 
     final_rooms = []
 
+    # ===== 测试监控打印开始 =====
+    print(f"\n[空教室雷达] 目标: 星期{req.day} | 楼栋={req.building} | 请求时段={req.period_list}")
+
     for b_code in target_buildings:
-        room_stats = {}  # 记录每个教室的状态：{ "I-301": {"is_free": True, "has_any_class": False} }
+        room_stats = {}  # 记录纯净的空闲状态
 
         for period in req.period_list:
             start_p, end_p = period.split("-")
-            # 新接口的节次没有前导0，必须转int去除，比如 "01" -> "1"
             payload = {
                 "xnxqh": req.term, "skyx": "", "kkyx": "", "zzdKcSX": "", "kc": "",
                 "xqid": "01", "jzwid": b_code,
                 "zc1": req.week, "zc2": req.week,
-                "xq": "", "xq2": "",  # 留空！强制返回7天数据
+                "xq": "", "xq2": "",  # 留空强制返回7天数据
                 "jc1": str(int(start_p)), "jc2": str(int(end_p))
             }
 
@@ -46,25 +47,30 @@ def get_empty_rooms(req: EmptyRoomRequest):
                 resp.encoding = 'utf-8'
                 matrix = parse_empty_rooms_matrix(resp.text)
 
+                free_count = 0
                 for room_name, days_free in matrix.items():
                     if room_name not in room_stats:
-                        room_stats[room_name] = {"is_free": True, "has_any_class": False}
+                        room_stats[room_name] = True
 
-                    # 1. 在目标日期的这个时段，必须没课
+                    # 只要这个教室在目标日期的目标时段有课，就不空闲
                     if not days_free[target_day_index]:
-                        room_stats[room_name]["is_free"] = False
+                        room_stats[room_name] = False
+                    elif room_stats[room_name]:
+                        free_count += 1
 
-                    # 2. 在这一周的这个时段，只要有任何一天有课，就说明它不是考研专用死教室
-                    if False in days_free:
-                        room_stats[room_name]["has_any_class"] = True
+                print(f" -> 扫描楼栋代码[{b_code}] 时段[{period}]：教务处返回 {len(matrix)} 间，当前完全空闲 {free_count} 间")
 
             except Exception as e:
-                print(f"扫描楼栋 {b_code} 时段 {period} 失败: {e}")
+                print(f" -> 扫描楼栋[{b_code}] 时段[{period}] 失败: {e}")
                 continue
 
-        # 筛选出满足条件的教室
-        for name, stats in room_stats.items():
-            if stats["is_free"] and stats["has_any_class"]:
+        # 将后端纯净判断为空闲的教室加入结果
+        for name, is_free in room_stats.items():
+            if is_free:
                 final_rooms.append(name)
+
+    print(f"[空教室雷达] 本次请求纯净返回: {len(final_rooms)} 间。 (将交由前端进行并发剔除)")
+    print(f"=========================================\n")
+    # ===== 测试监控打印结束 =====
 
     return {"msg": "成功", "data": final_rooms}

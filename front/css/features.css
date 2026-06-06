@@ -69,20 +69,26 @@
 }
 .empty-room-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px; /* 稍微减小卡片间距，省出空间 */
     padding-bottom: 20px;
 }
+
 .empty-room-item {
     background: var(--card-bg);
-    border-radius: 8px;
-    padding: 12px;
+    border-radius: 6px; /* 圆角改小一点更精致 */
+    padding: 8px 2px; /* 减小内边距，给文字留空间 */
     border: 1px solid var(--grid-border);
     text-align: center;
     font-weight: bold;
     color: var(--text-main);
-    font-size: 14px;
+    font-size: 13px; /* 字体适当缩小，防止 4 列挤换行 */
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+
+    /* 防止某些奇葩长名字教室换行破坏排版 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 
