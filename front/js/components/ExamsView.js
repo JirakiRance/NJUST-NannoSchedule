@@ -16,7 +16,7 @@ export default {
                 </div>
 
                 <div class="exam-header-actions" style="position: static;">
-                    <span v-show="false" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 4px;">
+                    <span v-show="true" @click="injectMultiTermData" style="color: #007aff; font-size: 11px; cursor: pointer; padding: 4px;">
                         [测试数据]
                     </span>
                 </div>
@@ -139,7 +139,9 @@ export default {
     methods: {
         parseTime(timeStr) {
             try {
-                const match = timeStr.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})/);
+                //const match = timeStr.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})/);
+                // 修改正则：用 \s*[-~]\s* 来兼容真实教务处的波浪号 ~ 和测试数据的短横线 -
+                const match = timeStr.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*[-~]\s*(\d{2}:\d{2})/);
                 if (!match) return null;
                 return {
                     start: new Date(match[1].replace(/-/g, '/') + ' ' + match[2] + ':00'),
@@ -227,48 +229,64 @@ export default {
             localStorage.setItem("my_njust_data", JSON.stringify(data));
         },
         injectMultiTermData() {
-            const n = new Date(); // 动态获取当前时间 (如 2026-04-12 20:44)
-            const fmt = (d) => {
-                const p = (v) => v.toString().padStart(2, '0');
-                return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
-            };
-            const curr = store.currentTerm;
+            const n = new Date();
+            // 默认用真实的学期号，如果没取到就兜底
+            const curr = store.currentTerm || "2025-2026-2";
 
-            // 时间偏移量常量 (毫秒)
+            // 例如: "2026-06-04 13:30~15:30"
+            const fmtTilde = (start, end) => {
+                const p = (v) => v.toString().padStart(2, '0');
+                const dateStr = `${start.getFullYear()}-${p(start.getMonth()+1)}-${p(start.getDate())}`;
+                const startTimeStr = `${p(start.getHours())}:${p(start.getMinutes())}`;
+                const endTimeStr = `${p(end.getHours())}:${p(end.getMinutes())}`;
+                return `${dateStr} ${startTimeStr}~${endTimeStr}`;
+            };
+
             const MIN = 60000;
             const HR = 3600000;
             const DAY = 86400000;
 
+            // 清理你可能有的通知日志，确保能重新触发提醒
             localStorage.removeItem('njust_exam_notified_log');
 
             store.examsList = [
-                // 1. 正在进行的考试 (半小时前开始，1小时后结束 - 测试红色高亮框)
-                { term: curr, course_name: "理论力学 (正在考试)", course_id: "MECH001", session: "期末考试", room: "I-201", seat: "05", time: `${fmt(new Date(n.getTime() - 30*MIN))}-${fmt(new Date(n.getTime() + 60*MIN)).split(' ')[1]}` },
+                // 1. 【真实历史数据】(测试清理逻辑与灰色蒙版)
+                // 来源于 HTML：振动理论，设定为绝对过去式 (3天前)
+                { term: curr, course_name: "振动理论 (历史数据)", course_id: "11031801", session: "期末考试", room: "Ⅳ-A210", seat: "32", time: fmtTilde(new Date(n.getTime() - 3*DAY), new Date(n.getTime() - 3*DAY + 2*HR)) },
 
-                // 2. 极度危险：即将开始 (45分钟后 - 完美测试 1h 通知提醒)
-                { term: curr, course_name: "材料力学 (即将开始)", course_id: "MECH002", session: "期中考试", room: "II-102", seat: "12", time: `${fmt(new Date(n.getTime() + 45*MIN))}-${fmt(new Date(n.getTime() + 165*MIN)).split(' ')[1]}` },
+                // 2. 【正在考试】(测试状态=1 "考试中" 的红色高亮框)
+                // 来源于 HTML：计算力学，动态设定为半小时前开始，1个半小时后结束
+                { term: curr, course_name: "计算力学 (正在考试)", course_id: "11025403", session: "期末考试", room: "Ⅳ-A207", seat: "32", time: fmtTilde(new Date(n.getTime() - 30*MIN), new Date(n.getTime() + 90*MIN)) },
 
-                // 3. 几小时后的考试 (2.5小时后 - 测试 3h 通知提醒)
-                { term: curr, course_name: "工程制图 (几小时后)", course_id: "DRAW001", session: "随堂测验", room: "IV-304", seat: "22", time: `${fmt(new Date(n.getTime() + 2.5*HR))}-${fmt(new Date(n.getTime() + 4.5*HR)).split(' ')[1]}` },
+                // 3. 【极度危险：即将开始】(测试分钟级倒计时，及【通知触发】逻辑！)
+                // 设定在 15 分钟后开始！(如果是30分钟内提醒，这个数据一注入就会立刻触发系统的推送)
+                { term: curr, course_name: "模式识别与大数据 (即将开始)", course_id: "CS1001", session: "考查", room: "Ⅳ-A109", seat: "15", time: fmtTilde(new Date(n.getTime() + 15*MIN), new Date(n.getTime() + 135*MIN)) },
 
-                // 4. 明天的考试 (20小时后 - 测试 12h/1天 倒计时UI)
-                { term: curr, course_name: "常微分方程 (明天)", course_id: "MATH103", session: "期末考试", room: "YF-402", seat: "110", time: `${fmt(new Date(n.getTime() + 20*HR))}-${fmt(new Date(n.getTime() + 22*HR)).split(' ')[1]}` },
+                // 4. 【几小时后的考试】(测试小时级倒计时UI)
+                { term: curr, course_name: "数字逻辑电路 (几小时后)", course_id: "EE2001", session: "期中考试", room: "Ⅰ-102", seat: "08", time: fmtTilde(new Date(n.getTime() + 3.5*HR), new Date(n.getTime() + 5.5*HR)) },
 
-                // 5. 3天后的考试 (测试 3d 通知提醒)
-                { term: curr, course_name: "线性代数 (3天后)", course_id: "MATH102", session: "期末考试", room: "YF-405", seat: "15", time: `${fmt(new Date(n.getTime() + 3*DAY))}-${fmt(new Date(n.getTime() + 3*DAY + 2*HR)).split(' ')[1]}` },
+                // 5. 【明天的考试】(测试天数级倒计时UI)
+                { term: curr, course_name: "空气动力学 (明天)", course_id: "AE3001", session: "期末考试", room: "Ⅳ-A111", seat: "22", time: fmtTilde(new Date(n.getTime() + 24*HR), new Date(n.getTime() + 26*HR)) },
 
-                // 6. 7天后的考试 (测试 7d 通知提醒)
-                { term: curr, course_name: "大学物理 (7天后)", course_id: "PHYS001", session: "期末考试", room: "III-201", seat: "30", time: `${fmt(new Date(n.getTime() + 7*DAY))}-${fmt(new Date(n.getTime() + 7*DAY + 2*HR)).split(' ')[1]}` },
+                // 6. 【跨学期已过期】(测试历史学期隔离与跨学期清理防误删功能)
+                { term: "2024-2025-1", course_name: "高等数学 (跨学期过期)", course_id: "MATH001", session: "期末考试", room: "Ⅲ-201", seat: "01", time: fmtTilde(new Date(n.getTime() - 300*DAY), new Date(n.getTime() - 300*DAY + 2*HR)) },
 
-                // 7. 本学期已过期的考试 (测试灰色滤镜，且会被“清理过期”按钮精准识别)
-                { term: curr, course_name: "思想道德修养 (本学期已结束)", course_id: "POL001", session: "考查", room: "I-405", seat: "01", time: `${fmt(new Date(n.getTime() - 2*DAY - 2*HR))}-${fmt(new Date(n.getTime() - 2*DAY)).split(' ')[1]}` },
+                // 7. 【差 2 天】 - 测试中短期倒计时与提醒
+                { term: curr, course_name: "通信原理 (差 2 天)", course_id: "EE3002", session: "期末考试", room: "Ⅰ-102", seat: "22", time: fmtTilde(new Date(n.getTime() + 2*DAY), new Date(n.getTime() + 2*DAY + 2*HR)) },
 
-                // 8. 跨学期已过期的考试 (放在 300 天前，测试历史学期隔离逻辑)
-                { term: "2024-2025-2", course_name: "大学计算机基础 (跨学期过期)", course_id: "CS001", session: "期末考试", room: "III-201", seat: "01", time: `${fmt(new Date(n.getTime() - 300*DAY - 2*HR))}-${fmt(new Date(n.getTime() - 300*DAY)).split(' ')[1]}` }
+                // 8. 【差 3 天】 - 测试 3 天警戒线提醒
+                { term: curr, course_name: "线性代数 (差 3 天)", course_id: "MATH102", session: "期末考试", room: "Ⅳ-B414", seat: "10", time: fmtTilde(new Date(n.getTime() + 3*DAY), new Date(n.getTime() + 3*DAY + 2*HR)) },
+
+                // 9. 【差 5 天】 - 测试中长期倒计时
+                { term: curr, course_name: "软件工程 (差 5 天)", course_id: "CS2004", session: "期末考试", room: "Ⅱ-204", seat: "45", time: fmtTilde(new Date(n.getTime() + 5*DAY), new Date(n.getTime() + 5*DAY + 2*HR)) },
+
+                // 10. 【差 8 天】 - 测试一周以上的长线提醒 (例如提前一周推送)
+                { term: curr, course_name: "计算机网络 (差 8 天)", course_id: "CS3001", session: "期末考试", room: "Ⅲ-101", seat: "05", time: fmtTilde(new Date(n.getTime() + 8*DAY), new Date(n.getTime() + 8*DAY + 2*HR)) }
+
             ];
 
-            this.saveToLocal(); // 把测试数据落盘，方便你刷新测试提醒守护进程
-            showToast("8条全场景测试数据已注入！", "success");
+            this.saveToLocal();
+            showToast("基于真实格式的6条测试数据已注入！", "success");
 
             // 注入后若在其他学期，自动切回来看看效果
             if (!this.availableTerms.includes(this.selectedTerm)) {

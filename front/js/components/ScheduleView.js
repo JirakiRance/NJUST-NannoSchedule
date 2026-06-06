@@ -90,6 +90,19 @@ export default {
                                 </div>
                                 <div v-if="group.length > 1" class="overlap-badge">{{ group.length }}门交替</div>
                             </div>
+
+                            <div class="exam-floating-card"
+                                 v-for="(exam, index) in visibleExams" :key="'exam-'+index"
+                                 @click="openExamModal(exam)"
+                                 :style="getExamCardStyle(exam)">
+                                <div class="exam-floating-tag">
+                                    座位: {{ exam.seat || '--' }}
+                                </div>
+                                <div class="exam-floating-name">{{ exam.course_name }}</div>
+                                <div class="exam-floating-time">{{ exam._render.timeRangeStr }}</div>
+                                <div class="exam-floating-room" v-if="exam.room"><i class="ri-map-pin-line"></i> {{ exam.room }}</div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -131,6 +144,27 @@ export default {
                         <hr v-if="idx !== selectedCourseGroup.length - 1" style="border: none; border-top: 1px dashed var(--grid-border); margin: 15px 0;">
                     </div>
                     <button class="modal-close-btn" @click="closeDetails">我知道了</button>
+                </div>
+            </div>
+
+            <div class="modal-overlay" v-if="showExamDetailsModal" @click.self="showExamDetailsModal = false">
+                <div class="modal-content" style="text-align: center;">
+                    <div style="font-size: 40px; color: #ff3b30; margin-bottom: 5px;">
+                        <i class="ri-pass-valid-line"></i>
+                    </div>
+                    <div class="modal-title" style="margin-bottom: 15px;">考试安排</div>
+                    <div style="font-weight: bold; font-size: 18px; color: var(--text-main); margin-bottom: 20px;">
+                        {{ selectedExamDetails.course_name }}
+                    </div>
+
+                    <div style="text-align: left; background: var(--input-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                        <div class="modal-detail-item" style="margin-bottom: 10px;"><div><i class="ri-calendar-line" style="margin-right: 6px; color: var(--primary-color);"></i><strong>日期：</strong>{{ selectedExamDetails._render.dateStr }} (周{{ getDayName(selectedExamDetails._render.dayOfWeek) }})</div></div>
+                        <div class="modal-detail-item" style="margin-bottom: 10px;"><div><i class="ri-time-line" style="margin-right: 6px; color: var(--primary-color);"></i><strong>时间：</strong>{{ selectedExamDetails._render.timeRangeStr }}</div></div>
+                        <div class="modal-detail-item" style="margin-bottom: 10px;"><div><i class="ri-map-pin-2-line" style="margin-right: 6px; color: var(--primary-color);"></i><strong>考场：</strong>{{ selectedExamDetails.room || '待定' }}</div></div>
+                        <div class="modal-detail-item"><div><i class="ri-user-location-line" style="margin-right: 6px; color: var(--primary-color);"></i><strong>座位：</strong><b style="color:#ff3b30; font-size: 16px;">{{ selectedExamDetails.seat || '--' }}</b></div></div>
+                    </div>
+
+                    <button class="modal-close-btn" style="margin-top: 0;" @click="showExamDetailsModal = false">关闭</button>
                 </div>
             </div>
 
@@ -264,10 +298,53 @@ export default {
 
             showCustomManager: false,
             isEditingCustom: false,
-            customForm: { id: '', name: '', teacher: '', room: '', weeks: '', day: 1, start: 1, duration: 2, term: '', isCustom: true }
+            customForm: { id: '', name: '', teacher: '', room: '', weeks: '', day: 1, start: 1, duration: 2, term: '', isCustom: true },
+            // 考试浮动专区状态
+            showExamDetailsModal: false,
+            selectedExamDetails: {}
         }
     },
     computed: {
+
+        // 提取当前周考试并做渲染准备
+        visibleExams() {
+            // 只有单周模式下才渲染考试浮窗，保持课表整洁
+            if (!this.store.examsList || this.viewMode !== 'week' || !this.store.termStartDate) return [];
+
+            const termStart = new Date(this.store.termStartDate);
+            termStart.setHours(0, 0, 0, 0);
+
+            return this.store.examsList.filter(exam => {
+                if (exam.term !== this.store.currentTerm) return false;
+
+                const timeMatch = exam.time.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*[-~]\s*(\d{2}:\d{2})/);
+                if (!timeMatch) return false;
+
+                const examDate = new Date(timeMatch[1].replace(/-/g, '/'));
+                examDate.setHours(0, 0, 0, 0);
+
+                // 计算该考试处于第几周
+                const diffDays = Math.floor((examDate - termStart) / 86400000);
+                const examWeek = Math.floor(diffDays / 7) + 1;
+
+                if (examWeek !== this.store.currentWeek) return false;
+
+                const dayOfWeek = examDate.getDay() === 0 ? 7 : examDate.getDay();
+                const startMins = parseInt(timeMatch[2].split(':')[0]) * 60 + parseInt(timeMatch[2].split(':')[1]);
+                const endMins = parseInt(timeMatch[3].split(':')[0]) * 60 + parseInt(timeMatch[3].split(':')[1]);
+
+                // 挂载用于渲染的高速缓存
+                exam._render = {
+                    dayOfWeek,
+                    startMins,
+                    endMins,
+                    timeRangeStr: `${timeMatch[2]} - ${timeMatch[3]}`,
+                    dateStr: timeMatch[1]
+                };
+                return true;
+            });
+        },
+
         currentWeekDates() {
             const start = new Date(this.store.termStartDate);
             start.setDate(start.getDate() + (this.store.currentWeek - 1) * 7);
@@ -339,6 +416,98 @@ export default {
         }
     },
     methods: {
+
+
+        // 绝对分钟数到课表 Y 轴像素坐标的完美映射
+        minsToY(mins) {
+            // 这是原生课表的排课时间结构 (精确消除中午、傍晚的坍缩黑洞)
+            const schedule = [
+                { s: 480, e: 525 },   // 1 (8:00)
+                { s: 530, e: 575 },   // 2 (8:50)
+                { s: 580, e: 625 },   // 3 (9:40)
+                { s: 640, e: 685 },   // 4 (10:40)
+                { s: 690, e: 735 },   // 5 (11:30)
+                { s: 840, e: 885 },   // 6 (14:00)
+                { s: 890, e: 935 },   // 7 (14:50)
+                { s: 950, e: 995 },   // 8 (15:50)
+                { s: 1000, e: 1045 }, // 9 (16:40)
+                { s: 1050, e: 1095 }, // 10 (17:30)
+                { s: 1140, e: 1185 }, // 11 (19:00)
+                { s: 1190, e: 1235 }, // 12 (19:50)
+                { s: 1240, e: 1285 }  // 13 (20:40)
+            ];
+
+            if (mins <= schedule[0].s) return 0;
+            if (mins >= schedule[12].e) return 13 * this.pixelsPerSlot;
+
+            for (let i = 0; i < schedule.length; i++) {
+                if (mins >= schedule[i].s && mins <= schedule[i].e) {
+                    const progress = (mins - schedule[i].s) / (schedule[i].e - schedule[i].s);
+                    return (i + progress * 0.9) * this.pixelsPerSlot;
+                }
+                if (i < schedule.length - 1 && mins > schedule[i].e && mins < schedule[i+1].s) {
+                    const progress = (mins - schedule[i].e) / (schedule[i+1].s - schedule[i].e);
+                    return (i + 0.9 + progress * 0.1) * this.pixelsPerSlot;
+                }
+            }
+            return 0;
+        },
+
+        // 动态计算考试卡片的样式（带状态感知）
+        getExamCardStyle(exam) {
+            const topY = this.minsToY(exam._render.startMins);
+            let bottomY = this.minsToY(exam._render.endMins);
+
+            if (bottomY - topY < 30) bottomY = topY + 30; // 防止挤成一条线
+            const leftPct = (100 / 7) * (exam._render.dayOfWeek - 1);
+
+            const now = new Date();
+            const examEnd = new Date(exam._render.dateStr.replace(/-/g, '/') + ' ' + exam._render.timeRangeStr.split('-')[1].trim() + ':00');
+            const examStart = new Date(exam._render.dateStr.replace(/-/g, '/') + ' ' + exam._render.timeRangeStr.split('-')[0].trim() + ':00');
+
+            // 颜色全面加深！
+            let borderColor = '#e68a00'; // 更深、更抓眼的橙色
+            let bgColor = 'rgba(255, 149, 0, 0.45)'; // 透明度从 0.15 暴增到 0.45，背景更实
+            let shadow = '0 0 15px rgba(255, 149, 0, 0.6)';
+            let textColor = '#b36b00'; // 字体更深，保证在深背景下看得清
+
+            if (now > examEnd) {
+                // 已结束的灰色也加深一点
+                borderColor = 'rgba(120, 120, 120, 0.8)';
+                bgColor = 'rgba(150, 150, 150, 0.35)';
+                shadow = 'none';
+                textColor = '#444';
+            } else if (now >= examStart && now <= examEnd) {
+                // 正在考试的红色直接拉满警报感
+                borderColor = '#ff2d55';
+                bgColor = 'rgba(255, 45, 85, 0.45)';
+                shadow = '0 0 20px rgba(255, 45, 85, 0.7)';
+                textColor = '#a3001e';
+            }
+
+            return {
+                position: 'absolute',
+                left: `calc(${leftPct}% + 1px)`, width: `calc(${100/7}% - 2px)`,
+                top: `${topY}px`, height: `${bottomY - topY}px`,
+                border: `2px dashed ${borderColor}`, // 2px 粗虚线
+                backgroundColor: bgColor,
+                boxShadow: shadow,
+                color: textColor,
+                zIndex: 10,
+                borderRadius: '8px',
+                backdropFilter: 'blur(4px)', // 增强毛玻璃效果
+                display: 'flex', flexDirection: 'column',
+                justifyContent: 'center', alignItems: 'center',
+                boxSizing: 'border-box', textAlign: 'center',
+                cursor: 'pointer', overflow: 'hidden'
+            };
+        },
+
+        // 打开专属考试弹窗
+        openExamModal(exam) {
+            this.selectedExamDetails = exam;
+            this.showExamDetailsModal = true;
+        },
 
         // 触发背景图片选择
         // 1. 触发背景按钮点击
@@ -659,7 +828,7 @@ export default {
         },
         handleTouchStart(e) { this.touchStartX = e.changedTouches[0].clientX; this.touchStartY = e.changedTouches[0].clientY; },
         handleTouchEnd(e) {
-            if (this.showModal || this.showWeekSelector || this.showCustomManager || this.viewMode !== 'week') return;
+            if (this.showModal || this.showWeekSelector || this.showCustomManager || this.viewMode !== 'week'|| this.showExamDetailsModal) return;
             const deltaX = e.changedTouches[0].clientX - this.touchStartX; const deltaY = e.changedTouches[0].clientY - this.touchStartY;
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) { if (deltaX > 0) this.changeWeek(-1); else this.changeWeek(1); }
         }
