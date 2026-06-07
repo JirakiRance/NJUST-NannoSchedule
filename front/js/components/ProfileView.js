@@ -3,9 +3,10 @@ import { store } from '../store.js';
 import LoginCard from './LoginCard.js';
 import SnifferBeast from './SnifferBeast.js';
 import GlobalNotice from './GlobalNotice.js';
+import DeveloperLogView from './DeveloperLogView.js';
 
 export default {
-    components: { LoginCard, SnifferBeast, GlobalNotice },
+    components: { LoginCard, SnifferBeast, GlobalNotice,DeveloperLogView},
     template: `
         <div class="profile-container" style="padding-bottom: 80px;">
 
@@ -19,7 +20,8 @@ export default {
                 <i class="ri-arrow-right-s-line" style="color: var(--text-sub); font-size: 20px;"></i>
             </div>
 
-            <sniffer-beast></sniffer-beast>
+            <sniffer-beast v-show="false"></sniffer-beast>
+            <developer-log-view></developer-log-view>
 
         </div>
     `,

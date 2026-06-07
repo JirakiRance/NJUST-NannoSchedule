@@ -14,6 +14,7 @@ import ContactView from './components/ContactView.js';
 import SettingsView from './components/SettingsView.js';
 import LoginCard from './components/LoginCard.js';
 import GlobalNotice from './components/GlobalNotice.js';
+import DeveloperLogView from './components/DeveloperLogView.js';
 
 const { createApp } = Vue;
 
@@ -33,7 +34,8 @@ createApp({
         ContactView,
         SettingsView,
         LoginCard,
-        GlobalNotice
+        GlobalNotice,
+        DeveloperLogView
     },
     data() {
         return {

@@ -26,7 +26,7 @@ export default {
                     <input type="text" v-model="searchKeyword" placeholder="输入课程名(如: 数据结构)" @keyup.enter="searchCourses">
                     <button class="search-btn" @click="searchCourses" :disabled="isSearching">
                         <i v-if="isSearching" class="ri-loader-4-line ri-spin" style="margin-right: 4px;"></i>
-                        {{ isSearching ? '扫描中' : '雷达扫描' }}
+                        {{ isSearching ? '查询中' : '查询' }}
                     </button>
                 </div>
 
