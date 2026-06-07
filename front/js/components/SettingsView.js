@@ -369,21 +369,30 @@ export default {
                 this.sessionStatus = 'expired';
                 return;
             }
+//            try {
+//                console.log("【前端状态检测】正在向后端发送探测请求...");
+//                const res = await fetch(`${API_BASE}/keep_alive`, {
+//                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+//                    body: JSON.stringify({ session_id: sessionId })
+//                });
+//                if (res.ok) {
+//                    console.log("【前端状态检测】 成功: 教务处返回 200 OK");
+//                    this.sessionStatus = 'active';
+//                } else {
+//                    console.log("【前端状态检测】 失败: 教务处拒绝，返回状态码", res.status);
+//                    this.sessionStatus = 'expired';
+//                }
+//            } catch(e) {
+//                console.error("【前端状态检测】 失败: 网络请求异常", e);
+//                this.sessionStatus = 'expired';
+//            }
             try {
-                console.log("【前端状态检测】正在向后端发送探测请求...");
-                const res = await fetch(`${API_BASE}/keep_alive`, {
+                const res = await fetch(`${API_BASE}/auto_relogin`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sessionId })
                 });
-                if (res.ok) {
-                    console.log("【前端状态检测】 成功: 教务处返回 200 OK");
-                    this.sessionStatus = 'active';
-                } else {
-                    console.log("【前端状态检测】 失败: 教务处拒绝，返回状态码", res.status);
-                    this.sessionStatus = 'expired';
-                }
+                this.sessionStatus = res.ok ? 'active' : 'expired';
             } catch(e) {
-                console.error("【前端状态检测】 失败: 网络请求异常", e);
                 this.sessionStatus = 'expired';
             }
         },

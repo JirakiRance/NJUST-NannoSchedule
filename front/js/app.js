@@ -88,13 +88,28 @@ createApp({
     methods: {
 
         async executeAutoSync() {
-            // 尝试获取本地存留的 session ID
-            const sessionId = this.store.sniffer.sessionId || localStorage.getItem("my_njust_session_id");
+             let sessionId = this.store.sniffer.sessionId || localStorage.getItem("my_njust_session_id");
             if (!sessionId) return;
+
+            // Session 可能已过期，先静默重登保证有效
+            try {
+                const reloginRes = await fetch(`${API_BASE}/auto_relogin`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: sessionId })
+                });
+                if (!reloginRes.ok) {
+                    console.log("[自动同步] 自动重登失败，跳过本次同步");
+                    return;
+                }
+            } catch(e) {
+                console.log("[自动同步] 自动重登网络异常，跳过", e);
+                return;
+            }
 
             console.log("[自动同步] 开始执行后台静默同步...");
             try {
-                const res = await fetch('${API_BASE}/auto_sync', {
+                const res = await fetch(`${API_BASE}/auto_sync`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ session_id: sessionId, term: this.store.currentTerm })
@@ -102,19 +117,48 @@ createApp({
 
                 if (res.ok) {
                     const result = await res.json();
+
                     // 1. 刷新内存
                     this.store.courseList = result.data.courses;
                     this.store.gradeList = result.data.grades;
-                    this.store.examsList = result.data.exams;
+                    this.store.levelExamsList = result.data.level_exams || []; // 加上等级考试
 
-                    // 2. 覆盖存盘
+                    // 2. 考试跨学期合并，和手动同步逻辑保持完全一致！
+                    if (result.data.exams) {
+                        const currentTerm = this.store.currentTerm;
+                        const newExamsFromAPI = result.data.exams.map(e => ({ ...e, term: currentTerm }));
+                        let mergedExams = [...(this.store.examsList || [])];
+                        newExamsFromAPI.forEach(newItem => {
+                            const index = mergedExams.findIndex(oldItem =>
+                                oldItem.course_id === newItem.course_id && oldItem.term === newItem.term
+                            );
+                            if (index !== -1) { mergedExams[index] = { ...mergedExams[index], ...newItem }; }
+                            else { mergedExams.push(newItem); }
+                        });
+                        mergedExams.sort((a, b) => {
+                            if (a.term !== b.term) return b.term.localeCompare(a.term);
+                            const parseTime = (t) => { const m = t.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/); return m ? new Date(m[1].replace(/-/g, '/') + ' ' + m[2] + ':00').getTime() : 0; };
+                            return parseTime(a.time) - parseTime(b.time);
+                        });
+                        this.store.examsList = mergedExams;
+                        result.data.exams = mergedExams; // 把合并好的挂载回去，准备存盘
+                    }
+
+                    // 3. 更新学期选项
+                    if (result.data.term_options && result.data.term_options.length > 0) {
+                        this.store.termOptions = result.data.term_options;
+                        localStorage.setItem("my_njust_term_options", JSON.stringify(this.store.termOptions));
+                    }
+
+                    // 4. 覆盖物理存盘，绝不漏掉任何一件
                     const saved = JSON.parse(localStorage.getItem("my_njust_data") || "{}");
                     saved.courses = result.data.courses;
                     saved.grades = result.data.grades;
-                    saved.exams = result.data.exams;
+                    saved.exams = result.data.exams || [];
+                    saved.level_exams = result.data.level_exams || []; // 加上等级考试的持久化
                     localStorage.setItem("my_njust_data", JSON.stringify(saved));
 
-                    console.log("[自动同步] 数据三大件更新成功！");
+                    console.log("[自动同步] 数据五大件完美更新并存盘！");
                 } else {
                     console.log("[自动同步] Session 已被教务处销毁，等待用户下次登录恢复");
                 }
@@ -415,7 +459,7 @@ createApp({
                         });
                     }
                 }
-            }, 5 * 60 * 1000);
+            }, 5 * 60  * 1000);
         }
     },
     unmounted() {

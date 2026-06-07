@@ -5,7 +5,7 @@ import requests
 import base64
 import uuid
 import traceback
-from core.config import session_store, HEADERS, CAPTCHA_URL, LOGIN_URL, SCHEDULE_URL, GRADES_LIST_URL, EXAMS_LIST_URL, LEVEL_EXAMS_URL, DEBUG
+from core.config import session_store, HEADERS, CAPTCHA_URL, LOGIN_URL, SCHEDULE_URL, GRADES_LIST_URL, EXAMS_LIST_URL, LEVEL_EXAMS_URL, DEBUG,ocr
 from models.schemas import LoginRequest,KeepAliveRequest,SniffDataRequest
 from parsers.nj_parser import parse_schedule, parse_grades, parse_exams, parse_level_exams, parse_term_options
 import time
@@ -23,12 +23,13 @@ SESSION_CACHE_DIR.mkdir(exist_ok=True)
 # 公用的防代理配置
 NO_PROXY = {"http": None, "https": None}
 
-def save_session_to_disk(session_id, user_session, active_node):
+def save_session_to_disk(session_id, user_session, active_node, credentials=None):
     """将 Session 对象和业务节点一起固化到硬盘"""
     try:
         data_to_save = {
             "session": user_session,
-            "active_node": active_node
+            "active_node": active_node,
+            "credentials": credentials
         }
         with open(SESSION_CACHE_DIR / f"{session_id}.pkl", "wb") as f:
             pickle.dump(data_to_save, f)
@@ -42,10 +43,11 @@ def load_session_from_disk(session_id):
         try:
             with open(file_path, "rb") as f:
                 data = pickle.load(f)
-                return data.get("session"), data.get("active_node")
+                # return data.get("session"), data.get("active_node")
+                return data.get("session"), data.get("active_node"), data.get("credentials")
         except Exception as e:
             print(f"DEBUG: Session 复活失败: {e}")
-    return None, None
+    return None, None ,None
 
 @router.get("/captcha")
 def get_captcha():
@@ -86,7 +88,7 @@ def sync_all(req: LoginRequest):
         # 3. 只有前端明确要求驻留后台，才固化到硬盘里
         # if req.keep_alive:
         #     save_session_to_disk(req.session_id, user_session, active_node)
-        save_session_to_disk(req.session_id, user_session, active_node)
+        save_session_to_disk(req.session_id, user_session, active_node,credentials={"username": req.username, "password": req.password})
 
         # ====== 抓取数据 ======
         schedule_resp = user_session.post(SCHEDULE_URL, data={'xnxq01id': req.term, 'zc': ''}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
@@ -133,8 +135,10 @@ def pure_login(req: LoginRequest):
 
         # 2. 定义完之后，再存入内存和硬盘
         session_store[req.session_id]["active_node"] = active_node
-        if req.keep_alive:
-            save_session_to_disk(req.session_id, user_session, active_node)
+        # if req.keep_alive:
+            # save_session_to_disk(req.session_id, user_session, active_node)
+        save_session_to_disk(req.session_id, user_session, active_node,
+                                 credentials={"username": req.username, "password": req.password})
 
         return {"msg": "登录成功"}
     except Exception as e:
@@ -154,7 +158,7 @@ def keep_alive(req: KeepAliveRequest):
     # 内存没了，去硬盘捞
     if not user_session:
         print("[状态检测] 内存无数据，尝试从硬盘读取...")
-        user_session, active_node = load_session_from_disk(req.session_id)
+        user_session, active_node, credentials = load_session_from_disk(req.session_id)
         if user_session:
             session_store[req.session_id] = {"session": user_session, "active_node": active_node}
             print("[状态检测] 硬盘读取成功，复活 Session")
@@ -167,22 +171,29 @@ def keep_alive(req: KeepAliveRequest):
         active_node = "http://202.119.81.112:9080"  # 修复兜底 IP
 
     # 探测教务处框架主页（比请求图片更稳，如果不在线会被强制302重定向）
-    probe_url = f"{active_node}/njlgdx/framework/main.jsp"
+    # probe_url = f"{active_node}/njlgdx/framework/main.jsp"
+    from core.config import SCHEDULE_URL
+    resp = user_session.post(SCHEDULE_URL, data={'xnxq01id': '', 'zc': ''},
+                             headers=HEADERS, timeout=10, proxies=NO_PROXY)
     print(f"[状态检测] 开始对目标节点发送探针: {probe_url}")
 
     try:
         # allow_redirects=False 是精髓，阻止它自动跳转到登录页
-        resp = user_session.get(probe_url, headers=HEADERS, timeout=10, proxies=NO_PROXY, allow_redirects=False)
+        # resp = user_session.get(probe_url, headers=HEADERS, timeout=10, proxies=NO_PROXY, allow_redirects=False)
         print(f"[状态检测] 探针返回 HTTP 状态码: {resp.status_code}")
 
-        if resp.status_code == 200:
-            print("[状态检测]  探测通过，Cookie 在教务处依然有效！")
-            return {"status": "alive", "node": active_node}
+        # if resp.status_code == 200:
+        #     print("[状态检测]  探测通过，Cookie 在教务处依然有效！")
+        #     return {"status": "alive", "node": active_node}
+        # else:
+        #     print(f"[状态检测]  遭到教务处拦截 (大概率是302重定向)，判定为已掉线！")
+        #     if req.session_id in session_store:
+        #         del session_store[req.session_id]
+        #     raise HTTPException(status_code=401, detail="被系统踢出下线")
+        if resp.status_code == 200 and "登录" not in resp.text and "RANDOMCODE" not in resp.text:
+            return {"status": "alive"}
         else:
-            print(f"[状态检测]  遭到教务处拦截 (大概率是302重定向)，判定为已掉线！")
-            if req.session_id in session_store:
-                del session_store[req.session_id]
-            raise HTTPException(status_code=401, detail="被系统踢出下线")
+            raise HTTPException(status_code=401, detail="Session已失效")
 
     except Exception as e:
         print(f"[状态检测]  探针发射网络异常: {e}")
@@ -195,7 +206,7 @@ def sniff_data(req: SniffDataRequest):
     active_node = store_data.get("active_node") if store_data else None
 
     if not user_session:
-        user_session, active_node = load_session_from_disk(req.session_id)
+        user_session, active_node, credentials = load_session_from_disk(req.session_id)
         if user_session:
             session_store[req.session_id] = {"session": user_session, "active_node": active_node}
             print(f"DEBUG: Sniff过程中复活了 Session")
@@ -262,7 +273,7 @@ def auto_sync(req: SniffDataRequest):
 
     # 从硬盘捞取僵尸 Session
     if not user_session:
-        user_session, active_node = load_session_from_disk(req.session_id)
+        user_session, active_node, credentials = load_session_from_disk(req.session_id)
         if user_session:
             session_store[req.session_id] = {"session": user_session, "active_node": active_node}
 
@@ -270,19 +281,71 @@ def auto_sync(req: SniffDataRequest):
         raise HTTPException(status_code=401, detail="Session 已过期")
 
     try:
-        # 一次性静默拉取三大件数据
-        schedule_resp = user_session.post(SCHEDULE_URL, data={'xnxq01id': req.term, 'zc': ''}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        # 一次性静默拉取全部五大件数据（和手动同步保持绝对一致）
+        schedule_resp = user_session.post(SCHEDULE_URL, data={'xnxq01id': req.term, 'zc': ''}, headers=HEADERS,
+                                          timeout=10, proxies=NO_PROXY)
         schedule_resp.encoding = 'utf-8'
         courses = parse_schedule(schedule_resp.text)
+        term_options = parse_term_options(schedule_resp.text)  # 🚀 补上学期列表
 
-        grade_resp = user_session.post(GRADES_LIST_URL, data={'kksj': '', 'kcxz': '', 'kcmc': '', 'xsfs': 'max', 'pageSize': '1000', 'pageNum': '1'}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        grade_resp = user_session.post(GRADES_LIST_URL,
+                                       data={'kksj': '', 'kcxz': '', 'kcmc': '', 'xsfs': 'max', 'pageSize': '1000',
+                                             'pageNum': '1'}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
         grade_resp.encoding = 'utf-8'
         grades = parse_grades(grade_resp.text)
 
-        exam_resp = user_session.post(EXAMS_LIST_URL, data={'xnxqid': req.term}, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        exam_resp = user_session.post(EXAMS_LIST_URL, data={'xnxqid': req.term}, headers=HEADERS, timeout=10,
+                                      proxies=NO_PROXY)
         exam_resp.encoding = 'utf-8'
         exams = parse_exams(exam_resp.text)
 
-        return {"msg": "成功", "data": {"courses": courses, "grades": grades, "exams": exams}}
+        # 🚀 补上等级考试
+        level_exam_resp = user_session.get(LEVEL_EXAMS_URL, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        level_exam_resp.encoding = 'utf-8'
+        level_exams = parse_level_exams(level_exam_resp.text)
+
+        # 把这五大件统统返回给前端
+        return {"msg": "成功",
+                "data": {"courses": courses, "grades": grades, "exams": exams, "level_exams": level_exams,
+                         "term_options": term_options}}
     except Exception as e:
         raise HTTPException(status_code=500, detail="静默同步失败")
+
+@router.post("/auto_relogin")
+def auto_relogin(req: KeepAliveRequest):
+    _, _, credentials = load_session_from_disk(req.session_id)
+    if not credentials:
+        raise HTTPException(status_code=401, detail="无存储凭据，请手动登录")
+
+    last_error = ""
+    for attempt in range(1, 6):  # 最多5次
+        try:
+            session = requests.Session()
+            cap_resp = session.get(CAPTCHA_URL, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+            captcha_text = ocr.classification(cap_resp.content).strip()
+
+            login_data = {
+                'USERNAME': credentials['username'],
+                'PASSWORD': credentials['password'],
+                'useDogCode': '',
+                'RANDOMCODE': captcha_text
+            }
+            login_resp = session.post(LOGIN_URL, data=login_data, headers=HEADERS,
+                                      timeout=10, proxies=NO_PROXY, allow_redirects=True)
+            login_resp.encoding = 'utf-8'
+
+            if any(k in login_resp.text for k in ["退出", "欢迎", "个人信息"]):
+                parsed = urlparse(login_resp.url)
+                active_node = f"{parsed.scheme}://{parsed.netloc}"
+                session_store[req.session_id] = {"session": session, "active_node": active_node}
+                save_session_to_disk(req.session_id, session, active_node, credentials)
+                print(f"[AutoRelogin] 第{attempt}次成功，验证码=[{captcha_text}]")
+                return {"status": "ok"}
+            else:
+                last_error = f"第{attempt}次验证码识别失败，识别结果=[{captcha_text}]"
+                print(f"[AutoRelogin] {last_error}")
+        except Exception as e:
+            last_error = str(e)
+            print(f"[AutoRelogin] 第{attempt}次异常: {e}")
+
+    raise HTTPException(status_code=401, detail=f"自动重登5次均失败，请手动登录。最后错误：{last_error}")

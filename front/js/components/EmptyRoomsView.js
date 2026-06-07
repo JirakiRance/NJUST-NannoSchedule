@@ -7,7 +7,12 @@ export default {
     template: `
         <div class="subpage-container" style="display: flex; flex-direction: column; height: 100%;">
 
-            <login-card v-if="!roomSessionValid" mode="pure" @login-success="onLoginSuccess">
+
+            <div v-if="isRestoringSession" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-sub);">
+                <i class="ri-loader-4-line ri-spin" style="font-size:28px; margin-bottom:10px;"></i>
+                <div style="font-size:13px;">正在自动恢复连接...</div>
+            </div>
+            <login-card v-else-if="!roomSessionValid" mode="pure" @login-success="onLoginSuccess">
                 <template #header>
                     <div class="empty-room-header">
                         <div class="empty-room-icon"><i class="ri-cup-line" style="color: #8d6e63;"></i></div>
@@ -75,6 +80,7 @@ export default {
         return {
             store,
             roomSessionValid: false,
+            isRestoringSession: false,
             sessionId: "",
             isSearchingRooms: false,
             allEmptyRooms: [],
@@ -89,13 +95,29 @@ export default {
     mounted() {
         // 启动时自动从 localStorage 捞取 Session ID
         const savedSession = localStorage.getItem("my_njust_session_id");
-        if (savedSession) {
-            this.sessionId = savedSession;
-            this.roomSessionValid = true;
-            console.log("检测到本地有效 Session，已自动免登录加载");
-        }
+        if (!savedSession) return;
+        this.sessionId = savedSession;
+        this.tryRestoreSession(savedSession);
     },
     methods: {
+
+        async tryRestoreSession(sessionId) {
+            this.isRestoringSession = true;
+            try {
+                const res = await fetch(`${API_BASE}/auto_relogin`, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+                if (res.ok) {
+                    this.roomSessionValid = true;
+                    this.isRestoringSession = false;
+                    return;
+                }
+            } catch(e) {}
+            this.isRestoringSession = false;
+        },
+
         onLoginSuccess(id) {
             this.sessionId = id;
             this.roomSessionValid = true;
@@ -139,6 +161,10 @@ export default {
                             building: this.roomQuery.building
                         })
                     });
+                    if (res.status === 401) {
+                        this.roomSessionValid = false;
+                        throw new Error("401");
+                    }
                     if (!res.ok) throw new Error(res.status);
                     const result = await res.json();
                     return result.data || [];
