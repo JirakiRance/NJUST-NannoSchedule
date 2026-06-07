@@ -1,7 +1,10 @@
 # 存放所有的全局常量、请求头、URL和内存中的 Session
 import requests
-import ddddocr
-ocr = ddddocr.DdddOcr(show_ad=False)
+# import ddddocr
+# ocr = ddddocr.DdddOcr(show_ad=False)
+from core.ocr_engine import OCR
+ocr = OCR()
+# captcha = ocr.classification(img_bytes)
 
 DEBUG = False
 

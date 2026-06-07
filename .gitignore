@@ -54,3 +54,5 @@ oldfiles/
 count_lines.py
 
 nanno_live2d_models/
+
+back/captcha/captcha_dataset/
