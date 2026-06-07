@@ -5,3 +5,5 @@ beautifulsoup4
 pydantic
 lxml
 python-multipart
+numpy
+pillow
