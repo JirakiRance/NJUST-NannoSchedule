@@ -12,6 +12,8 @@ import time
 from pathlib import Path
 import pickle
 import  os
+import re
+from bs4 import BeautifulSoup
 
 router = APIRouter()
 
@@ -113,7 +115,8 @@ def sync_all(req: LoginRequest):
 
         return {"msg": "成功", "data": {"courses": courses, "grades": grades, "exams": exams, "level_exams": level_exams, "term_options": term_options}}
     except Exception as e:
-        if DEBUG: traceback.print_exc()
+        # if DEBUG: traceback.print_exc()
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"内部错误: {str(e)}")
 
 
@@ -349,3 +352,112 @@ def auto_relogin(req: KeepAliveRequest):
             print(f"[AutoRelogin] 第{attempt}次异常: {e}")
 
     raise HTTPException(status_code=401, detail=f"自动重登5次均失败，请手动登录。最后错误：{last_error}")
+
+
+# ======== 一键评教接口 ========
+@router.post("/auto_evaluate")
+def auto_evaluate(req: KeepAliveRequest):
+    store_data = session_store.get(req.session_id)
+    user_session = store_data.get("session") if store_data else None
+    active_node = store_data.get("active_node") if store_data else None
+
+    if not user_session:
+        user_session, active_node, credentials = load_session_from_disk(req.session_id)
+        if user_session:
+            session_store[req.session_id] = {"session": user_session, "active_node": active_node}
+
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Session 已过期，请去个人中心重新同步")
+
+    base_url = active_node if active_node else "http://202.119.81.112:9080"
+    find_url = f"{base_url}/njlgdx/xspj/xspj_find.do?Ves632DSdyV=NEW_XSD_JXPJ"
+
+    try:
+        res = user_session.get(find_url, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        res.encoding = 'utf-8'
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        category_links = soup.find_all('a', href=re.compile(r'xspj_list\.do'))
+        total_evaluated = 0
+        details = []
+
+        for cat_a in category_links:
+            cat_url = cat_a['href']
+            if not cat_url.startswith("http"):
+                cat_url = base_url + cat_url
+
+            list_res = user_session.get(cat_url, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+            list_res.encoding = 'utf-8'
+            list_soup = BeautifulSoup(list_res.text, 'html.parser')
+
+            rows = list_soup.select('table#dataList tr')[1:]
+            for row in rows:
+                cols = row.find_all('td')
+                if len(cols) < 8: continue
+
+                course_name = cols[2].text.strip()
+                teacher = cols[3].text.strip()
+
+                # 正常逻辑：跳过已经评教的课程
+                is_evaluated = cols[6].text.strip()
+                if is_evaluated == '是': continue
+
+                a_tag = cols[7].find('a')
+                if a_tag and 'openWindow' in a_tag.get('href', ''):
+                    m = re.search(r"openWindow\('([^']+)'", a_tag['href'])
+                    if m:
+                        edit_path = m.group(1)
+                        edit_url = base_url + edit_path if not edit_path.startswith("http") else edit_path
+
+                        edit_res = user_session.get(edit_url, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+                        edit_res.encoding = 'utf-8'
+                        edit_soup = BeautifulSoup(edit_res.text, 'html.parser')
+                        form = edit_soup.find('form', id='Form1')
+
+                        if not form:
+                            details.append(f"{course_name}: 无法抓取表单，可能已被系统封锁")
+                            continue
+
+                        # 使用 list 存放，彻底解决 Python 字典同名键(pj06xh)相互覆盖的致命Bug！！
+                        payload = []
+                        for inp in form.find_all('input', type='hidden'):
+                            if inp.get('name') and inp.get('name') != 'issubmit':
+                                payload.append((inp.get('name'), inp.get('value', '')))
+
+                        # 强制提交
+                        payload.append(('issubmit', '1'))
+
+                        xh_inputs = form.find_all('input', {'name': 'pj06xh'})
+                        n_questions = len(xh_inputs)
+
+                        for idx, xh_inp in enumerate(xh_inputs):
+                            parent_td = xh_inp.find_parent('tr').find_all('td')[-1]
+                            radios = parent_td.find_all('input', type='radio')
+
+                            if radios:
+                                # 倒数第二题选次高(index=1)，其余全部选最高(index=0)
+                                target_idx = 1 if idx == n_questions - 2 else 0
+                                if target_idx >= len(radios):
+                                    target_idx = 0
+
+                                selected = radios[target_idx]
+                                payload.append((selected.get('name'), selected.get('value')))
+
+                        save_url = form.get('action')
+                        if not save_url.startswith("http"):
+                            save_url = base_url + save_url
+
+                        # 提交完整数据包
+                        save_res = user_session.post(save_url, data=payload, headers=HEADERS, timeout=10,
+                                                     proxies=NO_PROXY)
+                        if save_res.status_code == 200:
+                            total_evaluated += 1
+                            details.append(f"{course_name} ({teacher}): 评教成功")
+                        else:
+                            details.append(f"{course_name} ({teacher}): 提交失败")
+
+        return {"code": 200, "message": "一键评教结束", "total": total_evaluated, "details": details}
+
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"抓取异常: {str(e)}")

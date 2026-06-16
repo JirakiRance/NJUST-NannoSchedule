@@ -15,6 +15,7 @@ import SettingsView from './components/SettingsView.js';
 import LoginCard from './components/LoginCard.js';
 import GlobalNotice from './components/GlobalNotice.js';
 import DeveloperLogView from './components/DeveloperLogView.js';
+import AutoEvaluateView from './components/AutoEvaluateView.js';
 
 const { createApp } = Vue;
 
@@ -35,7 +36,8 @@ createApp({
         SettingsView,
         LoginCard,
         GlobalNotice,
-        DeveloperLogView
+        DeveloperLogView,
+        AutoEvaluateView
     },
     data() {
         return {
@@ -65,6 +67,7 @@ createApp({
                     'public_course': '蹭课查询',
                     'empty_rooms': '空闲教室',
                     'school_guide': '校园导览',
+                    'auto_evaluate': '一键评教',
                     'contact': '联系开发者'
                 };
                 return titleMap[this.store.currentSubPage] || '应用中心';
