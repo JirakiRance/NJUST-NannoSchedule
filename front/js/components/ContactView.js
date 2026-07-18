@@ -6,7 +6,7 @@ export default {
             <div class="card contact-card">
                 <div class="contact-icon"><i class="ri-terminal-box-line" style="color: #333;"></i></div>
                 <h2 class="contact-title">联系开发者</h2>
-                <p class="contact-desc">如果您在使用过程中遇到任何 Bug，或者有神仙功能建议，欢迎随时通过邮件与我联系！</p>
+                <p class="contact-desc">如果您在使用过程中遇到任何 Bug，或者有功能建议，欢迎随时通过邮件与我联系！</p>
 
                 <div class="contact-email-box" @click="copyEmail">
                     <div class="contact-email-label">开发者邮箱 (点击一键复制)</div>
@@ -48,14 +48,15 @@ export default {
     },
     async mounted() {
         try {
-            const res = await fetch('./md/contact.md');
+            // 从远端拉取，带上时间戳防止浏览器缓存老旧内容
+            const res = await fetch('https://ns-release.jiraki.top/md/contact.md?t=' + new Date().getTime());
             if (res.ok) {
                 this.rawMarkdown = await res.text();
             } else {
                 throw new Error("文件不存在或网络错误");
             }
         } catch (error) {
-            this.rawMarkdown = "> ⚠️ 加载文档失败，请检查 `front/md/contact.md` 文件是否存在。";
+            this.rawMarkdown = "> ⚠️ 加载文档失败，请检查网络或稍后再试。";
         }
     }
 }

@@ -398,14 +398,18 @@ createApp({
                     const localConfigVersion = localStorage.getItem("my_njust_term_config_version");
                     const hasLocalTerm = localStorage.getItem("my_njust_term"); // 判断是不是全新用户
 
-                    // 【核心修改：以本地为准的防冲突防降级机制】
-                    // 如果本地当前学期在字面上已经大于远端推送的学期，说明远端严重滞后
+                    // 以本地为准的防冲突防降级机制
                     if (hasLocalTerm && this.store.currentTerm > remoteConfig.term) {
-                        // 忽略远端旧数据，并把这版落后的版本号标记为已读，防止后续无意义的比对
+                        // 忽略远端旧数据，并把这版落后的版本号标记为已读
                         localStorage.setItem("my_njust_term_config_version", remoteConfig.version_id);
+
+                        // 根据开关判断是否锁死第一周
+                        if (this.store.autoLockWeek1) {
+                            this.store.realWeek = 1;
+                            this.store.currentWeek = 1;
+                        }
                     } else {
-                        // 正常逻辑：远端比本地新，或者处于同个学期但远端发布了热修复（如校准了开学日期）
-                        // 如果版本号不同，或者是第一次打开软件，则强制覆盖
+                        // 正常逻辑：远端较新或等于本地
                         if (localConfigVersion !== remoteConfig.version_id || !hasLocalTerm) {
                             this.store.currentTerm = remoteConfig.term;
                             this.store.termStartDate = remoteConfig.start_date;
@@ -413,27 +417,20 @@ createApp({
                             localStorage.setItem("my_njust_start_date", remoteConfig.start_date);
                             localStorage.setItem("my_njust_term_config_version", remoteConfig.version_id);
 
-                            // 清除"获取中..."的占位符并更新列表
                             const newOptions = this.store.termOptions.filter(t => t !== "获取中...");
                             if (!newOptions.includes(remoteConfig.term)) {
                                 newOptions.unshift(remoteConfig.term);
                             }
                             this.store.termOptions = newOptions;
                             localStorage.setItem("my_njust_term_options", JSON.stringify(newOptions));
-
-                            // 重新计算周次
-                            let start = new Date(remoteConfig.start_date);
-                            start.setHours(0, 0, 0, 0);
-                            let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
-                            this.store.realWeek = Math.max(1, Math.min(weekCount, 25));
-                            this.store.currentWeek = this.store.realWeek;
-
-                            if (localConfigVersion) {
-                                setTimeout(() => {
-                                    console.log(`已自动为您校准至 ${remoteConfig.term} 学期`);
-                                }, 800);
-                            }
                         }
+
+                        // 重新计算周次 (Math.max 本身就可以保证在预定开学日期前锁定为1)
+                        let start = new Date(this.store.termStartDate);
+                        start.setHours(0, 0, 0, 0);
+                        let weekCount = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24 * 7)) + 1;
+                        this.store.realWeek = Math.max(1, Math.min(weekCount, 25));
+                        this.store.currentWeek = this.store.realWeek;
                     }
                 }
             } catch (e) {

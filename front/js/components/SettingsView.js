@@ -15,6 +15,18 @@ export default {
                         <option v-for="t in store.termOptions" :key="t" :value="t">{{ t }} {{ t === store.currentTerm ? '(当前选中)' : '' }}</option>
                     </select>
                 </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 14px; color: var(--text-main); font-weight: bold;">未开学自动锁第一周</span>
+                    <div class="switch-capsule" style="margin: 0;">
+                        <div class="switch-item" :class="{active: store.autoLockWeek1}" @click="toggleAutoLockWeek(true)">开启</div>
+                        <div class="switch-item" :class="{active: !store.autoLockWeek1}" @click="toggleAutoLockWeek(false)">关闭</div>
+                    </div>
+                </div>
+                <p style="font-size: 11px; color: var(--text-sub); margin-top: 0; margin-bottom: 15px; line-height: 1.4;">
+                    <i class="ri-information-line" style="vertical-align: middle;"></i> 依赖远端维护。若开学后周次仍被错锁在第一周，请关闭此项并使用下方校准。
+                </p>
+
                 <p class="setting-desc" style="margin-top:0;">时间校准 (如果当前周次不对，请修正)：</p>
                 <div class="setting-row">
                     <span style="font-size: 14px; white-space: nowrap; color: var(--text-main);">当前为第</span>
@@ -348,6 +360,11 @@ export default {
         'store.scheduleViewType'(newVal) { localStorage.setItem("my_njust_view_type", newVal); }
     },
     methods: {
+
+        toggleAutoLockWeek(status) {
+            this.store.autoLockWeek1 = status;
+            localStorage.setItem("my_njust_autolock_week", status ? "true" : "false");
+        },
 
         toggleAutoSync(status) {
             this.store.autoSync.enabled = status;

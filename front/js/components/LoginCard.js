@@ -186,15 +186,25 @@ export default {
                                 const data = await res.json();
                                 if (data.term_update) {
                                     const r = data.term_update;
-                                    store.currentTerm = r.term;
-                                    store.termStartDate = r.start_date;
-                                    localStorage.setItem("my_njust_term", r.term);
-                                    localStorage.setItem("my_njust_start_date", r.start_date);
 
-                                    let s = new Date(r.start_date); s.setHours(0,0,0,0);
-                                    let wc = Math.floor((new Date() - s) / (1000 * 60 * 60 * 24 * 7)) + 1;
-                                    store.realWeek = Math.max(1, Math.min(wc, 25));
-                                    store.currentWeek = store.realWeek;
+                                    // 增加防降级与锁周判断
+                                    if (store.currentTerm > r.term) {
+                                        // 远端滞后，防降级 + 自动锁定判定
+                                        if (store.autoLockWeek1) {
+                                            store.realWeek = 1;
+                                            store.currentWeek = 1;
+                                        }
+                                    } else {
+                                        store.currentTerm = r.term;
+                                        store.termStartDate = r.start_date;
+                                        localStorage.setItem("my_njust_term", r.term);
+                                        localStorage.setItem("my_njust_start_date", r.start_date);
+
+                                        let s = new Date(r.start_date); s.setHours(0,0,0,0);
+                                        let wc = Math.floor((new Date() - s) / (1000 * 60 * 60 * 24 * 7)) + 1;
+                                        store.realWeek = Math.max(1, Math.min(wc, 25));
+                                        store.currentWeek = store.realWeek;
+                                    }
                                 }
                             }
                         } catch(e) { console.log("拉取 notice 失败", e); }

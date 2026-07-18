@@ -19,7 +19,7 @@ export default {
         };
     },
     mounted() {
-        fetch('https://ns-release.jiraki.top/logs.md?t=' + new Date().getTime())
+        fetch('https://ns-release.jiraki.top/md/logs.md?t=' + new Date().getTime())
             .then(res => res.text())
             .then(text => {
                 this.logContent = text;

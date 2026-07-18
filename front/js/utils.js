@@ -1,7 +1,7 @@
 //本地测试
-export const API_BASE = "http://127.0.0.1:8000/api";
-//服务器
-//export const API_BASE = "https://njust-nannoschedule.onrender.com/api";
+//export const API_BASE = "http://127.0.0.1:8000/api";
+//服务器(挂了，用不了了)
+export const API_BASE = "https://njust-nannoschedule.onrender.com/api";
 //打包版本
 //export const API_BASE = "/api";
 

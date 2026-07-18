@@ -88,6 +88,9 @@ export const store = reactive({
         interval: localStorage.getItem("my_njust_auto_sync_interval") || "72" // 默认72小时
     },
 
+    //未开学自动锁定周次开关
+    autoLockWeek1: localStorage.getItem("my_njust_autolock_week") !== "false",
+
     userAccount: {
         // 默认开启记住密码（只要不是显式存了 "false"，就认为是 true）
         remember: localStorage.getItem("my_njust_remember") !== "false",
