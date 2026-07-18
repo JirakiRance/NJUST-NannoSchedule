@@ -362,36 +362,29 @@ export default {
             // 兼容抓取当前遗留的 session_id
             const sessionId = this.store.sniffer.sessionId || localStorage.getItem("my_njust_session_id");
 
-            console.log("【前端状态检测】当前取到的 Session ID 是:", sessionId);
-
             if (!sessionId) {
-                console.log("【前端状态检测】 失败: Session ID 为空！(说明登录时没有把ID存入 localStorage)");
                 this.sessionStatus = 'expired';
                 return;
             }
-//            try {
-//                console.log("【前端状态检测】正在向后端发送探测请求...");
-//                const res = await fetch(`${API_BASE}/keep_alive`, {
-//                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-//                    body: JSON.stringify({ session_id: sessionId })
-//                });
-//                if (res.ok) {
-//                    console.log("【前端状态检测】 成功: 教务处返回 200 OK");
-//                    this.sessionStatus = 'active';
-//                } else {
-//                    console.log("【前端状态检测】 失败: 教务处拒绝，返回状态码", res.status);
-//                    this.sessionStatus = 'expired';
-//                }
-//            } catch(e) {
-//                console.error("【前端状态检测】 失败: 网络请求异常", e);
-//                this.sessionStatus = 'expired';
-//            }
             try {
-                const res = await fetch(`${API_BASE}/auto_relogin`, {
+                // 1. 先进行一次快速的 keep_alive 探测（看看状态是否失效）
+                const checkRes = await fetch(`${API_BASE}/keep_alive`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sessionId })
                 });
-                this.sessionStatus = res.ok ? 'active' : 'expired';
+
+                if (checkRes.ok) {
+                    this.sessionStatus = 'active';
+                } else {
+                    // 2. 发现状态失效后，触发“二次登陆” (后端尝试 5 次扫描验证码)
+                    console.log("[状态检测] 探测失效，正在尝试智能二次登录...");
+                    const reloginRes = await fetch(`${API_BASE}/auto_relogin`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ session_id: sessionId })
+                    });
+                    // 3. 5次不行，才回退为断开状态
+                    this.sessionStatus = reloginRes.ok ? 'active' : 'expired';
+                }
             } catch(e) {
                 this.sessionStatus = 'expired';
             }

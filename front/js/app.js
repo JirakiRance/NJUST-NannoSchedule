@@ -92,6 +92,23 @@ createApp({
 
     methods: {
 
+        // 独立封装的时间差比对与触发逻辑
+        checkAndRunAutoSync() {
+            if (this.store.autoSync && this.store.autoSync.enabled) {
+                const lastSync = Number(localStorage.getItem('my_njust_last_auto_sync') || '0');
+                const intervalMs = Number(this.store.autoSync.interval) * 60 * 60 * 1000;
+
+                // 判断：当前时间 - 上次同步时间 > 设定的间隔时间
+                if (Date.now() - lastSync > intervalMs) {
+                    console.log(`[自动同步] 发现距离上次同步已超过 ${this.store.autoSync.interval} 小时，立即触发！`);
+                    this.executeAutoSync().then(() => {
+                        // 同步成功后，刷新最后同步时间戳
+                        localStorage.setItem('my_njust_last_auto_sync', String(Date.now()));
+                    });
+                }
+            }
+        },
+
         async executeAutoSync() {
              let sessionId = this.store.sniffer.sessionId || localStorage.getItem("my_njust_session_id");
             if (!sessionId) return;
@@ -453,17 +470,11 @@ createApp({
             this.notificationTimer = setInterval(this.checkExamNotifications, 60000);
 
             // 2. 数据静默自动同步 (每 5 分钟检查一次是否到了设定的拉取时间)
+            // 软件刚打开时，立刻执行一次对比检查！
+            this.checkAndRunAutoSync();
+            // 随后依然保持每 5 分钟轮询一次，防止用户一直把软件挂在前台
             setInterval(() => {
-                if (this.store.autoSync && this.store.autoSync.enabled) {
-                    const lastSync = Number(localStorage.getItem('my_njust_last_auto_sync') || '0');
-                    const intervalMs = Number(this.store.autoSync.interval) * 60 * 60 * 1000;
-
-                    if (Date.now() - lastSync > intervalMs) {
-                        this.executeAutoSync().then(() => {
-                            localStorage.setItem('my_njust_last_auto_sync', String(Date.now()));
-                        });
-                    }
-                }
+                this.checkAndRunAutoSync();
             }, 5 * 60  * 1000);
         }
     },

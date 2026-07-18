@@ -80,17 +80,33 @@ export default {
         async tryRestoreSession(sessionId) {
             this.isRestoringSession = true;
             try {
-                const res = await fetch(`${API_BASE}/auto_relogin`, {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
+                // 1. 快速探测当前连接状态
+                const checkRes = await fetch(`${API_BASE}/keep_alive`, {
+                    method: "POST", headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({session_id: sessionId})
                 });
-                if (res.ok) {
+
+                if (checkRes.ok) {
                     this.roomSessionValid = true;
                     this.isRestoringSession = false;
                     return;
                 }
-            } catch(e) {}
+
+                // 2. 状态失效，开始自动尝试二次登录 (触发后端的 5 次 OCR 扫描)
+                const reloginRes = await fetch(`${API_BASE}/auto_relogin`, {
+                    method: "POST", headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+
+                if (reloginRes.ok) {
+                    this.roomSessionValid = true;
+                } else {
+                    // 3. 5 次扫描都不行，彻底回退到手动登录 (这会弹出 LoginCard)
+                    this.roomSessionValid = false;
+                }
+            } catch(e) {
+                this.roomSessionValid = false;
+            }
             this.isRestoringSession = false;
         },
 

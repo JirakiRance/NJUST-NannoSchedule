@@ -149,6 +149,59 @@ def pure_login(req: LoginRequest):
         raise HTTPException(status_code=500, detail=f"内部错误: {str(e)}")
 
 
+# # ======== 状态检测/心跳探测接口 ========
+# @router.post("/keep_alive")
+# def keep_alive(req: KeepAliveRequest):
+#     print(f"\n[状态检测] 收到探测请求，Session ID: {req.session_id}")
+#
+#     store_data = session_store.get(req.session_id)
+#     user_session = store_data.get("session") if store_data else None
+#     active_node = store_data.get("active_node") if store_data else None
+#
+#     # 内存没了，去硬盘捞
+#     if not user_session:
+#         print("[状态检测] 内存无数据，尝试从硬盘读取...")
+#         user_session, active_node, credentials = load_session_from_disk(req.session_id)
+#         if user_session:
+#             session_store[req.session_id] = {"session": user_session, "active_node": active_node}
+#             print("[状态检测] 硬盘读取成功，复活 Session")
+#
+#     if not user_session:
+#         print("[状态检测]  探测失败：内存和硬盘均无此 Session")
+#         raise HTTPException(status_code=401, detail="Session 已过期或被清理")
+#
+#     if not active_node:
+#         active_node = "http://202.119.81.112:9080"  # 修复兜底 IP
+#
+#     # 探测教务处框架主页（比请求图片更稳，如果不在线会被强制302重定向）
+#     # probe_url = f"{active_node}/njlgdx/framework/main.jsp"
+#     from core.config import SCHEDULE_URL
+#     resp = user_session.post(SCHEDULE_URL, data={'xnxq01id': '', 'zc': ''},
+#                              headers=HEADERS, timeout=10, proxies=NO_PROXY)
+#     print(f"[状态检测] 开始对目标节点发送探针: {probe_url}")
+#
+#     try:
+#         # allow_redirects=False 是精髓，阻止它自动跳转到登录页
+#         # resp = user_session.get(probe_url, headers=HEADERS, timeout=10, proxies=NO_PROXY, allow_redirects=False)
+#         print(f"[状态检测] 探针返回 HTTP 状态码: {resp.status_code}")
+#
+#         # if resp.status_code == 200:
+#         #     print("[状态检测]  探测通过，Cookie 在教务处依然有效！")
+#         #     return {"status": "alive", "node": active_node}
+#         # else:
+#         #     print(f"[状态检测]  遭到教务处拦截 (大概率是302重定向)，判定为已掉线！")
+#         #     if req.session_id in session_store:
+#         #         del session_store[req.session_id]
+#         #     raise HTTPException(status_code=401, detail="被系统踢出下线")
+#         if resp.status_code == 200 and "登录" not in resp.text and "RANDOMCODE" not in resp.text:
+#             return {"status": "alive"}
+#         else:
+#             raise HTTPException(status_code=401, detail="Session已失效")
+#
+#     except Exception as e:
+#         print(f"[状态检测]  探针发射网络异常: {e}")
+#         raise HTTPException(status_code=500, detail="请求节点失败")
+
 # ======== 状态检测/心跳探测接口 ========
 @router.post("/keep_alive")
 def keep_alive(req: KeepAliveRequest):
@@ -171,28 +224,18 @@ def keep_alive(req: KeepAliveRequest):
         raise HTTPException(status_code=401, detail="Session 已过期或被清理")
 
     if not active_node:
-        active_node = "http://202.119.81.112:9080"  # 修复兜底 IP
+        active_node = "http://202.119.81.112:9080"  # 兜底 IP
 
-    # 探测教务处框架主页（比请求图片更稳，如果不在线会被强制302重定向）
-    # probe_url = f"{active_node}/njlgdx/framework/main.jsp"
     from core.config import SCHEDULE_URL
     resp = user_session.post(SCHEDULE_URL, data={'xnxq01id': '', 'zc': ''},
                              headers=HEADERS, timeout=10, proxies=NO_PROXY)
-    print(f"[状态检测] 开始对目标节点发送探针: {probe_url}")
+
+
+    print(f"[状态检测] 开始对目标节点发送探针: {SCHEDULE_URL}")
 
     try:
-        # allow_redirects=False 是精髓，阻止它自动跳转到登录页
-        # resp = user_session.get(probe_url, headers=HEADERS, timeout=10, proxies=NO_PROXY, allow_redirects=False)
         print(f"[状态检测] 探针返回 HTTP 状态码: {resp.status_code}")
 
-        # if resp.status_code == 200:
-        #     print("[状态检测]  探测通过，Cookie 在教务处依然有效！")
-        #     return {"status": "alive", "node": active_node}
-        # else:
-        #     print(f"[状态检测]  遭到教务处拦截 (大概率是302重定向)，判定为已掉线！")
-        #     if req.session_id in session_store:
-        #         del session_store[req.session_id]
-        #     raise HTTPException(status_code=401, detail="被系统踢出下线")
         if resp.status_code == 200 and "登录" not in resp.text and "RANDOMCODE" not in resp.text:
             return {"status": "alive"}
         else:
@@ -201,6 +244,7 @@ def keep_alive(req: KeepAliveRequest):
     except Exception as e:
         print(f"[状态检测]  探针发射网络异常: {e}")
         raise HTTPException(status_code=500, detail="请求节点失败")
+
 # ======== 数据嗅探接口 ========
 @router.post("/sniff_data")
 def sniff_data(req: SniffDataRequest):
