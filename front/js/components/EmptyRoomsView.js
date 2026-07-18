@@ -37,7 +37,7 @@ export default {
                         </select>
                     </div>
 
-                    <div class="empty-room-filter-label">选择时段 (最多可选 4 个，求交集)：</div>
+                    <div class="empty-room-filter-label">选择时段 (可多选，求交集)：</div>
                     <div class="empty-room-period-grid">
                         <label v-for="p in periodOptions" :key="p.value"
                                class="period-checkbox"
@@ -53,9 +53,7 @@ export default {
                     </button>
                 </div>
 
-                <div v-if="allEmptyRooms.length > 0" class="empty-room-warning">
-                    <b><i class="ri-lightbulb-flash-line"></i> 温馨提示：</b> 全天没课的教室不会显示
-                </div>
+
 
                 <div class="empty-room-result-area">
                     <div v-if="allEmptyRooms.length > 0">
@@ -143,10 +141,10 @@ export default {
             if (idx !== -1) {
                 this.roomQuery.periods.splice(idx, 1);
             } else {
-                if (this.roomQuery.periods.length >= 4) {
-                    showToast("最多只允许同时选择 4 个时段", "error");
-                    return;
-                }
+//                if (this.roomQuery.periods.length >= 4) {
+//                    showToast("最多只允许同时选择 4 个时段", "error");
+//                    return;
+//                }
                 this.roomQuery.periods.push(val);
             }
         },
@@ -186,35 +184,22 @@ export default {
                     return result.data || [];
                 };
 
-                // 1. 【并发执行】瞬间拉取全天 5 个大节的所有教室状态 (速度提升5倍)
-                const allPeriodCodes = this.periodOptions.map(p => p.value);
-                const results = await Promise.all(allPeriodCodes.map(code => fetchPeriod(code).catch(() => [])));
+                // 1. 只拉取用户勾选的时段
+                const selectedPeriods = this.roomQuery.periods;
+                const results = await Promise.all(selectedPeriods.map(code => fetchPeriod(code).catch(() => [])));
 
-                // 2. 找到真正的“神仙考研教室”：求 5 个大节全部空闲的绝对交集
-                let allDayEmptyRooms = results[0];
-                for (let i = 1; i < 5; i++) {
-                    allDayEmptyRooms = allDayEmptyRooms.filter(r => results[i].includes(r));
+                // 2. 求用户选中时段的交集
+                let userEmptyRooms = results[0];
+                for (let i = 1; i < results.length; i++) {
+                    userEmptyRooms = userEmptyRooms.filter(r => results[i].includes(r));
                 }
 
-                // 3. 找到“用户选中的空教室”：求用户选中时段的交集
-                const selectedIndices = this.roomQuery.periods.map(p => allPeriodCodes.indexOf(p));
-                let userEmptyRooms = results[selectedIndices[0]];
-                for (let i = 1; i < selectedIndices.length; i++) {
-                    userEmptyRooms = userEmptyRooms.filter(r => results[selectedIndices[i]].includes(r));
-                }
-
-                // 4. 【终极剔除】从用户查询的结果里，无情地挖掉全天空闲的考研教室！
-                this.allEmptyRooms = userEmptyRooms
-                    .filter(r => !allDayEmptyRooms.includes(r))
-                    .sort((a, b) => a.localeCompare(b, 'zh-CN', {numeric: true}));
+                // 3. 直接进行排序并赋值
+                this.allEmptyRooms = userEmptyRooms.sort((a, b) => a.localeCompare(b, 'zh-CN', {numeric: true}));
 
                 // 反馈提示优化
                 if (this.allEmptyRooms.length === 0) {
-                    if (userEmptyRooms.length > 0) {
-                        showToast("找到的教室全是全天空闲的考研教室，已为您自动过滤", "error");
-                    } else {
-                        showToast("该组合时段内无空闲教室", "error");
-                    }
+                    showToast("该组合时段内无空闲教室", "error");
                 }
 
             } catch (e) {
