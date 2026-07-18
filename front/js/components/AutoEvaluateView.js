@@ -28,18 +28,18 @@ export default {
                     <i class="ri-robot-2-line" style="font-size: 60px; color: var(--primary-color);"></i>
                     <h3 style="margin: 15px 0 5px;">智能一键评教</h3>
                     <p style="color: var(--text-sub); font-size: 13px; line-height: 1.5;">
-                        策略：除“总分”项打次高分防拦截外，<br>其余选项全部自动打满分。
+                        策略：除倒数第二项打次高分防拦截外，<br>其余选项全部自动打满分。
                     </p>
                 </div>
 
                 <button class="btn" style="width: 80%; border-radius: 25px; padding: 12px; font-size: 16px;"
                         @click="startAutoEvaluate" :disabled="isEvaluating">
                     <i v-if="isEvaluating" class="ri-loader-4-line ri-spin" style="margin-right: 5px;"></i>
-                    {{ isEvaluating ? '疯狂提交中...' : '开始一键评教' }}
+                    {{ isEvaluating ? '提交中...' : '开始一键评教' }}
                 </button>
 
                 <div v-if="resultLog.length > 0" style="margin-top: 30px; width: 100%; background: #f8f9fa; border-radius: 10px; padding: 15px; max-height: 250px; overflow-y: auto;">
-                    <div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: var(--text-main);">执行战报：</div>
+                    <div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: var(--text-main);">评教结果：</div>
                     <div v-for="(log, idx) in resultLog" :key="idx"
                          style="font-size: 12px; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #eee;"
                          :style="{ color: log.includes('✅') ? '#34c759' : '#ff3b30' }">

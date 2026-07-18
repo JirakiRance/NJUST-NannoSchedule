@@ -44,7 +44,7 @@ export default {
                 </div>
             </div>
             <div style="font-size: 11px; color: #ff9500; margin-bottom: 15px; text-align: right;">
-                <i class="ri-information-line" style="vertical-align: middle;"></i> 教务处响应较慢，验证码可能需等待 5-10 秒
+                <i class="ri-information-line" style="vertical-align: middle;"></i> 刷新不出验证码请尝试连接校园网
             </div>
 
             <button class="btn" @click="submitLogin" :disabled="loading || isFetchingCaptcha">
