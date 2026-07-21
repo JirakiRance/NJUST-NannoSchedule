@@ -73,14 +73,38 @@ def sync_all(req: LoginRequest):
     login_data = {'USERNAME': req.username, 'PASSWORD': req.password, 'useDogCode': '', 'RANDOMCODE': req.captcha}
 
     try:
-        # 所有的请求全部加上 proxies=NO_PROXY
-        login_resp = user_session.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=10, proxies=NO_PROXY, allow_redirects=True)
-        login_resp.encoding = 'utf-8'
 
-        if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
-            raise HTTPException(status_code=401, detail="登录失败：账号或密码错误")
+        # 这个是老版的，必须用校园网登录
+        # # 所有的请求全部加上 proxies=NO_PROXY
+        # login_resp = user_session.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=10, proxies=NO_PROXY, allow_redirects=True)
+        # login_resp.encoding = 'utf-8'
+        #
+        # if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
+        #     raise HTTPException(status_code=401, detail="登录失败：账号或密码错误")
+        #
+        # # 1. 必须先解析并定义 active_node
+        # parsed = urlparse(login_resp.url)
+        # active_node = f"{parsed.scheme}://{parsed.netloc}"
 
-        # 1. 必须先解析并定义 active_node
+        # 使用 params 字典，并用 get 请求完美伪装浏览器的跳转
+        params = {
+            'method': 'verify',
+            'USERNAME': req.username,
+            'PASSWORD': req.password,
+            'RANDOMCODE': req.captcha
+        }
+        login_resp = user_session.get(LOGIN_URL, params=params, headers=HEADERS, timeout=10, proxies=NO_PROXY,
+                                      allow_redirects=False)
+
+        # 只要拿到 302 重定向，说明 112 验证通过发通行证了，直接放行
+        if login_resp.status_code == 302:
+            pass
+        else:
+            login_resp.encoding = 'utf-8'
+            if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
+                raise HTTPException(status_code=401, detail="登录失败：账号或密码错误")
+
+        # 必须先解析并定义 active_node
         parsed = urlparse(login_resp.url)
         active_node = f"{parsed.scheme}://{parsed.netloc}"
 
@@ -126,13 +150,33 @@ def pure_login(req: LoginRequest):
     user_session = session_store[req.session_id].get("session")
     login_data = {'USERNAME': req.username, 'PASSWORD': req.password, 'useDogCode': '', 'RANDOMCODE': req.captcha}
     try:
-        #  这里之前已经加了，为了统一也用 NO_PROXY 变量
-        login_resp = user_session.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=10, proxies=NO_PROXY)
-        login_resp.encoding = 'utf-8'
-        if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
-            raise HTTPException(status_code=401, detail="账号、密码或验证码错误")
+        # #  这里之前已经加了，为了统一也用 NO_PROXY 变量
+        # login_resp = user_session.post(LOGIN_URL, data=login_data, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+        # login_resp.encoding = 'utf-8'
+        # if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
+        #     raise HTTPException(status_code=401, detail="账号、密码或验证码错误")
+        #
+        # # 1. 必须先解析并定义 active_node
+        # parsed = urlparse(login_resp.url)
+        # active_node = f"{parsed.scheme}://{parsed.netloc}"
 
-        # 1. 必须先解析并定义 active_node
+        params = {
+            'method': 'verify',
+            'USERNAME': req.username,
+            'PASSWORD': req.password,
+            'RANDOMCODE': req.captcha
+        }
+        login_resp = user_session.get(LOGIN_URL, params=params, headers=HEADERS, timeout=10, proxies=NO_PROXY,
+                                      allow_redirects=False)
+
+        if login_resp.status_code == 302:
+            pass
+        else:
+            login_resp.encoding = 'utf-8'
+            if "退出" not in login_resp.text and "欢迎" not in login_resp.text and "个人信息" not in login_resp.text:
+                raise HTTPException(status_code=401, detail="账号、密码或验证码错误")
+
+        # 必须先解析并定义 active_node
         parsed = urlparse(login_resp.url)
         active_node = f"{parsed.scheme}://{parsed.netloc}"
 
@@ -365,23 +409,51 @@ def auto_relogin(req: KeepAliveRequest):
         raise HTTPException(status_code=401, detail="无存储凭据，请手动登录")
 
     last_error = ""
+    # for attempt in range(1, 6):  # 最多5次
+    #     try:
+    #         session = requests.Session()
+    #         cap_resp = session.get(CAPTCHA_URL, headers=HEADERS, timeout=10, proxies=NO_PROXY)
+    #         captcha_text = ocr.classification(cap_resp.content).strip()
+    #
+    #         login_data = {
+    #             'USERNAME': credentials['username'],
+    #             'PASSWORD': credentials['password'],
+    #             'useDogCode': '',
+    #             'RANDOMCODE': captcha_text
+    #         }
+    #         login_resp = session.post(LOGIN_URL, data=login_data, headers=HEADERS,
+    #                                   timeout=10, proxies=NO_PROXY, allow_redirects=True)
+    #         login_resp.encoding = 'utf-8'
+    #
+    #         if any(k in login_resp.text for k in ["退出", "欢迎", "个人信息"]):
+    #             parsed = urlparse(login_resp.url)
+    #             active_node = f"{parsed.scheme}://{parsed.netloc}"
+    #             session_store[req.session_id] = {"session": session, "active_node": active_node}
+    #             save_session_to_disk(req.session_id, session, active_node, credentials)
+    #             print(f"[AutoRelogin] 第{attempt}次成功，验证码=[{captcha_text}]")
+    #             return {"status": "ok"}
+    #         else:
+    #             last_error = f"第{attempt}次验证码识别失败，识别结果=[{captcha_text}]"
+    #             print(f"[AutoRelogin] {last_error}")
+
     for attempt in range(1, 6):  # 最多5次
         try:
             session = requests.Session()
             cap_resp = session.get(CAPTCHA_URL, headers=HEADERS, timeout=10, proxies=NO_PROXY)
             captcha_text = ocr.classification(cap_resp.content).strip()
 
-            login_data = {
+            # 【修改】
+            params = {
+                'method': 'verify',
                 'USERNAME': credentials['username'],
                 'PASSWORD': credentials['password'],
-                'useDogCode': '',
                 'RANDOMCODE': captcha_text
             }
-            login_resp = session.post(LOGIN_URL, data=login_data, headers=HEADERS,
-                                      timeout=10, proxies=NO_PROXY, allow_redirects=True)
-            login_resp.encoding = 'utf-8'
+            login_resp = session.get(LOGIN_URL, params=params, headers=HEADERS,
+                                     timeout=10, proxies=NO_PROXY, allow_redirects=False)
 
-            if any(k in login_resp.text for k in ["退出", "欢迎", "个人信息"]):
+            # 加上对 302 的认可
+            if login_resp.status_code == 302 or any(k in login_resp.text for k in ["退出", "欢迎", "个人信息"]):
                 parsed = urlparse(login_resp.url)
                 active_node = f"{parsed.scheme}://{parsed.netloc}"
                 session_store[req.session_id] = {"session": session, "active_node": active_node}

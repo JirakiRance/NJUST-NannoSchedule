@@ -1,5 +1,5 @@
 import { store } from './store.js';
-import { API_BASE } from './utils.js';
+import { API_BASE,RELEASE_BASE } from './utils.js';
 import ScheduleView from './components/ScheduleView.js';
 import GradesView from './components/GradesView.js';
 import LevelExamsView from './components/LevelExamsView.js';

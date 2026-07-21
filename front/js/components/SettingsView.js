@@ -548,7 +548,7 @@ export default {
                 if (window.AndroidNative) {
                     this.store.examReminder.enabled = true;
                     localStorage.setItem("exam_reminder_enabled", "true");
-                    showToast("原生系统提醒已开启", "success");
+                    showToast("考试提醒已开启", "success");
                     return;
                 }
 

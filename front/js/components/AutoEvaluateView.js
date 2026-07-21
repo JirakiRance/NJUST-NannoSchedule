@@ -26,7 +26,7 @@ export default {
 
                 <div style="text-align: center; margin-bottom: 30px;">
                     <i class="ri-robot-2-line" style="font-size: 60px; color: var(--primary-color);"></i>
-                    <h3 style="margin: 15px 0 5px;">智能一键评教</h3>
+                    <h3 style="margin: 15px 0 5px;">一键评教</h3>
                     <p style="color: var(--text-sub); font-size: 13px; line-height: 1.5;">
                         策略：除倒数第二项打次高分防拦截外，<br>其余选项全部自动打满分。
                     </p>
