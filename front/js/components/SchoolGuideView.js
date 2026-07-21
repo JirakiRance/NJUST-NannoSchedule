@@ -1,4 +1,4 @@
-import { showToast } from '../utils.js';
+import { showToast ,RELEASE_BASE} from '../utils.js';
 
 export default {
     template: `
@@ -68,9 +68,9 @@ export default {
         return {
             // 默认配置（网络拉取失败时的兜底显示）
             images: [
-                { id: 'nanjing', title: '南京校区地图', icon: 'ri-map-2-line', src: 'https://ns-release.jiraki.top/NJUST_map_nanjing.jpg', filename: 'NJUST_map_nanjing.jpg' },
-                { id: 'jiangyin', title: '江阴校区地图', icon: 'ri-map-pin-line', src: 'https://ns-release.jiraki.top/NJUST_map_jiangyin.jpg', filename: 'NJUST_map_jiangyin.jpg' },
-                { id: 'calendar', title: '最新学年校历', icon: 'ri-calendar-event-line', src: 'https://ns-release.jiraki.top/calendar_latest.jpg', filename: 'NJUST_Calendar.jpg' }
+                { id: 'nanjing', title: '南京校区地图', icon: 'ri-map-2-line', src: RELEASE_BASE + '/NJUST_map_nanjing.jpg', filename: 'NJUST_map_nanjing.jpg' },
+                { id: 'jiangyin', title: '江阴校区地图', icon: 'ri-map-pin-line', src: RELEASE_BASE + '/NJUST_map_jiangyin.jpg', filename: 'NJUST_map_jiangyin.jpg' },
+                { id: 'calendar', title: '最新学年校历', icon: 'ri-calendar-event-line', src: RELEASE_BASE + '/calendar_latest.jpg', filename: 'NJUST_Calendar.jpg' }
             ],
             showPreview: false,
             currentImg: null,
@@ -163,7 +163,7 @@ export default {
     async mounted() {
         try {
             // 从 release 服务器拉取最新的导览配置
-            const res = await fetch('https://ns-release.jiraki.top/guide.json?t=' + new Date().getTime());
+            const res = await fetch(`${RELEASE_BASE}/guide.json?t=` + new Date().getTime());
             if (res.ok) {
                 const data = await res.json();
                 if (data && data.length > 0) {

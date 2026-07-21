@@ -1,5 +1,5 @@
 import { store } from '../store.js';
-import { API_BASE, showToast } from '../utils.js';
+import { API_BASE, showToast,RELEASE_BASE } from '../utils.js';
 
 export default {
     props: {
@@ -181,7 +181,7 @@ export default {
 
                         // 同步完成后，拉取 notice.json 强行矫正时间轴和学期名
                         try {
-                            const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${new Date().getTime()}`);
+                            const res = await fetch(`${RELEASE_BASE}/notice.json?t=${new Date().getTime()}`);
                             if (res.ok) {
                                 const data = await res.json();
                                 if (data.term_update) {

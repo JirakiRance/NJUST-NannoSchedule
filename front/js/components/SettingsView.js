@@ -1,5 +1,5 @@
 import { store } from '../store.js';
-import { API_BASE,showToast } from '../utils.js';
+import { API_BASE,showToast,RELEASE_BASE } from '../utils.js';
 import ModelLabModal from './ModelLabModal.js';
 
 export default {
@@ -652,7 +652,7 @@ export default {
                 } else {
                     const timestamp = new Date().getTime();
                     // 强制跨域不缓存请求
-                    const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
+                    const res = await fetch(`${RELEASE_BASE}/notice.json?t=${timestamp}`);
                     if (!res.ok) {
                         throw new Error("接口返回非 200");
                     }
@@ -692,7 +692,7 @@ export default {
         },
 
         goToDownload() {
-            window.location.href = "https://ns-release.jiraki.top/";
+            window.location.href = RELEASE_BASE + "/";
         }
     },
     mounted() {

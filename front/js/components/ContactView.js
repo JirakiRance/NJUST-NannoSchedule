@@ -1,4 +1,4 @@
-import { showToast } from '../utils.js';
+import { showToast ,RELEASE_BASE} from '../utils.js';
 
 export default {
     template: `
@@ -49,7 +49,7 @@ export default {
     async mounted() {
         try {
             // 从远端拉取，带上时间戳防止浏览器缓存老旧内容
-            const res = await fetch('https://ns-release.jiraki.top/md/contact.md?t=' + new Date().getTime());
+            const res = await fetch(`${RELEASE_BASE}/md/contact.md?t=` + new Date().getTime());
             if (res.ok) {
                 this.rawMarkdown = await res.text();
             } else {

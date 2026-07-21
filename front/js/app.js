@@ -374,7 +374,7 @@ createApp({
                     localStorage.removeItem('dismissed_notice_ids');
                 } else {
                     const timestamp = new Date().getTime();
-                    const res = await fetch(`https://ns-release.jiraki.top/notice.json?t=${timestamp}`);
+                    const res = await fetch(`${RELEASE_BASE}/notice.json?t=${timestamp}`);
                     if (!res.ok) return;
                     data = await res.json();
                 }

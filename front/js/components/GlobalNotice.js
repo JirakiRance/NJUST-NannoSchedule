@@ -1,5 +1,6 @@
 // front/js/components/GlobalNotice.js
 import { store } from '../store.js';
+import { RELEASE_BASE } from '../utils.js';
 
 export default {
     template: `
@@ -47,7 +48,7 @@ export default {
     methods: {
         checkApkUpdate() {
             if (confirm("即将前往下载页面，是否继续？")) {
-                window.location.href = "https://ns-release.jiraki.top/";
+                window.location.href = RELEASE_BASE + "/";
             }
         },
         dismissNotice() {

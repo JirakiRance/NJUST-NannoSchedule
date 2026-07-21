@@ -1,4 +1,4 @@
-import { API_BASE } from '../utils.js';
+import { API_BASE,RELEASE_BASE } from '../utils.js';
 
 export default {
     template: `
@@ -19,7 +19,7 @@ export default {
         };
     },
     mounted() {
-        fetch('https://ns-release.jiraki.top/md/logs.md?t=' + new Date().getTime())
+        fetch(`${RELEASE_BASE}/md/logs.md?t=` + new Date().getTime())
             .then(res => res.text())
             .then(text => {
                 this.logContent = text;
